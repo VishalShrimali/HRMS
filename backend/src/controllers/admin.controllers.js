@@ -1,37 +1,40 @@
 import { Admin } from "../models/admin.models.js";
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
+import { Log } from "../models/logs.models.js";
 dotenv.config()
+
 const RegisterAdmin = async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
     if (!email || !password || !fullName || !phone) {
-      return res.status(404).json({
-        message: "All fields are required",
-      });
-    }
-    const existinguser = await Admin.findOne({ email });
-    if (existinguser) {
-      return res.status(404).json({
-        message: "User already exists",
-      });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    const user = await Admin.create({ fullName, email, phone, password });
+    const existingUser = await Admin.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const admin = await Admin.create({ fullName, email, phone, password });
+
+    // ✅ Store log entry
+    await Log.create({
+      action: "ADMIN_REGISTERED",
+      performedBy: admin._id,
+      details: `Admin ${admin.fullName} registered with email ${admin.email}.`
+    });
+
     return res.status(201).json({
-      message: "User created succesfully",
-      name: user.fullName,
+      message: "Admin created successfully",
+      name: admin.fullName,
     });
   } catch (error) {
-    console.log("Error:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 const LoginAdmin = async (req, res) => {
     try {
@@ -130,6 +133,7 @@ const updateAdmin = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 const deleteAdmin = async (req, res) => {
     try {
         const { id } = req.params;
@@ -154,4 +158,21 @@ const deleteAdmin = async (req, res) => {
     }
 };
 
-export { RegisterAdmin, LoginAdmin, GetAdminProfile, updateAdmin, deleteAdmin};
+
+const GetAdminLogs = async (req, res) => {
+  try {
+    const logs = await Log.find().sort({ timestamp: -1 });
+
+    if (!logs.length) {
+      return res.status(404).json({ message: "No logs found" });
+    }
+
+    return res.status(200).json({ message: "Logs retrieved successfully", logs });
+  } catch (error) {
+    console.error("Error fetching logs:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export { RegisterAdmin, LoginAdmin, GetAdminProfile, updateAdmin, deleteAdmin, GetAdminLogs};

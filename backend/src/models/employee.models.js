@@ -1,13 +1,12 @@
 import mongoose from "mongoose";
 import { connectionDB } from "../utils/database.utils.js";
 
-connectionDB();
-
 const EmployeeSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true },
+    password :{ type: String, required: true},
     role: {
       type: String,
       enum: ["Admin", "HR", "Employee"],
