@@ -34,6 +34,8 @@ cron.schedule("* * * * *", async () => {
 
 const port = process.env.PORT || 5100
 console.log("hyy vishal")
+console.log("Hello Dev");
+
 app.listen(port, (req, res) => {
     console.log(`Server is running on ${port}`);
     
