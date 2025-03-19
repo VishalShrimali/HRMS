@@ -28,6 +28,7 @@ dotenv.config();
 
     // ✅ Create new employee
     const employee = await Employee.create({
+      contactGroup,
       fullName,
       email,
       phone,

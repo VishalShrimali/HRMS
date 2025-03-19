@@ -31,6 +31,9 @@ const EmployeeSchema = new mongoose.Schema(
       anniversaryWishSent: { type: Boolean, default: false },
       policyRenewalReminderSent: { type: Boolean, default: false },
     },
+    contactGroup: {
+      type: String
+    },
   },
   { timestamps: true }
 );
