@@ -1,29 +1,51 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { Menu, X, Users, Home, Settings } from "lucide-react";
-import LeadsTable from "../src/components/LeadsTable/LeadsTable"
-import Sidebar from "../src/components/Sidebar/Sidebar"
-import Navbar from "../src/components/Navbar/Navbar"
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import Leads from "./pages/Leads";
+import Dashboard from "./pages/Dashboard";
+import Employees from "./pages/Employee";
+import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
+import Layout from "./components/Layout/Layout";
+import Login from "./pages/Login"; 
+import Register from "./pages/Register"; 
 
-const App = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener("storage", handleAuthChange);
+    return () => window.removeEventListener("storage", handleAuthChange);
+  }, []);
 
   return (
     <Router>
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="flex-1 flex flex-col min-h-screen">
-          <Navbar toggleSidebar={toggleSidebar} />
-          <div className="p-5 flex-grow overflow-auto">
-            <Routes>
-              <Route path="/leads" element={<LeadsTable />} />
-            </Routes>
-          </div>
-        </div>
-      </div>
+      <Routes>
+        {/* Redirect users based on authentication */}
+        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        
+        {/* Public Routes */}
+        <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Protected Routes */}
+        {isAuthenticated ? (
+          <Route element={<Layout setIsAuthenticated={setIsAuthenticated} />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/leads" element={<Leads />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        ) : (
+          <Route path="*" element={<Navigate to="/login" />} />
+        )}
+      </Routes>
     </Router>
   );
-};
+}
 
 export default App;

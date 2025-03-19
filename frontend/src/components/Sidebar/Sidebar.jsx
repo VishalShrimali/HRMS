@@ -1,28 +1,133 @@
-import { Menu, X, Users, Home, Settings } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaBars,
+  FaUser,
+  FaSignOutAlt,
+  FaUsers,
+  FaEnvelope,
+  FaTachometerAlt,
+  FaClipboardList,
+  FaCog,
+} from "react-icons/fa";
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
+const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(true);
+  const sidebarRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (!isOpen) return;
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  // Logout Function
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      // Clear auth token (Assuming you're storing it in localStorage)
+      localStorage.removeItem("authToken");
+      navigate("/login"); // Redirect to login page
+    }
+  };
+
   return (
-    <div
-      className={`fixed top-0 left-0 h-full bg-gray-900 text-white w-64 transform ${
-        isOpen ? "translate-x-0" : "-translate-x-64"
-      } transition-transform lg:relative lg:translate-x-0 shadow-lg`}
-    >
-      <button onClick={toggleSidebar} className="lg:hidden p-4 text-white">
-        <X className="w-6 h-6" />
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="md:hidden p-3 bg-gray-900 text-white fixed top-4 left-4 z-50 rounded-md"
+      >
+        <FaBars />
       </button>
-      <ul className="p-4 space-y-4">
-        <li className="flex items-center space-x-2 p-3 rounded hover:bg-zinc-700 cursor-pointer">
-          <Home className="w-5 h-5" /> <span>Dashboard</span>
-        </li>
-        <li className="flex items-center space-x-2 p-3 rounded hover:bg-zinc-700 cursor-pointer">
-          <Users className="w-5 h-5" /> <span>Leads</span>
-        </li>
-        <li className="flex items-center space-x-2 p-3 rounded hover:bg-zinc-700 cursor-pointer">
-          <Settings className="w-5 h-5" /> <span>Settings</span>
-        </li>
-      </ul>
-    </div>
+
+      {/* Sidebar Container */}
+      <div
+        ref={sidebarRef}
+        className={`h-screen bg-gray-900 text-white fixed top-0 left-0 transition-all duration-300 z-40 shadow-lg ${
+          isOpen ? "w-64" : "w-20"
+        } md:block hidden`}
+      >
+        <div className="flex justify-between items-center p-4">
+          <h3 className={`text-lg font-bold ${isOpen ? "block" : "hidden"}`}>
+            HRMS Admin
+          </h3>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-white md:block hidden"
+          >
+            <FaBars />
+          </button>
+        </div>
+
+        {/* Sidebar Links */}
+        <ul className="space-y-4 p-4">
+          <li>
+            <Link
+              to="/"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaTachometerAlt />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Dashboard</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/leads"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaClipboardList />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Leads</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/employees"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaUsers />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Employees</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/reports"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaEnvelope />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Reports</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/settings"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaCog />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Settings</span>
+            </Link>
+          </li>
+          <li>
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 hover:text-red-400 w-full"
+            >
+              <FaSignOutAlt />
+              <span className={`${isOpen ? "block" : "hidden"}`}>Logout</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </>
   );
 };
 
-export default Sidebar
+export default Sidebar;
