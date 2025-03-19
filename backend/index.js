@@ -5,7 +5,7 @@ import cron from "node-cron";
 import { adminRouter } from "./src/routes/admin.routes.js";
 import { employeeRouter } from "./src/routes/employee.routes.js";
 import { sendGreetings } from "./src/utils/Greetings.utils.js";
-import moment from 'moment-timezone';
+
 dotenv.config();
 
 const app = express();
@@ -18,7 +18,7 @@ app.use(express.urlencoded({extended: true}));
 app.use('/api/v1/admin', adminRouter)
 app.use('/api/v1/employee', employeeRouter)
 
-cron.schedule("* * * * *", async () => {
+cron.schedule("0 0 * * *", async () => {
     console.log("✅ Cron Job Triggered at:", new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }));
   
     try {
