@@ -11,19 +11,11 @@ employeeRouter.post('/register', RegisterEmployee);
 // Employee login
 employeeRouter.post('/login', LoginEmployee);
 
-<<<<<<< HEAD
-// Get employee profile by ID (protected route)
-employeeRouter.get('/employee/:id', protect, GetEmployeeProfile);
-
-// Get all employees (protected route)
-employeeRouter.get('/employee', protect, GetEmployeeProfile);
-=======
 // // Get employee profile by ID (protected route)
 // employeeRouter.get('/leads/:id', protect, GetEmployeeProfile);
 
 // Get all employees (protected route)
 employeeRouter.get('/leads', protect, GetEmployeeProfile);
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
 
 // Update employee profile (only Super Admin can update)
 employeeRouter.put('/update/:id', protect, isSuperAdmin, UpdateEmployee);

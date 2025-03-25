@@ -7,36 +7,15 @@ import { Log } from "../models/logs.models.js";
 dotenv.config();
 
 // ✅ Employee Registration
-<<<<<<< HEAD
- const RegisterEmployee = async (req, res) => {
-  try {
-    const { fullName, email, phone, password, joiningDate, birthday, workAnniversary, address } = req.body;
-
-    // ✅ Validate required fields
-=======
 const RegisterEmployee = async (req, res) => {
   try {
     const { fullName, email, phone, password, joiningDate, birthday, workAnniversary, address } = req.body;
 
     // Validate required fields
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     if (!fullName || !email || !phone || !password || !joiningDate || !birthday) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
-<<<<<<< HEAD
-    // ✅ Check if employee already exists
-    const existingUser = await Employee.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Employee already exists" });
-    }
-
-    // ✅ Hash password before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // ✅ Create new employee
-=======
     // Check if employee already exists
     const existingUser = await Employee.findOne({ email });
  if (existingUser) {
@@ -48,16 +27,11 @@ const RegisterEmployee = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new employee
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const employee = await Employee.create({
       fullName,
       email,
       phone,
-<<<<<<< HEAD
-      password: hashedPassword, // Store hashed password
-=======
       password: hashedPassword,
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
       joiningDate,
       birthday,
       workAnniversary,
@@ -71,11 +45,7 @@ const RegisterEmployee = async (req, res) => {
       }
     });
 
-<<<<<<< HEAD
-    // ✅ Store log entry
-=======
     // Store log entry
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     await Log.create({
       action: "EMPLOYEE_REGISTERED",
       performedBy: employee._id,
@@ -86,19 +56,11 @@ const RegisterEmployee = async (req, res) => {
       message: "Employee registered successfully",
       name: employee.fullName,
     });
-<<<<<<< HEAD
-
-=======
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-<<<<<<< HEAD
-=======
-
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
 // ✅ Employee Login
 const LoginEmployee = async (req, res) => {
   try {
@@ -113,21 +75,13 @@ const LoginEmployee = async (req, res) => {
       return res.status(404).json({ message: "Invalid user credentials" });
     }
 
-<<<<<<< HEAD
-    // 🔹 Use comparePassword method from model
-=======
     // Use comparePassword method from model
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const isMatch = await employee.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-<<<<<<< HEAD
-    // ✅ Generate JWT Token
-=======
     // Generate JWT Token
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const token = jwt.sign(
       { id: employee._id, role: employee.role },
       process.env.JWT_SECRET_KEY,
@@ -234,8 +188,6 @@ const GetEmployeeLogs = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-=======
 // ✅ Get All Leads (for HR Admin)
 const GetAllLeads = async (req, res) => {
   try {
@@ -333,7 +285,6 @@ const DeleteLead = async (req, res) => {
   }
 };
 
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
 export {
   RegisterEmployee,
   LoginEmployee,
@@ -341,11 +292,7 @@ export {
   UpdateEmployee,
   DeleteEmployee,
   GetEmployeeLogs,
-<<<<<<< HEAD
-};
-=======
   GetAllLeads,
   AddLead,
   DeleteLead,
 };
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
