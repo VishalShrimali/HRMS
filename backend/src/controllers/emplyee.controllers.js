@@ -7,15 +7,24 @@ import { Log } from "../models/logs.models.js";
 dotenv.config();
 
 // ✅ Employee Registration
+<<<<<<< HEAD
  const RegisterEmployee = async (req, res) => {
   try {
     const { fullName, email, phone, password, joiningDate, birthday, workAnniversary, address } = req.body;
 
     // ✅ Validate required fields
+=======
+const RegisterEmployee = async (req, res) => {
+  try {
+    const { fullName, email, phone, password, joiningDate, birthday, workAnniversary, address } = req.body;
+
+    // Validate required fields
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     if (!fullName || !email || !phone || !password || !joiningDate || !birthday) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
+<<<<<<< HEAD
     // ✅ Check if employee already exists
     const existingUser = await Employee.findOne({ email });
     if (existingUser) {
@@ -27,11 +36,28 @@ dotenv.config();
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // ✅ Create new employee
+=======
+    // Check if employee already exists
+    const existingUser = await Employee.findOne({ email });
+ if (existingUser) {
+      return res.status(400).json({ message: "Employee already exists" });
+    }
+
+    // Hash password before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new employee
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const employee = await Employee.create({
       fullName,
       email,
       phone,
+<<<<<<< HEAD
       password: hashedPassword, // Store hashed password
+=======
+      password: hashedPassword,
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
       joiningDate,
       birthday,
       workAnniversary,
@@ -45,7 +71,11 @@ dotenv.config();
       }
     });
 
+<<<<<<< HEAD
     // ✅ Store log entry
+=======
+    // Store log entry
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     await Log.create({
       action: "EMPLOYEE_REGISTERED",
       performedBy: employee._id,
@@ -56,12 +86,19 @@ dotenv.config();
       message: "Employee registered successfully",
       name: employee.fullName,
     });
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
 // ✅ Employee Login
 const LoginEmployee = async (req, res) => {
   try {
@@ -76,13 +113,21 @@ const LoginEmployee = async (req, res) => {
       return res.status(404).json({ message: "Invalid user credentials" });
     }
 
+<<<<<<< HEAD
     // 🔹 Use comparePassword method from model
+=======
+    // Use comparePassword method from model
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const isMatch = await employee.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+<<<<<<< HEAD
     // ✅ Generate JWT Token
+=======
+    // Generate JWT Token
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     const token = jwt.sign(
       { id: employee._id, role: employee.role },
       process.env.JWT_SECRET_KEY,
@@ -189,6 +234,106 @@ const GetEmployeeLogs = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
+=======
+// ✅ Get All Leads (for HR Admin)
+const GetAllLeads = async (req, res) => {
+  try {
+    const leads = await Employee.find().select("-password");
+    if (!leads || leads.length === 0) {
+      return res.status(404).json({ message: "No leads found" });
+    }
+    return res.status(200).json({
+      message: "Leads fetched successfully",
+      leads,
+    });
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// ✅ Add New Lead (for HR Admin)
+const AddLead = async (req, res) => {
+  try {
+    const { fullName, email, phone, phoneNumber, birthday, country, joiningDate, tags } = req.body;
+
+    // Validate required fields
+    if (!fullName || !email || !phone || !joiningDate || !birthday) {
+      return res.status(400).json({ message: "All required fields must be filled" });
+    }
+
+    // Check if employee already exists
+    const existingUser = await Employee.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Employee already exists" });
+    }
+
+    // Create new lead (no password required for leads added by HR Admin)
+    const employee = await Employee.create({
+      fullName,
+      email,
+      phone,
+      phoneNumber,
+      birthday,
+      country: country || "United States",
+      joiningDate,
+      tags,
+      role: "Employee",
+      status: "Active",
+      notifications: {
+        birthdayWishSent: false,
+        anniversaryWishSent: false,
+        policyRenewalReminderSent: false,
+      },
+    });
+
+    // Store log entry
+    await Log.create({
+      action: "LEAD_ADDED",
+      performedBy: req.user._id,
+      details: `Lead ${employee.fullName} added with email ${employee.email} by HR Admin.`,
+    });
+
+    return res.status(201).json({
+      message: "Lead added successfully",
+      lead: employee,
+    });
+  } catch (error) {
+    console.error("Error adding lead:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// ✅ Delete Lead (for HR Admin)
+const DeleteLead = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const employee = await Employee.findById(id);
+    if (!employee) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    await Employee.findByIdAndDelete(id);
+
+    // Store log entry
+    await Log.create({
+      action: "LEAD_DELETED",
+      performedBy: req.user._id,
+      details: `Lead ${employee.fullName} deleted by HR Admin.`,
+    });
+
+    return res.status(200).json({
+      message: "Lead deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting lead:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
 export {
   RegisterEmployee,
   LoginEmployee,
@@ -196,4 +341,11 @@ export {
   UpdateEmployee,
   DeleteEmployee,
   GetEmployeeLogs,
+<<<<<<< HEAD
 };
+=======
+  GetAllLeads,
+  AddLead,
+  DeleteLead,
+};
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff

@@ -2,12 +2,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaBars,
+<<<<<<< HEAD
   FaUser,
   FaSignOutAlt,
   FaUsers,
   FaEnvelope,
   FaTachometerAlt,
   FaClipboardList,
+=======
+  FaSignOutAlt,
+  FaClipboardList,
+  FaEnvelope,
+  FaTachometerAlt,
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
   FaCog,
 } from "react-icons/fa";
 
@@ -34,7 +41,11 @@ const Sidebar = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
       // Clear auth token (Assuming you're storing it in localStorage)
+<<<<<<< HEAD
       localStorage.removeItem("authToken");
+=======
+      localStorage.removeItem("token");
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
       navigate("/login"); // Redirect to login page
     }
   };
@@ -72,7 +83,11 @@ const Sidebar = () => {
         <ul className="space-y-4 p-4">
           <li>
             <Link
+<<<<<<< HEAD
               to="/"
+=======
+              to="/dashboard"
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
               className="flex items-center space-x-2 hover:text-gray-300"
             >
               <FaTachometerAlt />
@@ -90,6 +105,7 @@ const Sidebar = () => {
           </li>
           <li>
             <Link
+<<<<<<< HEAD
               to="/employees"
               className="flex items-center space-x-2 hover:text-gray-300"
             >
@@ -104,6 +120,13 @@ const Sidebar = () => {
             >
               <FaEnvelope />
               <span className={`${isOpen ? "block" : "hidden"}`}>Reports</span>
+=======
+              to="/editor"
+              className="flex items-center space-x-2 hover:text-gray-300"
+            >
+              <FaEnvelope />
+              <span className={`${isOpen ? "block" : "hidden"}`}>EmailEditor</span>
+>>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
             </Link>
           </li>
           <li>
