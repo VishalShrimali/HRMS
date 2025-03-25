@@ -10,10 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-=======
-    "antd": "^5.24.4",
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
     "axios": "^1.8.3",
     "bootstrap": "^5.3.3",
     "lucide-react": "^0.483.0",

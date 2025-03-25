@@ -20,23 +20,12 @@ const Login = ({ setIsAuthenticated }) => {
       console.log("Login Response:", data); 
 
       if (response.ok && data.token) {
-<<<<<<< HEAD
         localStorage.setItem("token", data.token);
         localStorage.setItem("adminName", data.admin?.fullName || "Admin");
 
         setIsAuthenticated(true); // ✅ Update Auth Status
         navigate("/dashboard"); // Redirect to Dashboard
       } else {
-=======
-        console.log("Token received:", data.token); // ✅ Check if token is received
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("adminName", data.admin?.fullName || "Admin");
-      
-        setIsAuthenticated(true);
-        navigate("/dashboard");
-      }
-       else {
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
         alert(data.message || "Invalid credentials. Please try again.");
       }
     } catch (error) {
@@ -45,67 +34,18 @@ const Login = ({ setIsAuthenticated }) => {
     }
   };
 
-<<<<<<< HEAD
-=======
-  const handleRegister = () => {
-    navigate("/register"); // Redirect to Register page
-  };
-
-  const handleForgotPassword = () => {
-    navigate("/forgot-password"); // Redirect to Forgot Password page
-  };
-
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
       <div className="bg-white p-6 rounded-lg shadow-md w-80">
         <h2 className="text-2xl font-bold text-center mb-4">Admin Login</h2>
         <form onSubmit={handleLogin} className="flex flex-col">
-<<<<<<< HEAD
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="border p-2 rounded mb-2" />
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="border p-2 rounded mb-2" />
           <button type="submit" className="bg-blue-500 text-white py-2 rounded">Login</button>
         </form>
-=======
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="border p-2 rounded mb-2"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="border p-2 rounded mb-2"
-          />
-          <button type="submit" className="bg-blue-500 text-white py-2 rounded mb-2">
-            Login
-          </button>
-        </form>
-        <div className="text-center">
-          <button onClick={handleForgotPassword} className="text-blue-500 text-sm mb-2">
-            Forgot Password?
-          </button>
-          <div className="flex justify-center items-center">
-            <span className="text-sm text-gray-500 mr-2">Don't have an account?</span>
-            <button onClick={handleRegister} className="text-blue-500 text-sm">
-              Register
-            </button>
-          </div>
-        </div>
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
       </div>
     </div>
   );
 };
 
 export default Login;
-<<<<<<< HEAD
-
-=======
->>>>>>> 4b3fab8e72f43f3d569066d42ac00a0ecf096cff
