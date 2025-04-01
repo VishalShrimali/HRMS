@@ -17,23 +17,30 @@ const Navbar = ({ toggleSidebar, setIsAuthenticated }) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.dispatchEvent(new Event("storage")); // Triggers auth state update
-    setIsAuthenticated(false); // ✅ Update Auth Status
+    setIsAuthenticated(false);
     navigate("/login");
   };
 
   return (
-    <nav className="bg-gray-900 text-white p-4 fixed w-full top-0 left-0 z-10 shadow-md flex justify-between items-center">
-      <button onClick={toggleSidebar} className="text-white text-2xl">
-        ☰
+    <nav className="fixed top-0 left-0 w-full bg-gray-800 text-gray-100 p-4 z-10 flex items-center justify-between shadow-sm">
+      {/* Sidebar Toggle */}
+      <button
+        onClick={toggleSidebar}
+        className="text-gray-300 hover:text-white transition-colors"
+      >
+        <span className="text-2xl">☰</span>
       </button>
 
-      <div className="flex items-center space-x-4">
+      {/* Right Side (Admin Name & Buttons) */}
+      <div className="flex items-center space-x-6">
         {adminName ? (
           <>
-            <span className="text-lg font-semibold">Welcome, {adminName}</span>
+            <span className="text-sm font-light tracking-wide">
+              Hello, {adminName}
+            </span>
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition duration-200"
+              className="bg-gray-700 hover:bg-red-600 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors duration-200"
             >
               Logout
             </button>
@@ -41,9 +48,9 @@ const Navbar = ({ toggleSidebar, setIsAuthenticated }) => {
         ) : (
           <button
             onClick={() => navigate("/login")}
-            className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition duration-200"
+            className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors duration-200"
           >
-            Login
+            Sign In
           </button>
         )}
       </div>

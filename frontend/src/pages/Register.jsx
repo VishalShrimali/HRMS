@@ -1,48 +1,47 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:8000/api/v1/admin/register", { // Fixed Port
+      const response = await fetch("http://localhost:8000/api/v1/admin/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, phone, password }),
-        credentials: "include", // Needed if using cookies for authentication
+        body: JSON.stringify({ fullName, email, password }),
       });
-
       const data = await response.json();
       if (response.ok) {
-        alert("Registration Successful! Please log in.");
+        alert("Registration successful! Please log in.");
         navigate("/login");
       } else {
-        alert(data.message);
+        alert(data.message || "Registration failed.");
       }
     } catch (error) {
-      console.error("Registration Error:", error);
-      alert("Something went wrong. Try again.");
+      console.error("Register Error:", error);
+      alert("Something went wrong.");
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-80">
-        <h2 className="text-2xl font-bold text-center mb-4">Admin Register</h2>
-        <form onSubmit={handleRegister} className="flex flex-col">
+    <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] p-4">
+      <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-light text-[#1F2937] text-center mb-6">
+          Register
+        </h2>
+        <form onSubmit={handleRegister} className="space-y-4">
           <input
             type="text"
             placeholder="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            className="border p-2 rounded mb-2"
+            className="w-full p-3 border border-gray-300 rounded-md text-sm text-[#1F2937] focus:outline-none focus:border-[#2DD4BF] transition-colors"
           />
           <input
             type="email"
@@ -50,15 +49,7 @@ const Register = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="border p-2 rounded mb-2"
-          />
-          <input
-            type="text"
-            placeholder="Phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            className="border p-2 rounded mb-2"
+            className="w-full p-3 border border-gray-300 rounded-md text-sm text-[#1F2937] focus:outline-none focus:border-[#2DD4BF] transition-colors"
           />
           <input
             type="password"
@@ -66,12 +57,20 @@ const Register = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="border p-2 rounded mb-2"
+            className="w-full p-3 border border-gray-300 rounded-md text-sm text-[#1F2937] focus:outline-none focus:border-[#2DD4BF] transition-colors"
           />
-          <button type="submit" className="bg-blue-500 text-white py-2 rounded">Register</button>
+          <button
+            type="submit"
+            className="w-full py-3 bg-[#2DD4BF] text-white text-sm font-medium rounded-md hover:bg-[#26A69A] transition-colors duration-200"
+          >
+            Register
+          </button>
         </form>
-        <p className="text-center mt-2">
-          Already have an account? <a href="/login" className="text-blue-500">Login</a>
+        <p className="mt-4 text-center text-sm text-[#1F2937]">
+          Already registered?{" "}
+          <Link to="/login" className="text-[#2DD4BF] hover:underline">
+            Sign In
+          </Link>
         </p>
       </div>
     </div>

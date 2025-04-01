@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaBars,
-  FaUser,
   FaSignOutAlt,
   FaUsers,
   FaEnvelope,
@@ -33,9 +32,8 @@ const Sidebar = () => {
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
-      // Clear auth token (Assuming you're storing it in localStorage)
-      localStorage.removeItem("authToken");
-      navigate("/login"); // Redirect to login page
+      localStorage.removeItem("token"); // Updated to match Login component
+      navigate("/login");
     }
   };
 
@@ -44,84 +42,91 @@ const Sidebar = () => {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden p-3 bg-gray-900 text-white fixed top-4 left-4 z-50 rounded-md"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors"
       >
-        <FaBars />
+        <FaBars size={20} />
       </button>
 
       {/* Sidebar Container */}
       <div
         ref={sidebarRef}
-        className={`h-screen bg-gray-900 text-white fixed top-0 left-0 transition-all duration-300 z-40 shadow-lg ${
-          isOpen ? "w-64" : "w-20"
-        } md:block hidden`}
+        className={`fixed top-0 left-0 h-screen bg-gray-800 text-gray-100 transition-all duration-300 ease-in-out z-40 ${
+          isOpen ? "w-64" : "w-16"
+        }`}
       >
-        <div className="flex justify-between items-center p-4">
-          <h3 className={`text-lg font-bold ${isOpen ? "block" : "hidden"}`}>
-            HRMS Admin
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h3
+            className={`text-lg font-light tracking-wide ${
+              isOpen ? "block" : "hidden"
+            }`}
+          >
+            HRMS
           </h3>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="text-white md:block hidden"
+            className="text-gray-300 hover:text-white transition-colors"
           >
-            <FaBars />
+            <FaBars size={18} />
           </button>
         </div>
 
         {/* Sidebar Links */}
-        <ul className="space-y-4 p-4">
+        <ul className="p-4 space-y-3">
           <li>
             <Link
               to="/"
-              className="flex items-center space-x-2 hover:text-gray-300"
+              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
+
             >
-              <FaTachometerAlt />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Dashboard</span>
+              <FaTachometerAlt size={18} />
+              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
+                Dashboard
+              </span>
             </Link>
           </li>
           <li>
             <Link
               to="/leads"
-              className="flex items-center space-x-2 hover:text-gray-300"
+              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
             >
-              <FaClipboardList />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Leads</span>
+              <FaClipboardList size={18} />
+              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
+                Leads
+              </span>
             </Link>
           </li>
           <li>
             <Link
               to="/employees"
-              className="flex items-center space-x-2 hover:text-gray-300"
+              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
             >
-              <FaUsers />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Employees</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/reports"
-              className="flex items-center space-x-2 hover:text-gray-300"
-            >
-              <FaEnvelope />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Reports</span>
+              <FaUsers size={18} />
+              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
+                Email-Editor
+              </span>
             </Link>
           </li>
           <li>
             <Link
               to="/settings"
-              className="flex items-center space-x-2 hover:text-gray-300"
+              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
             >
-              <FaCog />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Settings</span>
+              <FaCog size={18} />
+              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
+                Settings
+              </span>
             </Link>
           </li>
           <li>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 hover:text-red-400 w-full"
+              className="flex items-center space-x-3 p-2 w-full text-left rounded-md hover:bg-gray-700 hover:text-red-400 transition-colors"
             >
-              <FaSignOutAlt />
-              <span className={`${isOpen ? "block" : "hidden"}`}>Logout</span>
+              <FaSignOutAlt size={18} />
+              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
+                Logout
+              </span>
             </button>
           </li>
         </ul>
