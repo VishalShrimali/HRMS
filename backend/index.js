@@ -5,8 +5,10 @@ import cors from "cors";
 import moment from "moment-timezone";
 import { connectionDB } from "./src/utils/database.utils.js";
 import { adminRouter } from "./src/routes/admin.routes.js";
+import { userRouter } from "./src/routes/user.routes.js";
 import { employeeRouter } from "./src/routes/employee.routes.js";
 import { sendGreetings } from "./src/utils/Greetings.utils.js";
+import roleRouter from "./src/routes/role.routes.js";
 
 dotenv.config();
 
@@ -29,7 +31,17 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/user", userRouter);
 app.use("/api/v1/employee", employeeRouter);
+app.use("/api/v1/role", roleRouter);
+
+// Handle Non-Existent Routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: "Route not found", 
+    requestedRoute: `${req.method} ${req.originalUrl}` 
+  });
+});
 
 // Cron Job (Runs Every Minute)
 cron.schedule(
