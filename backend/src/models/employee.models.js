@@ -6,7 +6,6 @@ const EmployeeSchema = new mongoose.Schema(
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true },
-    password :{ type: String, required: true},
     role: {
       type: String,
       enum: ["Admin", "HR", "Employee"],
@@ -31,6 +30,8 @@ const EmployeeSchema = new mongoose.Schema(
       anniversaryWishSent: { type: Boolean, default: false },
       policyRenewalReminderSent: { type: Boolean, default: false },
     },
+    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
   },
   { timestamps: true }
 );

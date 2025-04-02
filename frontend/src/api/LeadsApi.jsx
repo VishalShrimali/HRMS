@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000/api/v1"; // 🔹 Update with your actual backend URL
+const API_BASE_URL = "http://localhost:8000/api/v1"; // Matches your backend URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,45 +9,45 @@ const api = axios.create({
   },
 });
 
-// 🔹 Fetch all employees
-export const getEmployees = async () => {
+// Fetch all leads
+export const getLeads = async (config = {}) => {
   try {
-    const response = await api.get("/employees");
+    const response = await api.get("admin/leads", config); // Matches GetAllLeads
     return response.data;
   } catch (error) {
-    console.error("Error fetching employees:", error);
+    console.error("Error fetching leads:", error);
     throw error;
   }
 };
 
-// 🔹 Add a new employee
-export const addEmployee = async (employeeData) => {
+// Add a new lead
+export const addLead = async (leadData, config = {}) => {
   try {
-    const response = await api.post("/employees", employeeData);
+    const response = await api.post("admin/addlead", leadData, config); // Matches AddLead
     return response.data;
   } catch (error) {
-    console.error("Error adding employee:", error);
+    console.error("Error adding lead:", error);
     throw error;
   }
 };
 
-// 🔹 Delete an employee
-export const deleteEmployee = async (employeeId) => {
+// Delete a lead
+export const deleteLead = async (leadId, config = {}) => {
   try {
-    await api.delete(`/employees/${employeeId}`);
+    await api.delete(`admin/leads/${leadId}`, config); // Matches DeleteLead
   } catch (error) {
-    console.error("Error deleting employee:", error);
+    console.error("Error deleting lead:", error);
     throw error;
   }
 };
 
-// 🔹 Update an employee
-export const updateEmployee = async (employeeId, updatedData) => {
+// Update a lead
+export const updateLead = async (leadId, updatedData, config = {}) => {
   try {
-    const response = await api.put(`/employees/${employeeId}`, updatedData);
+    const response = await api.put(`/leads/${leadId}`, updatedData, config); // Matches UpdateLead
     return response.data;
   } catch (error) {
-    console.error("Error updating employee:", error);
+    console.error("Error updating lead:", error);
     throw error;
   }
 };

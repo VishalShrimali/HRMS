@@ -107,8 +107,8 @@ const GetEmployeeProfileFromAdmin = async (req, res) => {
     console.log("Fetching leads...");
 
     const leads = await Employee.find()
-      .select("-password")
-      .populate("groups"); // Populate groups for each lead
+      // .select("-password")
+      // .populate("groups"); // Populate groups for each lead
     if (!leads || leads.length === 0) {
       return res.status(404).json({ message: "No leads found" });
     }
