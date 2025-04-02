@@ -1,29 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
+import {
+  Search, Filter, Upload, Download, Plus, ChevronLeft, ChevronRight,
+  Edit, Trash, Users, X
+} from "lucide-react";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingLead, setEditingLead] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState([]);
-  const [groupName, setGroupName] = useState("");
-  const [activeTab, setActiveTab] = useState("personal");
 
+  // Updated formData to match the fields in the image
   const [formData, setFormData] = useState({
-    fullName: "",
+    contactGroup: "",
+    shareLead: "",
+    pipeline: "",
+    firstName: "",
+    lastName: "",
     email: "",
-    phone: "",
-    birthday: "",
-    country: "",
-    joiningDate: "",
-    tags: "",
-    role: "Employee",
-    status: "Active",
-    group: "",
+    country: "USA (+1)", // Default value as shown in the image
+    phoneNumber: "",
+    secondPhoneNumber: "",
+    otherInformation: "",
   });
 
   const token = localStorage.getItem("token");
@@ -52,13 +58,14 @@ const LeadsTable = () => {
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.fullName) errors.fullName = "Full name is required";
+    if (!formData.firstName) errors.firstName = "First Name is required";
+    if (!formData.lastName) errors.lastName = "Last Name is required";
     if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
       errors.email = "Valid email is required";
-    if (!formData.phone || !/^\d{10}$/.test(formData.phone))
-      errors.phone = "Valid 10-digit phone number is required";
-    if (!formData.joiningDate) errors.joiningDate = "Joining date is required";
-    if (!formData.birthday) errors.birthday = "Birthday is required";
+    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
+      errors.phoneNumber = "Valid 10-digit phone number is required";
+    if (formData.secondPhoneNumber && !/^\d{10}$/.test(formData.secondPhoneNumber))
+      errors.secondPhoneNumber = "Valid 10-digit phone number is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -71,24 +78,35 @@ const LeadsTable = () => {
     setFormErrors({ ...formErrors, [e.target.name]: "" });
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     try {
-      let response;
-      if (editingLead) {
-        response = await updateLead(editingLead._id, formData, apiConfig);
-        setLeads(leads.map(lead => (lead._id === editingLead._id ? response.lead : lead)));
-      } else {
-        response = await addLead(formData, apiConfig);
-        setLeads([...leads, response.lead]);
-      }
-      setShowModal(false);
+      const response = await addLead(formData, apiConfig);
+      setLeads([...leads, response.lead]);
+      setShowAddModal(false);
       resetForm();
       setError(null);
+      fetchLeads();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save lead");
+      setError(err.response?.data?.message || "Failed to add lead");
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      const response = await updateLead(editingLead._id, formData, apiConfig);
+      setLeads(leads.map((lead) => (lead._id === editingLead._id ? response.lead : lead)));
+      setShowEditModal(false);
+      resetForm();
+      setError(null);
+      fetchLeads();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update lead");
     }
   };
 
@@ -96,32 +114,21 @@ const LeadsTable = () => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
         await deleteLead(id, apiConfig);
-        setLeads(leads.filter(lead => lead._id !== id));
-        setSelectedLeads(selectedLeads.filter(selectedId => selectedId !== id));
+        setLeads(leads.filter((lead) => lead._id !== id));
+        setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
         setError(null);
+        fetchLeads();
       } catch (err) {
         setError(err.response?.data?.message || "Failed to delete lead");
       }
     }
   };
 
-  const handleGroupSelected = () => {
-    if (selectedLeads.length === 0 || !groupName) {
-      alert("Please select leads and enter a group name");
-      return;
-    }
-    setLeads(leads.map(lead => 
-      selectedLeads.includes(lead._id) ? { ...lead, group: groupName } : lead
-    ));
-    setSelectedLeads([]);
-    setGroupName("");
-  };
-
   const handleExport = () => {
     const csv = [
-      "Full Name,Email,Phone,Status,Country,Joining Date,Birthday,Tags,Group",
-      ...leads.map(lead =>
-        `${lead.fullName},${lead.email},${lead.phone},${lead.status},${lead.country},${lead.joiningDate},${lead.birthday},${lead.tags || ""},${lead.group || ""}`
+      "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Other Information",
+      ...leads.map((lead) =>
+        `${lead.firstName},${lead.lastName},${lead.email},${lead.country || "N/A"},${ LEAD.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.otherInformation || "N/A"}`
       ),
     ].join("\n");
 
@@ -129,395 +136,708 @@ const LeadsTable = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "leads_export.csv";
+    a.download = "leads.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
-  const handleImport = (event) => {
+  const handleImport = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    console.log("Selected file:", file);
-    alert("Import functionality to be implemented! File selected: " + file.name);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const rows = e.target.result.split("\n").slice(1); // Skip header
+      for (const row of rows) {
+        const [firstName, lastName, email, country, phoneNumber, secondPhoneNumber, otherInformation] = row.split(",").map((item) => item.trim());
+        if (firstName && lastName && email) { // Ensure required fields are present
+          try {
+            await addLead({ firstName, lastName, email, country, phoneNumber, secondPhoneNumber, otherInformation }, apiConfig);
+          } catch (err) {
+            console.error("Error importing lead:", err);
+            setError(err.response?.data?.message || "Failed to import lead");
+          }
+        }
+      }
+      fetchLeads(); // Refresh table after import
+    };
+    reader.readAsText(file);
   };
 
   const resetForm = () => {
     setFormData({
-      fullName: "",
+      contactGroup: "",
+      shareLead: "",
+      pipeline: "",
+      firstName: "",
+      lastName: "",
       email: "",
-      phone: "",
-      birthday: "",
-      country: "",
-      joiningDate: "",
-      tags: "",
-      role: "Employee",
-      status: "Active",
-      group: "",
+      country: "USA (+1)",
+      phoneNumber: "",
+      secondPhoneNumber: "",
+      otherInformation: "",
     });
     setEditingLead(null);
     setFormErrors({});
   };
 
-  const handleCheckboxChange = (id) => {
-    setSelectedLeads(prev =>
-      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
-    );
+  const handleSelectLead = (id) => {
+    if (selectedLeads.includes(id)) {
+      setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
+    } else {
+      setSelectedLeads([...selectedLeads, id]);
+    }
   };
 
-  // Filter leads for tabs
-  const filteredLeads = leads.filter(lead =>
-    lead.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const groupedLeads = filteredLeads.filter(lead => lead.group);
-
-  // Group leads by group name for the Groups tab
-  const groupedByName = groupedLeads.reduce((acc, lead) => {
-    const group = lead.group || "Ungrouped";
-    if (!acc[group]) {
-      acc[group] = [];
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedLeads(paginatedLeads.map((lead) => lead._id));
+    } else {
+      setSelectedLeads([]);
     }
-    acc[group].push(lead);
-    return acc;
-  }, {});
+  };
 
-  const renderTable = (leadsToShow) => (
-    <div className="h-[calc(100vh-12rem)] overflow-auto">
-      <table className="table-auto w-full text-left border-collapse border border-gray-300">
-        <thead className="sticky top-0 bg-gray-100 z-10">
-          <tr>
-            <th className="border px-2 py-1">
-              <input
-                type="checkbox"
-                onChange={(e) =>
-                  setSelectedLeads(e.target.checked ? leadsToShow.map(lead => lead._id) : [])
-                }
-                checked={selectedLeads.length === leadsToShow.length && leadsToShow.length > 0}
-              />
-            </th>
-            <th className="border px-2 py-1">Name</th>
-            <th className="border px-2 py-1">Email</th>
-            <th className="border px-2 py-1">Phone</th>
-            <th className="border px-2 py-1">Status</th>
-            <th className="border px-2 py-1">Country</th>
-            <th className="border px-2 py-1">Birthday</th>
-            <th className="border px-2 py-1">Joining</th>
-            <th className="border px-2 py-1">Tags</th>
-            <th className="border px-2 py-1">Group</th>
-            <th className="border px-2 py-1">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leadsToShow.map((lead) => (
-            <tr key={lead._id} className="hover:bg-gray-50">
-              <td className="border px-2 py-1">
-                <input
-                  type="checkbox"
-                  checked={selectedLeads.includes(lead._id)}
-                  onChange={() => handleCheckboxChange(lead._id)}
-                />
-              </td>
-              <td className="border px-2 py-1">{lead.fullName}</td>
-              <td className="border px-2 py-1">{lead.email}</td>
-              <td className="border px-2 py-1">{lead.phone}</td>
-              <td className="border px-2 py-1">{lead.status || "N/A"}</td>
-              <td className="border px-2 py-1">{lead.country || "N/A"}</td>
-              <td className="border px-2 py-1">{lead.birthday}</td>
-              <td className="border px-2 py-1">{lead.joiningDate}</td>
-              <td className="border px-2 py-1">{lead.tags || "N/A"}</td>
-              <td className="border px-2 py-1">{lead.group || "N/A"}</td>
-              <td className="border px-2 py-1 whitespace-nowrap">
-                <button
-                  onClick={() => {
-                    setEditingLead(lead);
-                    setFormData(lead);
-                    setShowModal(true);
-                  }}
-                  className="text-blue-500 mr-2 hover:underline"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(lead._id)}
-                  className="text-red-500 hover:underline"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+  const filteredLeads = leads.filter((lead) =>
+    (lead.firstName + " " + lead.lastName).toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  const fileInputRef = useRef(null);
 
   return (
-    <div className="ml-64 mt-16 mr-2 p-2 h-[calc(100vh-4rem)] overflow-hidden">
-      <div className="mb-2">
-        <div className="flex border-b">
-          <button
-            className={`px-4 py-2 ${activeTab === "personal" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setActiveTab("personal")}
-          >
-            Personal Leads
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === "groups" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            onClick={() => setActiveTab("groups")}
-          >
-            Groups
-          </button>
+    <div className="ml-5 mt-5 mr-5 p-4 h-[calc(100vh-2rem)] overflow-auto">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center">
+          <Users className="mr-2" size={20} />
+          <h2 className="mb-0 text-xl font-semibold">Leads</h2>
+          <small className="ml-2 text-gray-500">({leads.length} Records Found)</small>
         </div>
-      </div>
-
-      <div className="flex justify-between mb-2 flex-wrap gap-2">
-        <div className="relative w-1/3 min-w-[200px]">
-          <input
-            type="text"
-            placeholder="Search by name..."
-            className="border border-gray-300 rounded-lg py-1 pl-8 pr-2 w-full bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </span>
-        </div>
-        <div className="flex space-x-2 flex-wrap gap-2">
-          <button
-            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-          >
-            Add Lead
-          </button>
-          <div className="flex items-center space-x-2">
+        <div className="flex items-center">
+          <div className="relative mr-2">
             <input
               type="text"
-              placeholder="Group name"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              className="border border-gray-300 rounded-lg py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-8 form-control border border-gray-300 rounded p-2 w-52"
+              placeholder="Search leads..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
-            <button
-              className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition-colors"
-              onClick={handleGroupSelected}
-            >
-              Group Selected
-            </button>
+            <Search className="absolute left-2 top-2.5" size={16} />
           </div>
-          <label className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-colors cursor-pointer">
-            Import
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleImport}
-            />
-          </label>
           <button
-            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-colors"
-            onClick={handleExport}
+            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center hover:bg-gray-700"
+            onClick={() => {/* Implement filter functionality */}}
           >
-            Export
+            <Filter className="mr-1" size={16} /> Filter
           </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-4">
-          <svg className="animate-spin h-5 w-5 mr-3 text-blue-500" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          Loading...
+      {/* Import/Export and Add New Section */}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center">
+          <input
+            type="file"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImport}
+            accept=".csv"
+          />
+          <button
+            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center mr-2 hover:bg-gray-700"
+            onClick={() => fileInputRef.current.click()}
+          >
+            <Upload className="mr-1" size={16} /> Import
+          </button>
+          <button
+            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center mr-2 hover:bg-gray-700"
+            onClick={handleExport}
+          >
+            <Download className="mr-1" size={16} /> Export
+          </button>
         </div>
+        <div className="flex items-center">
+          <select
+            className="form-select border border-gray-300 rounded p-2 mr-2 w-20"
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <button
+            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center hover:bg-gray-700"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus className="mr-1" size={16} /> Add New
+          </button>
+        </div>
+      </div>
+
+      {/* Table Section */}
+      {loading ? (
+        <div className="text-center py-4">Loading...</div>
       ) : error ? (
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <>
-          {activeTab === "personal" && renderTable(filteredLeads)}
-          {activeTab === "groups" && (
-            <div className="h-[calc(100vh-12rem)] overflow-auto">
-              {Object.keys(groupedByName).length === 0 ? (
-                <div className="text-center py-4">No grouped leads found.</div>
-              ) : (
-                Object.entries(groupedByName).map(([group, groupLeads]) => (
-                  <div key={group} className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2">{group}</h3>
-                    {renderTable(groupLeads)}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead className="bg-blue-500 text-white">
+                <tr>
+                  <th className="border border-gray-300 p-2 text-left">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox"
+                      onChange={handleSelectAll}
+                      checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
+                    />
+                  </th>
+                  <th className="border border-gray-300 p-2 text-left">Name & Email</th>
+                  <th className="border border-gray-300 p-2 text-left">Country</th>
+                  <th className="border border-gray-300 p-2 text-left">Phone</th>
+                  <th className="border border-gray-300 p-2 text-left">Tags</th>
+                  <th className="border border-gray-300 p-2 text-left">Date</th>
+                  <th className="border border-gray-300 p-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedLeads.map((lead) => (
+                  <tr key={lead._id} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 p-2">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox"
+                        checked={selectedLeads.includes(lead._id)}
+                        onChange={() => handleSelectLead(lead._id)}
+                      />
+                    </td>
+                    <td className="border border-gray-300 p-2">
+                      <div>{lead.firstName} {lead.lastName}</div>
+                      <div className="text-gray-500 text-sm">{lead.email}</div>
+                    </td>
+                    <td className="border border-gray-300 p-2">{lead.country || "N/A"}</td>
+                    <td className="border border-gray-300 p-2">{lead.phoneNumber || "N/A"}</td>
+                    <td className="border border-gray-300 p-2">{lead.tags || "N/A"}</td>
+                    <td className="border border-gray-300 p-2">{lead.date || "N/A"}</td>
+                    <td className="border border-gray-300 p-2">
+                      <button
+                        className="bg-gray-500 text-white px-2 py-1 rounded mr-2 flex items-center inline-flex hover:bg-gray-600"
+                        onClick={() => {
+                          setEditingLead(lead);
+                          setFormData({
+                            contactGroup: lead.contactGroup || "",
+                            shareLead: lead.shareLead || "",
+                            pipeline: lead.pipeline || "",
+                            firstName: lead.firstName || "",
+                            lastName: lead.lastName || "",
+                            email: lead.email || "",
+                            country: lead.country || "USA (+1)",
+                            phoneNumber: lead.phoneNumber || "",
+                            secondPhoneNumber: lead.secondPhoneNumber || "",
+                            otherInformation: lead.otherInformation || "",
+                          });
+                          setShowEditModal(true);
+                        }}
+                      >
+                        <Edit size={14} className="mr-1" /> Edit
+                      </button>
+                      <button
+                        className="bg-gray-800 text-white px-2 py-1 rounded flex items-center inline-flex hover:bg-gray-900"
+                        onClick={() => handleDelete(lead._id)}
+                      >
+                        <Trash size={14} className="mr-1" /> Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Section */}
+          <div className="flex justify-center mt-6">
+            <button
+              className="bg-white border border-gray-300 rounded-l px-3 py-1 flex items-center disabled:opacity-50"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="px-4 py-1 border-t border-b border-gray-300 flex items-center">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <button
+              className="bg-white border border-gray-300 rounded-r px-3 py-1 flex items-center disabled:opacity-50"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
+              }
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-white bg-opacity-50">
-          <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-2xl">
-            <h2 className="text-lg font-bold mb-3">
-              {editingLead ? "Edit Lead" : "Add New Lead"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                  <input
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    className={`mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                      formErrors.fullName ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  {formErrors.fullName && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>
-                  )}
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden">
+            <div className="flex justify-between items-center border-b p-4">
+              <h5 className="text-lg font-semibold">Add Leads</h5>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowAddModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <form onSubmit={handleAddSubmit}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="contactGroup" className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact Group
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="contactGroup"
+                      name="contactGroup"
+                      value={formData.contactGroup}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Group</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="shareLead" className="block text-sm font-medium text-gray-700 mb-1">
+                      Share Lead
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="shareLead"
+                      name="shareLead"
+                      value={formData.shareLead}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select or search</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    name="email"
-                    type="text"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                      formErrors.email ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  {formErrors.email && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-                  )}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Tags
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="tags"
+                      name="tags"
+                      value={formData.tags}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Tags...</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="pipeline" className="block text-sm font-medium text-gray-700 mb-1">
+                      Pipelines
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="pipeline"
+                      name="pipeline"
+                      value={formData.pipeline}
+                      onChange={handleChange}
+                    >
+                      <option value="">--Select Pipeline--</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <input
-                    name="phone"
-                    type="text"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className={`mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                      formErrors.phone ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  {formErrors.phone && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>
-                  )}
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.firstName ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.firstName && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.lastName ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.lastName && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.email ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.email && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>
+                    )}
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                      Country
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="country"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                    >
+                      <option value="USA (+1)">USA (+1)</option>
+                      {/* Add more country options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.phoneNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                    />
+                    {formErrors.phoneNumber && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.phoneNumber}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      Second Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="secondPhoneNumber"
+                      name="secondPhoneNumber"
+                      value={formData.secondPhoneNumber}
+                      onChange={handleChange}
+                    />
+                    {formErrors.secondPhoneNumber && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.secondPhoneNumber}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label htmlFor="otherInformation" className="block text-sm font-medium text-gray-700 mb-1">
+                    Other Information
+                  </label>
+                  <textarea
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    id="otherInformation"
+                    name="otherInformation"
+                    value={formData.otherInformation}
                     onChange={handleChange}
-                    className="mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                    rows="3"
+                  />
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-400"
+                    onClick={() => setShowAddModal(false)}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Pending">Pending</option>
-                  </select>
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    Submit
+                  </button>
                 </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Birthday</label>
-                  <input
-                    name="birthday"
-                    type="date"
-                    value={formData.birthday}
+      {/* Edit Lead Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden">
+            <div className="flex justify-between items-center border-b p-4">
+              <h5 className="text-lg font-semibold">Edit Lead</h5>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowEditModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <form onSubmit={handleEditSubmit}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="contactGroup" className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact Group
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="contactGroup"
+                      name="contactGroup"
+                      value={formData.contactGroup}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Group</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="shareLead" className="block text-sm font-medium text-gray-700 mb-1">
+                      Share Lead
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="shareLead"
+                      name="shareLead"
+                      value={formData.shareLead}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select or search</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Tags
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="tags"
+                      name="tags"
+                      value={formData.tags}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Tags...</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="pipeline" className="block text-sm font-medium text-gray-700 mb-1">
+                      Pipelines
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="pipeline"
+                      name="pipeline"
+                      value={formData.pipeline}
+                      onChange={handleChange}
+                    >
+                      <option value="">--Select Pipeline--</option>
+                      {/* Add options as needed */}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.firstName ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.firstName && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.lastName ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.lastName && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.email ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                    />
+                    {formErrors.email && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                      Country
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="country"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                    >
+                      <option value="USA (+1)">USA (+1)</option>
+                      {/* Add more country options as needed */}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.phoneNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                    />
+                    {formErrors.phoneNumber && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.phoneNumber}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      Second Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                      id="secondPhoneNumber"
+                      name="secondPhoneNumber"
+                      value={formData.secondPhoneNumber}
+                      onChange={handleChange}
+                    />
+                    {formErrors.secondPhoneNumber && (
+                      <div className="text-red-500 text-sm mt-1">{formErrors.secondPhoneNumber}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label htmlFor="otherInformation" className="block text-sm font-medium text-gray-700 mb-1">
+                    Other Information
+                  </label>
+                  <textarea
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    id="otherInformation"
+                    name="otherInformation"
+                    value={formData.otherInformation}
                     onChange={handleChange}
-                    className={`mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                      formErrors.birthday ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  {formErrors.birthday && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.birthday}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Joining Date</label>
-                  <input
-                    name="joiningDate"
-                    type="date"
-                    value={formData.joiningDate}
-                    onChange={handleChange}
-                    className={`mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                      formErrors.joiningDate ? "border-red-500" : ""
-                    }`}
-                    required
-                  />
-                  {formErrors.joiningDate && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.joiningDate}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Country</label>
-                  <input
-                    name="country"
-                    type="text"
-                    value={formData.country}
-                    onChange={handleChange}
-                    className="mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                    rows="3"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Tags</label>
-                  <input
-                    name="tags"
-                    type="text"
-                    value={formData.tags}
-                    onChange={handleChange}
-                    className="mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
-                  />
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-400"
+                    onClick={() => setShowEditModal(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    Submit
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Group</label>
-                  <input
-                    name="group"
-                    type="text"
-                    value={formData.group}
-                    onChange={handleChange}
-                    className="mt-1 border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    resetForm();
-                  }}
-                  className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}

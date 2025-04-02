@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FaBars,
   FaSignOutAlt,
@@ -8,33 +8,53 @@ import {
   FaTachometerAlt,
   FaClipboardList,
   FaCog,
+  FaTimes
 } from "react-icons/fa";
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      setIsOpen(window.innerWidth >= 768);
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      if (
+        window.innerWidth < 768 &&
+        sidebarRef.current && 
+        !sidebarRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    if (!isOpen) return;
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, []);
 
   // Logout Function
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
-      localStorage.removeItem("token"); // Updated to match Login component
+      localStorage.removeItem("token");
       navigate("/login");
     }
+  };
+
+  // Check if a link is active
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
@@ -42,96 +62,143 @@ const Sidebar = () => {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors duration-200 shadow-lg"
+        aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
       >
-        <FaBars size={20} />
+        {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
       </button>
+
+      {/* Sidebar Overlay for Mobile */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
       {/* Sidebar Container */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-screen bg-gray-800 text-gray-100 transition-all duration-300 ease-in-out z-40 ${
-          isOpen ? "w-64" : "w-16"
+        className={`fixed top-0 left-0 h-full bg-gray-800 text-gray-100 shadow-xl transition-all duration-300 ease-in-out z-40 ${
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-16"
         }`}
       >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h3
-            className={`text-lg font-light tracking-wide ${
-              isOpen ? "block" : "hidden"
+            className={`text-xl font-semibold tracking-wide ${
+              isOpen ? "block" : "hidden md:block md:text-center"
             }`}
           >
-            HRMS
+            {isOpen ? "HRMS Dashboard" : "HR"}
           </h3>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-300 hover:text-white transition-colors"
+            className="text-gray-300 hover:text-white transition-colors md:block hidden"
+            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             <FaBars size={18} />
           </button>
         </div>
 
         {/* Sidebar Links */}
-        <ul className="p-4 space-y-3">
-          <li>
-            <Link
-              to="/"
-              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
+        <nav>
+          <ul className="p-2 space-y-1">
+            <SidebarItem 
+              to="/" 
+              icon={<FaTachometerAlt size={18} />} 
+              text="Dashboard" 
+              isOpen={isOpen}
+              isActive={isActive("/")}
+            />
+            <SidebarItem 
+              to="/leads" 
+              icon={<FaClipboardList size={18} />} 
+              text="Leads" 
+              isOpen={isOpen}
+              isActive={isActive("/leads")}
+            />
+            <SidebarItem 
+              to="/email-editor" 
+              icon={<FaEnvelope size={18} />} 
+              text="Email Editor" 
+              isOpen={isOpen}
+              isActive={isActive("/email-editor")}
+            />
+            <SidebarItem 
+              to="/employees" 
+              icon={<FaUsers size={18} />} 
+              text="Employees" 
+              isOpen={isOpen}
+              isActive={isActive("/employees")}
+            />
+            <SidebarItem 
+              to="/settings" 
+              icon={<FaCog size={18} />} 
+              text="Settings" 
+              isOpen={isOpen}
+              isActive={isActive("/settings")}
+            />
 
-            >
-              <FaTachometerAlt size={18} />
-              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
-                Dashboard
-              </span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/leads"
-              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              <FaClipboardList size={18} />
-              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
-                Leads
-              </span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/employees"
-              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              <FaUsers size={18} />
-              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
-                Email-Editor
-              </span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/settings"
-              className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              <FaCog size={18} />
-              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
-                Settings
-              </span>
-            </Link>
-          </li>
-          <li>
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-3 p-2 w-full text-left rounded-md hover:bg-gray-700 hover:text-red-400 transition-colors"
-            >
-              <FaSignOutAlt size={18} />
-              <span className={`${isOpen ? "block" : "hidden"} text-sm`}>
-                Logout
-              </span>
-            </button>
-          </li>
-        </ul>
+            {/* Divider */}
+            <div className="my-2 border-t border-gray-700 mx-2"></div>
+            
+            {/* Logout Button */}
+            <li>
+              <button
+                onClick={handleLogout}
+                className={`flex items-center w-full p-3 rounded-md text-left
+                  hover:bg-red-700/30 hover:text-red-300 transition-colors duration-200
+                  ${isOpen ? "px-4" : "justify-center md:px-0"}`}
+              >
+                <FaSignOutAlt size={18} />
+                {isOpen && <span className="ml-3 text-sm">Logout</span>}
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Optional: User Profile Section at bottom */}
+        {isOpen && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                <span className="text-xs font-medium">JD</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">John Doe</p>
+                <p className="text-xs text-gray-400">Administrator</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Wrapper - adjust margin based on sidebar state */}
+      <div className={`transition-all duration-300 ${isOpen ? "md:ml-64" : "md:ml-16"}`}>
+        {/* Your main content goes here */}
       </div>
     </>
+  );
+};
+
+// Sidebar Item Component
+const SidebarItem = ({ to, icon, text, isOpen, isActive }) => {
+  return (
+    <li>
+      <Link
+        to={to}
+        className={`flex items-center p-3 rounded-md transition-colors duration-200
+          ${isOpen ? "px-4" : "justify-center md:px-0"}
+          ${isActive 
+            ? "bg-blue-700/30 text-blue-200" 
+            : "hover:bg-gray-700 text-gray-300 hover:text-white"
+          }`}
+      >
+        {icon}
+        {isOpen && <span className="ml-3 text-sm">{text}</span>}
+      </Link>
+    </li>
   );
 };
 

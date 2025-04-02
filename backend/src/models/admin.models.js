@@ -4,6 +4,7 @@ import { connectionDB } from "../utils/database.utils.js";
 
 connectionDB();
 
+
 const AdminSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true, trim: true },
