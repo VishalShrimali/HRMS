@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import twilio from "twilio";
-import { Employee } from "../models/employee.models.js";
+import User from "../models/user.model.js";
 import moment from "moment-timezone";
 
 // Load environment variables
@@ -136,7 +136,7 @@ export const sendGreetings = async (testDate = null) => {
 
   try {
     // Find employees with birthday or work anniversary today
-    const employees = await Employee.find({
+    const employees = await User.find({
       $or: [
         { $expr: { $eq: [{ $dateToString: { format: "%m-%d", date: "$birthday" } }, todayStr] } },
         { $expr: { $eq: [{ $dateToString: { format: "%m-%d", date: "$workAnniversary" } }, todayStr] } },

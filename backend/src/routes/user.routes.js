@@ -7,7 +7,8 @@ import {
     deleteUser,
     addRoleToUser, // Import the new controller
 } from "../controllers/user.controllers.js";
-import { protect, authorizeRole } from "../middleware/auth.middlware.js";
+import { protect, authorizeRole, isSuperAdmin } from "../middleware/auth.middlware.js";
+import { GetEmployeeProfileFromAdmin   } from "../controllers/user.controllers.js";
 
 const userRouter = express.Router();
 
@@ -35,6 +36,15 @@ userRouter.post('/role', (req, res, next) => {
 });
 
 // Protected Routes
+
+userRouter.get('/leads',  (req, res, next) => {
+    console.log("AuthorizeRole middleware triggered");
+     authorizeRole(["Super Admin"], req, res, next);
+    next();
+}, (req, res) => {
+    console.log("addRoleToUser controller triggered");
+    GetEmployeeProfileFromAdmin(req, res)} ); // Fetching leads for admin
+
 userRouter.get('/profile', protect, getUserProfile);
 userRouter.put('/profile', protect, updateUserProfile);
 userRouter.delete('/delete', protect, deleteUser);

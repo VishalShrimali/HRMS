@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
 import {
-  Search, Filter, Upload, Download, Plus, ChevronLeft, ChevronRight,
+  Search, Upload, Download, Plus, ChevronLeft, ChevronRight,
   Edit, Trash, Users, X
 } from "lucide-react";
 
@@ -17,19 +17,16 @@ const LeadsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState([]);
+  const [activeTab, setActiveTab] = useState("personal");
 
-  // Updated formData to match the fields in the image
   const [formData, setFormData] = useState({
-    contactGroup: "",
-    shareLead: "",
-    pipeline: "",
     firstName: "",
     lastName: "",
     email: "",
-    country: "USA (+1)", // Default value as shown in the image
+    country: "USA (+1)",
     phoneNumber: "",
     secondPhoneNumber: "",
-    otherInformation: "",
+    date: "",
   });
 
   const token = localStorage.getItem("token");
@@ -83,7 +80,7 @@ const LeadsTable = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await addLead(formData, apiConfig);
+      const response = await addLead({ ...formData, date: new Date().toISOString() }, apiConfig);
       setLeads([...leads, response.lead]);
       setShowAddModal(false);
       resetForm();
@@ -126,9 +123,9 @@ const LeadsTable = () => {
 
   const handleExport = () => {
     const csv = [
-      "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Other Information",
+      "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Date",
       ...leads.map((lead) =>
-        `${lead.firstName},${lead.lastName},${lead.email},${lead.country || "N/A"},${ LEAD.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.otherInformation || "N/A"}`
+        `${lead.firstName},${lead.lastName},${lead.email},${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.date || "N/A"}`
       ),
     ].join("\n");
 
@@ -147,35 +144,32 @@ const LeadsTable = () => {
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const rows = e.target.result.split("\n").slice(1); // Skip header
+      const rows = e.target.result.split("\n").slice(1);
       for (const row of rows) {
-        const [firstName, lastName, email, country, phoneNumber, secondPhoneNumber, otherInformation] = row.split(",").map((item) => item.trim());
-        if (firstName && lastName && email) { // Ensure required fields are present
+        const [firstName, lastName, email, country, phoneNumber, secondPhoneNumber, date] = row.split(",").map((item) => item.trim());
+        if (firstName && lastName && email) {
           try {
-            await addLead({ firstName, lastName, email, country, phoneNumber, secondPhoneNumber, otherInformation }, apiConfig);
+            await addLead({ firstName, lastName, email, country, phoneNumber, secondPhoneNumber, date }, apiConfig);
           } catch (err) {
             console.error("Error importing lead:", err);
             setError(err.response?.data?.message || "Failed to import lead");
           }
         }
       }
-      fetchLeads(); // Refresh table after import
+      fetchLeads();
     };
     reader.readAsText(file);
   };
 
   const resetForm = () => {
     setFormData({
-      contactGroup: "",
-      shareLead: "",
-      pipeline: "",
       firstName: "",
       lastName: "",
       email: "",
       country: "USA (+1)",
       phoneNumber: "",
       secondPhoneNumber: "",
-      otherInformation: "",
+      date: "",
     });
     setEditingLead(null);
     setFormErrors({});
@@ -209,278 +203,268 @@ const LeadsTable = () => {
   const fileInputRef = useRef(null);
 
   return (
-    <div className="ml-5 mt-5 mr-5 p-4 h-[calc(100vh-2rem)] overflow-auto">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center">
-          <Users className="mr-2" size={20} />
-          <h2 className="mb-0 text-xl font-semibold">Leads</h2>
-          <small className="ml-2 text-gray-500">({leads.length} Records Found)</small>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      {/* <div className="w-64 bg-gray-900 text-white flex flex-col">
+        <div className="p-4">
+          <h1 className="text-xl font-bold">HRMS DASHBOARD</h1>
         </div>
-        <div className="flex items-center">
-          <div className="relative mr-2">
+        <nav className="flex-1">
+          <ul>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Dashboard
+              </a>
+            </li>
+            <li className="p-4 bg-blue-500">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Leads
+              </a>
+            </li>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Email Editor
+              </a>
+            </li>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Employees
+              </a>
+            </li>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Settings
+              </a>
+            </li>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="#" className="flex items-center">
+                <Users className="mr-2" size={20} /> Logout
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div className="p-4">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center mr-2">
+              JD
+            </div>
+            <div>
+              <p className="font-semibold">John Doe</p>
+              <p className="text-sm text-gray-400">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Main Content */}
+      <div className="flex-1 p-4 overflow-auto bg-white">
+        {/* Header Section */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center">
+            <Users className="mr-2" size={20} />
+            <h2 className="text-2xl font-semibold text-gray-800">Leads</h2>
+            <span className="ml-2 text-gray-500">({leads.length} Records Found)</span>
+          </div>
+          <div className="relative">
             <input
               type="text"
-              className="pl-8 form-control border border-gray-300 rounded p-2 w-52"
-              placeholder="Search leads..."
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-72 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search here..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
             />
-            <Search className="absolute left-2 top-2.5" size={16} />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
           </div>
-          <button
-            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center hover:bg-gray-700"
-            onClick={() => {/* Implement filter functionality */}}
-          >
-            <Filter className="mr-1" size={16} /> Filter
-          </button>
         </div>
-      </div>
 
-      {/* Import/Export and Add New Section */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center">
-          <input
-            type="file"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImport}
-            accept=".csv"
-          />
+        {/* Tabs Section */}
+        <div className="flex mb-6 border-b">
           <button
-            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center mr-2 hover:bg-gray-700"
-            onClick={() => fileInputRef.current.click()}
+            className={`px-6 py-2 -mb-px ${activeTab === "personal" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"} font-medium focus:outline-none`}
+            onClick={() => setActiveTab("personal")}
           >
-            <Upload className="mr-1" size={16} /> Import
+            Personal Leads
           </button>
           <button
-            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center mr-2 hover:bg-gray-700"
-            onClick={handleExport}
+            className={`px-6 py-2 -mb-px ${activeTab === "groups" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"} font-medium focus:outline-none ml-2`}
+            onClick={() => setActiveTab("groups")}
           >
-            <Download className="mr-1" size={16} /> Export
+            Groups
           </button>
         </div>
-        <div className="flex items-center">
-          <select
-            className="form-select border border-gray-300 rounded p-2 mr-2 w-20"
-            value={rowsPerPage}
-            onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-          <button
-            className="bg-gray-800 text-white px-3 py-2 rounded flex items-center hover:bg-gray-700"
-            onClick={() => setShowAddModal(true)}
-          >
-            <Plus className="mr-1" size={16} /> Add New
-          </button>
-        </div>
-      </div>
 
-      {/* Table Section */}
-      {loading ? (
-        <div className="text-center py-4">Loading...</div>
-      ) : error ? (
-        <div className="text-red-500 text-center py-4">{error}</div>
-      ) : (
-        <>
+        {/* Controls Section */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex space-x-4">
+            <input
+              type="file"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImport}
+              accept=".csv"
+            />
+            <button
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
+              onClick={() => fileInputRef.current.click()}
+            >
+              <Upload className="mr-2" size={16} /> Import
+            </button>
+            <button
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
+              onClick={handleExport}
+            >
+              <Download className="mr-2" size={16} /> Export
+            </button>
+          </div>
+          <div className="flex space-x-4 items-center">
+            <select
+              className="border border-gray-300 rounded-lg px-3 py-2 w-20 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <button
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
+              onClick={() => setShowAddModal(true)}
+            >
+              <Plus className="mr-2" size={16} /> Add New
+            </button>
+          </div>
+        </div>
+
+        {/* Table Section */}
+        {loading ? (
+          <div className="text-center py-10 text-gray-600">Loading...</div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">{error}</div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead className="bg-blue-500 text-white">
-                <tr>
-                  <th className="border border-gray-300 p-2 text-left">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox"
-                      onChange={handleSelectAll}
-                      checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
-                    />
-                  </th>
-                  <th className="border border-gray-300 p-2 text-left">Name & Email</th>
-                  <th className="border border-gray-300 p-2 text-left">Country</th>
-                  <th className="border border-gray-300 p-2 text-left">Phone</th>
-                  <th className="border border-gray-300 p-2 text-left">Tags</th>
-                  <th className="border border-gray-300 p-2 text-left">Date</th>
-                  <th className="border border-gray-300 p-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedLeads.map((lead) => (
-                  <tr key={lead._id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-2">
+            <div className="min-w-full bg-white shadow-md rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="p-4 text-left">
                       <input
                         type="checkbox"
-                        className="form-checkbox"
-                        checked={selectedLeads.includes(lead._id)}
-                        onChange={() => handleSelectLead(lead._id)}
+                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        onChange={handleSelectAll}
+                        checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
                       />
-                    </td>
-                    <td className="border border-gray-300 p-2">
-                      <div>{lead.firstName} {lead.lastName}</div>
-                      <div className="text-gray-500 text-sm">{lead.email}</div>
-                    </td>
-                    <td className="border border-gray-300 p-2">{lead.country || "N/A"}</td>
-                    <td className="border border-gray-300 p-2">{lead.phoneNumber || "N/A"}</td>
-                    <td className="border border-gray-300 p-2">{lead.tags || "N/A"}</td>
-                    <td className="border border-gray-300 p-2">{lead.date || "N/A"}</td>
-                    <td className="border border-gray-300 p-2">
-                      <button
-                        className="bg-gray-500 text-white px-2 py-1 rounded mr-2 flex items-center inline-flex hover:bg-gray-600"
-                        onClick={() => {
-                          setEditingLead(lead);
-                          setFormData({
-                            contactGroup: lead.contactGroup || "",
-                            shareLead: lead.shareLead || "",
-                            pipeline: lead.pipeline || "",
-                            firstName: lead.firstName || "",
-                            lastName: lead.lastName || "",
-                            email: lead.email || "",
-                            country: lead.country || "USA (+1)",
-                            phoneNumber: lead.phoneNumber || "",
-                            secondPhoneNumber: lead.secondPhoneNumber || "",
-                            otherInformation: lead.otherInformation || "",
-                          });
-                          setShowEditModal(true);
-                        }}
-                      >
-                        <Edit size={14} className="mr-1" /> Edit
-                      </button>
-                      <button
-                        className="bg-gray-800 text-white px-2 py-1 rounded flex items-center inline-flex hover:bg-gray-900"
-                        onClick={() => handleDelete(lead._id)}
-                      >
-                        <Trash size={14} className="mr-1" /> Delete
-                      </button>
-                    </td>
+                    </th>
+                    <th className="p-4 text-left text-sm font-semibold">Name & Email</th>
+                    <th className="p-4 text-left text-sm font-semibold">Country</th>
+                    <th className="p-4 text-left text-sm font-semibold">Phone</th>
+                    <th className="p-4 text-left text-sm font-semibold">Date</th>
+                    <th className="p-4 text-left text-sm font-semibold">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Section */}
-          <div className="flex justify-center mt-6">
-            <button
-              className="bg-white border border-gray-300 rounded-l px-3 py-1 flex items-center disabled:opacity-50"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="px-4 py-1 border-t border-b border-gray-300 flex items-center">
-              Page {currentPage} of {totalPages || 1}
-            </span>
-            <button
-              className="bg-white border border-gray-300 rounded-r px-3 py-1 flex items-center disabled:opacity-50"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
-              }
-              disabled={currentPage === totalPages || totalPages === 0}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* Add Lead Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden">
-            <div className="flex justify-between items-center border-b p-4">
-              <h5 className="text-lg font-semibold">Add Leads</h5>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowAddModal(false)}
-              >
-                <X size={20} />
-              </button>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedLeads.map((lead) => (
+                    <tr key={lead._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4">
+                        <input
+                          type="checkbox"
+                          className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          checked={selectedLeads.includes(lead._id)}
+                          onChange={() => handleSelectLead(lead._id)}
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</div>
+                        <div className="text-sm text-gray-500">{lead.email}</div>
+                      </td>
+                      <td className="p-4 text-gray-700">{lead.country || "N/A"}</td>
+                      <td className="p-4 text-gray-700">{lead.phoneNumber || "N/A"}</td>
+                      <td className="p-4 text-gray-700">{new Date(lead.date).toLocaleString() || "N/A"}</td>
+                      <td className="p-4 flex space-x-2">
+                        <button
+                          className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
+                          onClick={() => {
+                            setEditingLead(lead);
+                            setFormData({
+                              firstName: lead.firstName || "",
+                              lastName: lead.lastName || "",
+                              email: lead.email || "",
+                              country: lead.country || "USA (+1)",
+                              phoneNumber: lead.phoneNumber || "",
+                              secondPhoneNumber: lead.secondPhoneNumber || "",
+                              date: lead.date || "",
+                            });
+                            setShowEditModal(true);
+                          }}
+                        >
+                          <Edit size={14} className="mr-1" /> Edit
+                        </button>
+                        <button
+                          className="bg-red-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-red-700 transition-colors"
+                          onClick={() => handleDelete(lead._id)}
+                        >
+                          <Trash size={14} className="mr-1" /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="p-4">
+          </div>
+        )}
+
+        {/* Pagination Section */}
+        <div className="flex justify-center items-center mt-6 space-x-4">
+          <button
+            className="bg-white border border-gray-300 rounded-l-md px-4 py-2 flex items-center text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-gray-700">
+            Page {currentPage} of {totalPages || 1}
+          </span>
+          <button
+            className="bg-white border border-gray-300 rounded-r-md px-4 py-2 flex items-center text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
+            }
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Add Lead Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-2xl p-6">
+              <div className="flex justify-between items-center border-b pb-4 mb-4">
+                <h5 className="text-xl font-semibold text-gray-800">Add Lead</h5>
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
               <form onSubmit={handleAddSubmit}>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label htmlFor="contactGroup" className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Group
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="contactGroup"
-                      name="contactGroup"
-                      value={formData.contactGroup}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Group</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="shareLead" className="block text-sm font-medium text-gray-700 mb-1">
-                      Share Lead
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="shareLead"
-                      name="shareLead"
-                      value={formData.shareLead}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select or search</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Tags
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="tags"
-                      name="tags"
-                      value={formData.tags}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Tags...</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="pipeline" className="block text-sm font-medium text-gray-700 mb-1">
-                      Pipelines
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="pipeline"
-                      name="pipeline"
-                      value={formData.pipeline}
-                      onChange={handleChange}
-                    >
-                      <option value="">--Select Pipeline--</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                       First Name
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.firstName ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.firstName ? "border-red-500" : "border-gray-300"}`}
                       id="firstName"
                       name="firstName"
                       value={formData.firstName}
@@ -492,14 +476,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.lastName ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.lastName ? "border-red-500" : "border-gray-300"}`}
                       id="lastName"
                       name="lastName"
                       value={formData.lastName}
@@ -511,14 +493,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.email ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.email ? "border-red-500" : "border-gray-300"}`}
                       id="email"
                       name="email"
                       value={formData.email}
@@ -530,31 +510,28 @@ const LeadsTable = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                   <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
                       Country
                     </label>
                     <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       id="country"
                       name="country"
                       value={formData.country}
                       onChange={handleChange}
                     >
                       <option value="USA (+1)">USA (+1)</option>
-                      {/* Add more country options as needed */}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.phoneNumber ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.phoneNumber ? "border-red-500" : "border-gray-300"}`}
                       id="phoneNumber"
                       name="phoneNumber"
                       value={formData.phoneNumber}
@@ -565,14 +542,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                       Second Phone Number
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"}`}
                       id="secondPhoneNumber"
                       name="secondPhoneNumber"
                       value={formData.secondPhoneNumber}
@@ -583,30 +558,17 @@ const LeadsTable = () => {
                     )}
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label htmlFor="otherInformation" className="block text-sm font-medium text-gray-700 mb-1">
-                    Other Information
-                  </label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    id="otherInformation"
-                    name="otherInformation"
-                    value={formData.otherInformation}
-                    onChange={handleChange}
-                    rows="3"
-                  />
-                </div>
-                <div className="mt-6 flex justify-end">
+                <div className="mt-8 flex justify-end space-x-4">
                   <button
                     type="button"
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
                     onClick={() => setShowAddModal(false)}
                   >
                     Close
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
                   >
                     Submit
                   </button>
@@ -614,98 +576,30 @@ const LeadsTable = () => {
               </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Lead Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden">
-            <div className="flex justify-between items-center border-b p-4">
-              <h5 className="text-lg font-semibold">Edit Lead</h5>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowEditModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-4">
+        {/* Edit Lead Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-2xl p-6">
+              <div className="flex justify-between items-center border-b pb-4 mb-4">
+                <h5 className="text-xl font-semibold text-gray-800">Edit Lead</h5>
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
               <form onSubmit={handleEditSubmit}>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label htmlFor="contactGroup" className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Group
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="contactGroup"
-                      name="contactGroup"
-                      value={formData.contactGroup}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Group</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="shareLead" className="block text-sm font-medium text-gray-700 mb-1">
-                      Share Lead
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="shareLead"
-                      name="shareLead"
-                      value={formData.shareLead}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select or search</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Tags
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="tags"
-                      name="tags"
-                      value={formData.tags}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Tags...</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="pipeline" className="block text-sm font-medium text-gray-700 mb-1">
-                      Pipelines
-                    </label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="pipeline"
-                      name="pipeline"
-                      value={formData.pipeline}
-                      onChange={handleChange}
-                    >
-                      <option value="">--Select Pipeline--</option>
-                      {/* Add options as needed */}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                       First Name
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.firstName ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.firstName ? "border-red-500" : "border-gray-300"}`}
                       id="firstName"
                       name="firstName"
                       value={formData.firstName}
@@ -717,14 +611,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.lastName ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.lastName ? "border-red-500" : "border-gray-300"}`}
                       id="lastName"
                       name="lastName"
                       value={formData.lastName}
@@ -736,14 +628,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.email ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.email ? "border-red-500" : "border-gray-300"}`}
                       id="email"
                       name="email"
                       value={formData.email}
@@ -755,31 +645,28 @@ const LeadsTable = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                   <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
                       Country
                     </label>
                     <select
-                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       id="country"
                       name="country"
                       value={formData.country}
                       onChange={handleChange}
                     >
                       <option value="USA (+1)">USA (+1)</option>
-                      {/* Add more country options as needed */}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.phoneNumber ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.phoneNumber ? "border-red-500" : "border-gray-300"}`}
                       id="phoneNumber"
                       name="phoneNumber"
                       value={formData.phoneNumber}
@@ -790,14 +677,12 @@ const LeadsTable = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                       Second Phone Number
                     </label>
                     <input
                       type="text"
-                      className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"}`}
                       id="secondPhoneNumber"
                       name="secondPhoneNumber"
                       value={formData.secondPhoneNumber}
@@ -808,30 +693,17 @@ const LeadsTable = () => {
                     )}
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label htmlFor="otherInformation" className="block text-sm font-medium text-gray-700 mb-1">
-                    Other Information
-                  </label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    id="otherInformation"
-                    name="otherInformation"
-                    value={formData.otherInformation}
-                    onChange={handleChange}
-                    rows="3"
-                  />
-                </div>
-                <div className="mt-6 flex justify-end">
+                <div className="mt-8 flex justify-end space-x-4">
                   <button
                     type="button"
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
                     onClick={() => setShowEditModal(false)}
                   >
                     Close
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
                   >
                     Submit
                   </button>
@@ -839,8 +711,8 @@ const LeadsTable = () => {
               </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

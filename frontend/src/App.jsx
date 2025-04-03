@@ -4,8 +4,8 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPass";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import LeadTable from "./components/LeadsTable/LeadsTable"; // Adjust path as needed
-import Layout from "./components/Layout/Layout";
+import LeadTable from "./components/LeadsTable/LeadsTable";
+import Sidebar from "./components/Sidebar/Sidebar";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -20,13 +20,13 @@ function App() {
           path="/*"
           element={
             isAuthenticated ? (
-              <Layout setIsAuthenticated={setIsAuthenticated}>
+              <Sidebar>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/leads" element={<LeadTable />} />
                 </Routes>
-              </Layout>
+              </Sidebar>
             ) : (
               <Login setIsAuthenticated={setIsAuthenticated} />
             )

@@ -8,42 +8,37 @@ import {
   FaTachometerAlt,
   FaClipboardList,
   FaCog,
-  FaTimes
+  FaTimes,
 } from "react-icons/fa";
 
-const Sidebar = () => {
+const Sidebar = ({ children }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
       setIsOpen(window.innerWidth >= 768);
     };
-    
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         window.innerWidth < 768 &&
-        sidebarRef.current && 
+        sidebarRef.current &&
         !sidebarRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Logout Function
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
@@ -52,7 +47,6 @@ const Sidebar = () => {
     }
   };
 
-  // Check if a link is active
   const isActive = (path) => {
     return location.pathname === path;
   };
@@ -70,7 +64,7 @@ const Sidebar = () => {
 
       {/* Sidebar Overlay for Mobile */}
       {isOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
         />
@@ -83,14 +77,13 @@ const Sidebar = () => {
           isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-16"
         }`}
       >
-        {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h3
             className={`text-xl font-semibold tracking-wide ${
               isOpen ? "block" : "hidden md:block md:text-center"
             }`}
           >
-            {isOpen ? "HRMS Dashboard" : "HR"}
+            {isOpen ? "HRMS Dashboard" : ""}
           </h3>
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -101,55 +94,50 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Sidebar Links */}
         <nav>
           <ul className="p-2 space-y-1">
-            <SidebarItem 
-              to="/" 
-              icon={<FaTachometerAlt size={18} />} 
-              text="Dashboard" 
+            <SidebarItem
+              to="/"
+              icon={<FaTachometerAlt size={18} />}
+              text="Dashboard"
               isOpen={isOpen}
               isActive={isActive("/")}
             />
-            <SidebarItem 
-              to="/leads" 
-              icon={<FaClipboardList size={18} />} 
-              text="Leads" 
+            <SidebarItem
+              to="/leads"
+              icon={<FaClipboardList size={18} />}
+              text="Leads"
               isOpen={isOpen}
               isActive={isActive("/leads")}
             />
-            <SidebarItem 
-              to="/email-editor" 
-              icon={<FaEnvelope size={18} />} 
-              text="Email Editor" 
+            <SidebarItem
+              to="/email-editor"
+              icon={<FaEnvelope size={18} />}
+              text="Email Editor"
               isOpen={isOpen}
               isActive={isActive("/email-editor")}
             />
-            <SidebarItem 
-              to="/employees" 
-              icon={<FaUsers size={18} />} 
-              text="Employees" 
+            <SidebarItem
+              to="/employees"
+              icon={<FaUsers size={18} />}
+              text="Employees"
               isOpen={isOpen}
               isActive={isActive("/employees")}
             />
-            <SidebarItem 
-              to="/settings" 
-              icon={<FaCog size={18} />} 
-              text="Settings" 
+            <SidebarItem
+              to="/settings"
+              icon={<FaCog size={18} />}
+              text="Settings"
               isOpen={isOpen}
               isActive={isActive("/settings")}
             />
-
-            {/* Divider */}
             <div className="my-2 border-t border-gray-700 mx-2"></div>
-            
-            {/* Logout Button */}
             <li>
               <button
                 onClick={handleLogout}
-                className={`flex items-center w-full p-3 rounded-md text-left
-                  hover:bg-red-700/30 hover:text-red-300 transition-colors duration-200
-                  ${isOpen ? "px-4" : "justify-center md:px-0"}`}
+                className={`flex items-center w-full p-3 rounded-md text-left hover:bg-red-700/30 hover:text-red-300 transition-colors duration-200 ${
+                  isOpen ? "px-4" : "justify-center md:px-0"
+                }`}
               >
                 <FaSignOutAlt size={18} />
                 {isOpen && <span className="ml-3 text-sm">Logout</span>}
@@ -158,7 +146,6 @@ const Sidebar = () => {
           </ul>
         </nav>
 
-        {/* Optional: User Profile Section at bottom */}
         {isOpen && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
             <div className="flex items-center space-x-3">
@@ -174,26 +161,30 @@ const Sidebar = () => {
         )}
       </div>
 
-      {/* Main Content Wrapper - adjust margin based on sidebar state */}
-      <div className={`transition-all duration-300 ${isOpen ? "md:ml-64" : "md:ml-16"}`}>
-        {/* Your main content goes here */}
+      {/* Main Content */}
+      <div
+        className={`transition-all duration-300 p-6 bg-gray-100 min-h-screen ${
+          isOpen ? "md:ml-64" : "md:ml-16"
+        }`}
+      >
+        {children}
       </div>
     </>
   );
 };
 
-// Sidebar Item Component
 const SidebarItem = ({ to, icon, text, isOpen, isActive }) => {
   return (
     <li>
       <Link
         to={to}
-        className={`flex items-center p-3 rounded-md transition-colors duration-200
-          ${isOpen ? "px-4" : "justify-center md:px-0"}
-          ${isActive 
-            ? "bg-blue-700/30 text-blue-200" 
+        className={`flex items-center p-3 rounded-md transition-colors duration-200 ${
+          isOpen ? "px-4" : "justify-center md:px-0"
+        } ${
+          isActive
+            ? "bg-blue-700/30 text-blue-200"
             : "hover:bg-gray-700 text-gray-300 hover:text-white"
-          }`}
+        }`}
       >
         {icon}
         {isOpen && <span className="ml-3 text-sm">{text}</span>}

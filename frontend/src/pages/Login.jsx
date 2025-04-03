@@ -1,76 +1,72 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = ({ setIsAuthenticated }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:8000/api/v1/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
+      const response = await axios.post('http://localhost:8000/api/v1/user/login', {
+        email,
+        password,
       });
-      const data = await response.json();
-      if (response.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("adminName", data.admin?.fullName || "Admin");
-        setIsAuthenticated(true);
-        navigate("/dashboard");
-      } else {
-        alert(data.message || "Invalid credentials.");
-      }
-    } catch (error) {
-      console.error("Login Error:", error);
-      alert("Something went wrong.");
+      localStorage.setItem('token', response.data.token);
+      setIsAuthenticated(true);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] p-4">
-      <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-light text-[#1F2937] text-center mb-6">
-          Sign In
-        </h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-md text-sm text-[#1F2937] focus:outline-none focus:border-[#2DD4BF] transition-colors"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-md text-sm text-[#1F2937] focus:outline-none focus:border-[#2DD4BF] transition-colors"
-          />
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Login</h2>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
           <button
             type="submit"
-            className="w-full py-3 bg-[#2DD4BF] text-white text-sm font-medium rounded-md hover:bg-[#26A69A] transition-colors duration-200"
+            className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition duration-200"
           >
-            Sign In
+            Login
           </button>
         </form>
-        <div className="mt-4 text-center text-sm text-[#1F2937] space-y-2">
-          <Link to="/forgot-password" className="hover:text-[#2DD4BF] transition-colors">
+        <p className="mt-4 text-center">
+          <a href="/forgot-password" className="text-blue-500 hover:underline">
             Forgot Password?
-          </Link>
-          <p>
-            New here?{" "}
-            <Link to="/register" className="text-[#2DD4BF] hover:underline">
-              Register
-            </Link>
-          </p>
-        </div>
+          </a>
+        </p>
+        <p className="mt-2 text-center">
+          Don’t have an account?{' '}
+          <a href="/register" className="text-blue-500 hover:underline">
+            Register
+          </a>
+        </p>
       </div>
     </div>
   );

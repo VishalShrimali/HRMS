@@ -12,7 +12,7 @@ const protect = async (req, res, next) => {
         if (!token) return res.status(401).json({ message: "Unauthorized" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await Admin.findById(decoded.id).select("-password"); // Attach user to req
+        req.user = await User.findById(decoded.id).select("-password"); // Attach user to req
         next();
     } catch (error) {
         return res.status(401).json({ message: "Invalid token" });

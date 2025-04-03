@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import {Group} from "../models/group.models.js";     
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -29,7 +30,7 @@ export const loginUser = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
         res.status(200).json({ 
             message: "Login successful", 
             token, 
@@ -39,7 +40,27 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
+// Fetching leads for admin
+export const GetEmployeeProfileFromAdmin = async (req, res) => {
+    try {
+      console.log("Fetching leads...");
+  
+      const leads = await User.find().populate("role");
+      console.log("Leads Fetched:", leads);
+  
+      // Make sure you only send the response once
+      return res.status(200).json({ message: "Leads fetched successfully", leads });
+      
+    } catch (error) {
+      console.error("Error Fetching Leads:", error.message);
+  
+      // Only respond with an error once
+      if (!res.headersSent) {
+        return res.status(500).json({ message: error.message });
+      }
+    }
+  };
+  
 // Get user profile
 export const getUserProfile = async (req, res) => {
     try {
