@@ -3,6 +3,13 @@ import { Role } from "../models/role.models.js";
 export const addRole = async (req, res) => {
   try {
     const { name, permissions } = req.body;
+
+    for (const permission of permissions) {
+      if (permission === "*****") {
+        return res.status(401).json({ message: "You Can't Assign All Permission Identifier to this Role" });
+      }
+    }
+
     const role = new Role({ name, permissions });
     await role.save();
     res.status(201).json({ message: "Role added successfully", role });

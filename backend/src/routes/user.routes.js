@@ -28,7 +28,7 @@ userRouter.post('/login', loginUser);
 
 userRouter.post('/role', (req, res, next) => {
     console.log("AuthorizeRole middleware triggered");
-    // authorizeRole(["Super Admin"], req, res, next);
+    authorizeRole(["ADMIN", "Super Admin"], req, res, next);
     next();
 }, (req, res) => {
     console.log("addRoleToUser controller triggered");
@@ -36,7 +36,6 @@ userRouter.post('/role', (req, res, next) => {
 });
 
 // Protected Routes
-
 userRouter.get('/leads',  (req, res, next) => {
     console.log("AuthorizeRole middleware triggered");
      authorizeRole(["Super Admin"], req, res, next);

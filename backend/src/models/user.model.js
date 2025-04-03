@@ -61,6 +61,30 @@ userSchema.pre("save", async function (next) {
     next();
 });
 
+userSchema.statics.initializeFirstUserAsAdmin = async function () {
+    const userCount = await this.countDocuments();
+    if (userCount === 1) {
+        const firstUser = await this.findOne();
+        if (firstUser) {
+            const Role = mongoose.model("Role"); // Access Role model
+            let adminRole = await Role.findOne({ name: "ADMIN" });
+
+            if (!adminRole) {
+                adminRole = await Role.create({
+                    name: "ADMIN",
+                    permissions: ["*****"], // Default permissions added
+                });
+            }
+
+            firstUser.role = adminRole._id;
+            await firstUser.save();
+        }
+    }
+};
+
 const User = mongoose.model("User", userSchema);
+
+// Initialize first user as ADMIN when the model is loaded
+User.initializeFirstUserAsAdmin();
 
 export default User;
