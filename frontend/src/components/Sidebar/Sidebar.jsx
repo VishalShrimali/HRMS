@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
   FaBars,
   FaSignOutAlt,
@@ -10,8 +10,9 @@ import {
   FaCog,
   FaTimes,
 } from "react-icons/fa";
+import { Layout } from "lucide-react";
 
-const Sidebar = ({ children }) => {
+const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
@@ -167,7 +168,7 @@ const Sidebar = ({ children }) => {
           isOpen ? "md:ml-64" : "md:ml-16"
         }`}
       >
-        {children}
+        <Outlet /> {/* Render nested routes here */}
       </div>
     </>
   );
