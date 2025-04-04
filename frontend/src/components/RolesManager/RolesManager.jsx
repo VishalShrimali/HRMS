@@ -125,6 +125,8 @@ const RolesManager = () => {
           },
         }
       );
+      alert("Role Assigned!");
+      
       fetchUsers(pagination.page, searchQuery);
     } catch (error) {
       console.error("Error assigning role:", error);
