@@ -7,7 +7,9 @@ import {
     deleteUser,
     getUsersWithPagination,
     GetEmployeeProfileFromAdmin,
-    addRoleToUser, // Import the new controller
+    addRoleToUser,
+    forgotPassword,
+    resetPassword, // Import the new controller
 } from "../controllers/user.controllers.js";
 import { authorizeRole, protect } from "../middleware/auth.middlware.js";
 
@@ -44,7 +46,8 @@ userRouter.get('/leads',  (req, res, next) => {
 userRouter.get('/profile', protect, getUserProfile);
 userRouter.put('/profile', protect, updateUserProfile);
 userRouter.delete('/delete', protect, deleteUser);
-
+userRouter.post('/forgot-password', forgotPassword);
+userRouter.post('/reset-password', resetPassword);
 userRouter.get('/list', (req, res, next) => {
     authorizeRole(["ADMIN", "Super Admin"], req, res, next);
 }, (req, res) => {
