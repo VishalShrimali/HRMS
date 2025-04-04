@@ -146,11 +146,11 @@ const Sidebar = () => {
               isActive={isActive("/leads")}
             />
             <SidebarItem
-              to="/email-editor"
+              to="/emaildesigner"
               icon={<FaEnvelope size={18} />}
               text="Email Editor"
               isOpen={isOpen}
-              isActive={isActive("/email-editor")}
+              isActive={isActive("/emaildesigner")}
             />
             <SidebarItem
               to="/employees"

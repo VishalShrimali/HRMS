@@ -13,6 +13,8 @@ import LeadTable from "./components/LeadsTable/LeadsTable";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";
 import RolesManager from "./components/RolesManager/RolesManager";
+import EmailDesigner from "./pages/EmailDesigner";
+import CustomEmailEditor from "./pages/EmailEditor";
 
 const Protected = ({ isAuthenticated, children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -44,7 +46,8 @@ function App() {
             }
           />
           <Route path="roles" element={<RolesManager />} />
-          <Route path="email-editor" element={<div>Email Editor Page</div>} />
+          <Route path="emaildesigner" element={<EmailDesigner />} />
+          <Route path="emaileditor" element={<CustomEmailEditor />}/>
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
         </Route>
