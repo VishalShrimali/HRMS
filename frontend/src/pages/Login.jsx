@@ -11,15 +11,22 @@ const Login = ({ setIsAuthenticated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log("Submitting login data:", { email, password }); // Debugging log
       const response = await axios.post('http://localhost:8000/api/v1/user/login', {
         email,
         password,
       });
+      console.log("Login response:", response.data); // Debugging log
       localStorage.setItem('token', response.data.token);
       setIsAuthenticated(true);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error("Login error:", err.response?.data || err.message); // Debugging log
+      if (err.response?.status === 401) {
+        setError(err.response.data.message); // Use backend-provided error message
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      }
     }
   };
 

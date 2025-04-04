@@ -204,57 +204,6 @@ const LeadsTable = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
-      {/* <div className="w-64 bg-gray-900 text-white flex flex-col">
-        <div className="p-4">
-          <h1 className="text-xl font-bold">HRMS DASHBOARD</h1>
-        </div>
-        <nav className="flex-1">
-          <ul>
-            <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Dashboard
-              </a>
-            </li>
-            <li className="p-4 bg-blue-500">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Leads
-              </a>
-            </li>
-            <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Email Editor
-              </a>
-            </li>
-            <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Employees
-              </a>
-            </li>
-            <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Settings
-              </a>
-            </li>
-            <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="flex items-center">
-                <Users className="mr-2" size={20} /> Logout
-              </a>
-            </li>
-          </ul>
-        </nav>
-        <div className="p-4">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center mr-2">
-              JD
-            </div>
-            <div>
-              <p className="font-semibold">John Doe</p>
-              <p className="text-sm text-gray-400">Administrator</p>
-            </div>
-          </div>
-        </div>
-      </div> */}
 
       {/* Main Content */}
       <div className="flex-1 p-4 overflow-auto bg-white">
@@ -384,8 +333,8 @@ const LeadsTable = () => {
                         <div className="text-sm text-gray-500">{lead.email}</div>
                       </td>
                       <td className="p-4 text-gray-700">{lead.country || "N/A"}</td>
-                      <td className="p-4 text-gray-700">{lead.phoneNumber || "N/A"}</td>
-                      <td className="p-4 text-gray-700">{new Date(lead.date).toLocaleString() || "N/A"}</td>
+                      <td className="p-4 text-gray-700">{lead.phone || "N/A"}</td>
+                      <td className="p-4 text-gray-700">{new Date(lead.dates.joinDate).toLocaleString() || "N/A"}</td>
                       <td className="p-4 flex space-x-2">
                         <button
                           className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"

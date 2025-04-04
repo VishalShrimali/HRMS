@@ -11,7 +11,6 @@ const Home = () => {
   return (
     <>
       <Sidebar />
-      <Outlet /> {/* Render nested routes */}
     </>
   );
 };

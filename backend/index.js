@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 // API Routes
 
 app.use("/api/v1/user", userRouter);
-app.use("/api/v1/role", roleRouter);
+app.use("/api/v1/roles", roleRouter);
 
 // Handle Non-Existent Routes
 app.use((req, res) => {

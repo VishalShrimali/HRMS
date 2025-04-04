@@ -54,10 +54,12 @@ const authorizeRole = async (roles, req, res, next) => {
         }
 
         req.user = user; // Attach user to req
-        next();
+        next(); // Ensure next() is called only once
     } catch (error) {
         console.log("Victim Card : Error occurred", error); // Log any errors
-        return res.status(401).json({ message: "Invalid token" });
+        if (!res.headersSent) { // Prevent multiple responses
+            return res.status(401).json({ message: "Invalid token" });
+        }
     }
 };
 

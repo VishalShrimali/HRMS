@@ -9,8 +9,7 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    country: '',
-    roleName: 'Employee' // Default role
+    country: ''
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -21,10 +20,12 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submitting form data:", formData); // Debugging log
     try {
       await axios.post('http://localhost:8000/api/v1/user/register', formData);
       navigate('/login');
     } catch (err) {
+      console.error("Error during registration:", err.response?.data); // Debugging log
       setError(err.response?.data?.message || 'Registration failed');
     }
   };
@@ -100,20 +101,6 @@ const Register = () => {
               className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-          </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 mb-2">Role</label>
-            <select
-              name="roleName"
-              value={formData.roleName}
-              onChange={handleChange}
-              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="Employee">Employee</option>
-              <option value="HR Admin">HR Admin</option>
-              <option value="Super Admin">Super Admin</option>
-            </select>
           </div>
           <button
             type="submit"

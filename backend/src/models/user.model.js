@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import { Role } from "./role.models.js"; // Import Role model
 
 const addressSchema = new mongoose.Schema({
     line1: { type: String, required: true },
@@ -24,6 +23,13 @@ const userPreferencesSchema = new mongoose.Schema({
     emailReceive: { type: Boolean, default: false },
 });
 
+const dateSchema = new mongoose.Schema({
+    joinDate: { type: Number, required: true },
+    lastLogin: { type: Date }, // Example: Add other date fields here
+    passwordChangedAt: { type: Date },
+    birthDate: { type: Date},
+});
+
 const userSchema = new mongoose.Schema(
     {
         firstName: { type: String, required: true, trim: true },
@@ -44,6 +50,7 @@ const userSchema = new mongoose.Schema(
         password: { type: String, required: true, minlength: 6 },
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
+        dates: dateSchema, // Embed the date schema here
         role: { 
             type: mongoose.Schema.Types.ObjectId, 
             ref: "Role", 
@@ -56,7 +63,12 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
-        this.password = await bcrypt.hash(this.password, 10);
+        try {
+            const salt = await bcrypt.genSalt(10);
+            this.password = await bcrypt.hash(this.password, salt);
+        } catch (err) {
+            return next(err);
+        }
     }
     next();
 });

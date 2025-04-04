@@ -5,10 +5,11 @@ import {
     getUserProfile,
     updateUserProfile,
     deleteUser,
+    getUsersWithPagination,
+    GetEmployeeProfileFromAdmin,
     addRoleToUser, // Import the new controller
 } from "../controllers/user.controllers.js";
-import { protect, authorizeRole, isSuperAdmin } from "../middleware/auth.middlware.js";
-import { GetEmployeeProfileFromAdmin   } from "../controllers/user.controllers.js";
+import { authorizeRole, protect } from "../middleware/auth.middlware.js";
 
 const userRouter = express.Router();
 
@@ -27,19 +28,15 @@ userRouter.post('/login', loginUser);
 // })
 
 userRouter.post('/role', (req, res, next) => {
-    console.log("AuthorizeRole middleware triggered");
     authorizeRole(["ADMIN", "Super Admin"], req, res, next);
-    next();
 }, (req, res) => {
-    console.log("addRoleToUser controller triggered");
     addRoleToUser(req, res);
 });
 
 // Protected Routes
 userRouter.get('/leads',  (req, res, next) => {
     console.log("AuthorizeRole middleware triggered");
-     authorizeRole(["Super Admin"], req, res, next);
-    next();
+     authorizeRole(["ADMIN"], req, res, next);
 }, (req, res) => {
     console.log("addRoleToUser controller triggered");
     GetEmployeeProfileFromAdmin(req, res)} ); // Fetching leads for admin
@@ -47,6 +44,12 @@ userRouter.get('/leads',  (req, res, next) => {
 userRouter.get('/profile', protect, getUserProfile);
 userRouter.put('/profile', protect, updateUserProfile);
 userRouter.delete('/delete', protect, deleteUser);
+
+userRouter.get('/list', (req, res, next) => {
+    authorizeRole(["ADMIN", "Super Admin"], req, res, next);
+}, (req, res) => {
+    getUsersWithPagination(req, res);
+});
 
 // // Admin and HR Admin Routes
 // userRouter.get('/', protect, (req, res, next) => authorizeRole(["HR Admin", "Super Admin"], req, res, next), getAllUsers);

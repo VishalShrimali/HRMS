@@ -1,18 +1,23 @@
 import express from "express";
-import { addRole, addPermissionsToRole, getPermissionsByRole, removePermissionsFromRole } from "../controllers/role.controllers.js";
+import { addRole, addPermissionsToRole, getPermissionsByRole, removePermissionsFromRole, getRoles, getUserRoleAndPermissions } from "../controllers/role.controllers.js";
 
 const router = express.Router();
+
+router.get('', getRoles);
 
 // Route to add a new role
 router.post("/add", addRole);
 
 // Route to add permissions to an existing role
-router.put("/permissions/add/:roleName", addPermissionsToRole);
+router.put("/permissions/add/:name", addPermissionsToRole);
 
 // Route to get permissions based on role
-router.get("/permissions/:roleName", getPermissionsByRole);
+router.get("/permissions/:name", getPermissionsByRole);
 
 // Route to remove permissions from a role
-router.delete("/permissions/remove/:roleName/:permissions", removePermissionsFromRole);
+router.delete("/permissions/remove/:name/:permissions", removePermissionsFromRole);
+
+// Route to get the role and permissions of the current user
+router.get("/user/permissions", getUserRoleAndPermissions);
 
 export default router;

@@ -1,5 +1,4 @@
-import User from "../models/user.model.js";
-import {Group} from "../models/group.models.js";     
+import User from "../models/user.model.js";  
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -10,10 +9,38 @@ dotenv.config(); // Load environment variables
 export const registerUser = async (req, res) => {
     try {
         const { firstName, lastName, email, phone, password, country } = req.body;
+
+        console.log("Received registration data:", req.body); // Debugging log
+
+        // Validate required fields
+        if (!firstName || !lastName || !email || !phone || !password || !country) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Check if the email already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already in use" });
+        }
+
         let fullName = `${firstName} ${lastName}`;
-        const user = await User.create({ firstName, lastName, fullName , email, phone, password, country });
+        const joinDate = Date.now(); // Assign current timestamp as join date
+
+        const user = await User.create({
+            firstName,
+            lastName,
+            fullName,
+            email,
+            phone,
+            password, // Store the plain password directly
+            country,
+            dates: { joinDate }
+        });
+
+        console.log("User registered successfully:", user); // Debugging log
         res.status(201).json({ message: "User registered successfully", user });
     } catch (error) {
+        console.error("Error during registration:", error.message); // Debugging log
         res.status(400).json({ message: error.message });
     }
 };
@@ -22,14 +49,30 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        console.log("Login attempt with email:", email); // Debugging log
+
+        // Check if email exists
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            console.log("Email not found:", email); // Debugging log
+            return res.status(401).json({ message: "Email not found. Please register first." });
         }
+
+        console.log("User found:", user); // Debugging log
+
+        // Validate password
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log("Password validation result:", isPasswordValid); // Debugging log
+        console.log("Provided password:", password); // Debugging log
+        console.log("Stored hashed password:", user.password); // Debugging log
+
         if (!isPasswordValid) {
-            return res.status(401).json({ message: "Invalid credentials" });
+            console.log("Password mismatch detected."); // Debugging log
+            return res.status(401).json({ message: "Incorrect password. Please try again." });
         }
+
+        // Generate token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
         res.status(200).json({ 
             message: "Login successful", 
@@ -37,7 +80,8 @@ export const loginUser = async (req, res) => {
             user: { fullName: user.fullName, role: user.role } 
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("Error during login:", error.message); // Debugging log
+        res.status(500).json({ message: "An error occurred during login. Please try again later." });
     }
 };
 // Fetching leads for admin
@@ -148,11 +192,50 @@ export const addRoleToUser = async (req, res) => {
         const { userId, roleId } = req.body;
 
         const user = await User.findByIdAndUpdate({ _id: userId }, { role: roleId }, { new: true }).populate("role");
+
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: "User not found" }); // Ensure response is sent only once
         }
-        res.status(200).json({ message: "Role assigned successfully", user });
+        return res.status(200).json({ message: "Role assigned successfully", user }); // Ensure response is sent only once
     } catch (error) {
+        console.error("Error in addRoleToUser:", error.message); // Log the error for debugging
+        if (!res.headersSent) { // Check if headers have already been sent
+            return res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+export const getUsersWithPagination = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, search = "" } = req.query;
+
+        // Extract token and decode user ID
+        const token = req.headers.authorization?.split(" ")[1]; // Extract token
+        console.log("Extracted token: ", token); // Log the extracted token
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const userId = decoded.id; // Get user ID from token
+
+        const query = {
+            ...search ? { fullName: { $regex: search, $options: "i" } } : {},
+            _id: { $ne: userId }, // Exclude the user who initiated the request
+        };
+
+        const users = await User.find(query)
+            .populate("role")
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .select("-password");
+
+        const totalUsers = await User.countDocuments(query);
+
+        res.status(200).json({
+            users,
+            totalPages: Math.ceil(totalUsers / limit),
+            currentPage: parseInt(page),
+        });
+    } catch (error) {
+        console.error("Error in getUsersWithPagination:", error.message);
         res.status(500).json({ message: error.message });
     }
 };

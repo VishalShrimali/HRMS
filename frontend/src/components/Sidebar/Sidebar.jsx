@@ -10,10 +10,10 @@ import {
   FaCog,
   FaTimes,
 } from "react-icons/fa";
-import { Layout } from "lucide-react";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
+  const [permissions, setPermissions] = useState([]);
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,6 +38,29 @@ const Sidebar = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:8000/api/v1/roles/user/permissions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setPermissions(data.permissions);
+        } else {
+          console.error("Failed to fetch permissions");
+        }
+      } catch (error) {
+        console.error("Error fetching permissions:", error);
+      }
+    };
+
+    fetchPermissions();
   }, []);
 
   const handleLogout = () => {
@@ -75,7 +98,9 @@ const Sidebar = () => {
       <div
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-full bg-gray-800 text-gray-100 shadow-xl transition-all duration-300 ease-in-out z-40 ${
-          isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-16"
+          isOpen
+            ? "translate-x-0 w-64"
+            : "-translate-x-full md:translate-x-0 md:w-16"
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
@@ -104,6 +129,15 @@ const Sidebar = () => {
               isOpen={isOpen}
               isActive={isActive("/")}
             />
+            {permissions.includes("*****") && (
+              <SidebarItem
+                to="/roles"
+                icon={<FaUsers size={18} />}
+                text="Roles"
+                isOpen={isOpen}
+                isActive={isActive("/roles")}
+              />
+            )}
             <SidebarItem
               to="/leads"
               icon={<FaClipboardList size={18} />}
@@ -132,6 +166,7 @@ const Sidebar = () => {
               isOpen={isOpen}
               isActive={isActive("/settings")}
             />
+
             <div className="my-2 border-t border-gray-700 mx-2"></div>
             <li>
               <button
