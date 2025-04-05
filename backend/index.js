@@ -7,7 +7,7 @@ import { connectionDB } from "./src/utils/database.utils.js";
 import { userRouter } from "./src/routes/user.routes.js";
 import { sendGreetings } from "./src/utils/Greetings.utils.js";
 import roleRouter from "./src/routes/role.routes.js";
-
+import emailRoutes from "./src/routes/email.routes.js";
 dotenv.config();
 
 const app = express();
@@ -31,6 +31,8 @@ app.use((req, res, next) => {
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/roles", roleRouter);
+app.use("/api/v1/emails", emailRoutes);
+
 
 // Handle Non-Existent Routes
 app.use((req, res) => {

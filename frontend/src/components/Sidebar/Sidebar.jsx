@@ -146,11 +146,11 @@ const Sidebar = () => {
               isActive={isActive("/leads")}
             />
             <SidebarItem
-              to="/email-editor"
+              to="/email-designer"
               icon={<FaEnvelope size={18} />}
               text="Email Editor"
               isOpen={isOpen}
-              isActive={isActive("/email-editor")}
+              isActive={isActive("/email-designer")}
             />
             <SidebarItem
               to="/employees"
@@ -186,10 +186,10 @@ const Sidebar = () => {
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                <span className="text-xs font-medium">JD</span>
+                <span className="text-xs font-medium">VS</span>
               </div>
               <div>
-                <p className="text-sm font-medium">John Doe</p>
+                <p className="text-sm font-medium">ADMIN</p>
                 <p className="text-xs text-gray-400">Administrator</p>
               </div>
             </div>
