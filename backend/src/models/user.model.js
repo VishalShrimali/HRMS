@@ -61,17 +61,17 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
-    if (this.isModified("password")) {
-        try {
-            const salt = await bcrypt.genSalt(10);
-            this.password = await bcrypt.hash(this.password, salt);
-        } catch (err) {
-            return next(err);
-        }
-    }
-    next();
-});
+// userSchema.pre("save", async function (next) {
+//     if (isModified("password")) {
+//         try {
+//             const salt = await bcrypt.genSalt(10);
+//             this.password =  bcrypt.hashSync(password, salt);
+//         } catch (err) {
+//             return next(err);
+//         }
+//     }
+//     next();
+// });
 
 userSchema.statics.initializeFirstUserAsAdmin = async function () {
     const userCount = await this.countDocuments();

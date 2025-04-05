@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendResetLink } from "../utils/email.utils.js";
+import { encrypt } from "../../helper/helper.js";
 
 dotenv.config(); // Load environment variables
 
@@ -26,14 +27,14 @@ export const registerUser = async (req, res) => {
 
         let fullName = `${firstName} ${lastName}`;
         const joinDate = Date.now(); // Assign current timestamp as join date
-
+        const hashedPassword =  bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
         const user = await User.create({
             firstName,
             lastName,
             fullName,
             email,
             phone,
-            password, // Store the plain password directly
+            password: hashedPassword, // Store the plain password directly
             country,
             dates: { joinDate }
         });
@@ -126,12 +127,11 @@ export const loginUser = async (req, res) => {
         }
 
         console.log("User found:", user); // Debugging log
-
+       
         // Validate password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log("Password validation result:", isPasswordValid); // Debugging log
-        console.log("Provided password:", password); // Debugging log
-        console.log("Stored hashed password:", user.password); // Debugging log
+        const isPasswordValid = encrypt.comparePassword(user.password, password); // Use the helper function to compare passwords
+        console.log(password)
+        console.log(user.password);
 
         if (!isPasswordValid) {
             console.log("Password mismatch detected."); // Debugging log

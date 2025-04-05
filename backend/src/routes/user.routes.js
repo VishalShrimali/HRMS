@@ -11,7 +11,7 @@ import {
     forgotPassword,
     resetPassword, // Import the new controller
 } from "../controllers/user.controllers.js";
-import { authorizeRole, protect } from "../middleware/auth.middlware.js";
+import { authorizeRole, protect}  from "../middleware/auth.middlware.js";
 
 const userRouter = express.Router();
 
