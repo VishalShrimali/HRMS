@@ -6,7 +6,8 @@ import {
   Navigate,
 } from "react-router-dom";
 import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPass";
+import ForgotPassword from "./pages/ForgotPassward";
+import ResetPassword from "./pages/ResetPassword"; // Import ResetPassword
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import LeadTable from "./components/LeadsTable/LeadsTable";
@@ -56,6 +57,7 @@ function App() {
           element={<Login setIsAuthenticated={setIsAuthenticated} />}
         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} /> {/* Add Reset Password route */}
         <Route path="/register" element={<Register />} />
       </Routes>
     </Router>

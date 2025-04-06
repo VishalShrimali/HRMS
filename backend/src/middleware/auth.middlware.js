@@ -11,7 +11,13 @@ const protect = async (req, res, next) => {
 
         if (!token) return res.status(401).json({ message: "Unauthorized" });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        } catch (err) {
+            console.error("Token verification failed:", err.message); // Log the error for debugging
+            return res.status(401).json({ message: "Invalid or expired token" });
+        }
         req.user = await User.findById(decoded.id).select("-password"); // Attach user to req
         next();
     } catch (error) {
@@ -33,14 +39,19 @@ const authorizeRole = async (roles, req, res, next) => {
 
         const token = req.headers.authorization?.split(" ")[1]; // Extract token
         console.log("Extracted token: ", token); // Log the extracted token
-
-        if (!token) {
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        } catch (err) {
+            console.error("Token verification failed:", err.message); // Log the error for debugging
+            return res.status(401).json({ message: "Invalid or expired token" });
+        }
+        
+        const user = await User.findById(decoded.id).populate("role").select("-password"); // Fetch user and populate role
+        if (!user) {
             console.log("Victim Card : Token is missing or undefined"); // Log when token is missing
             return res.status(401).json({ message: "Unauthorized Main", token });
         }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        const user = await User.findById(decoded.id).populate("role").select("-password"); // Fetch user and populate role
 
         if (!user) {
             console.log("Victim Card : User not found"); // Log when user is invalid
@@ -60,7 +71,7 @@ const authorizeRole = async (roles, req, res, next) => {
         if (!res.headersSent) { // Prevent multiple responses
             return res.status(401).json({ message: "Invalid token" });
         }
-    }
-};
+    };
+}
 
 export { protect, isSuperAdmin, authorizeRole };

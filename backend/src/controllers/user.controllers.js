@@ -2,6 +2,8 @@ import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { sendResetLink } from "../utils/email.utils.js";
+import { encrypt } from "../../helper/helper.js";
 
 dotenv.config(); // Load environment variables
 
@@ -25,14 +27,14 @@ export const registerUser = async (req, res) => {
 
         let fullName = `${firstName} ${lastName}`;
         const joinDate = Date.now(); // Assign current timestamp as join date
-
+        const hashedPassword =  bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
         const user = await User.create({
             firstName,
             lastName,
             fullName,
             email,
             phone,
-            password, // Store the plain password directly
+            password: hashedPassword, // Store the plain password directly
             country,
             dates: { joinDate }
         });
@@ -45,7 +47,72 @@ export const registerUser = async (req, res) => {
     }
 };
 
-// Login user
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        console.log("Received forgot password request for email:", email);
+
+        // Check if the email exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Email not found" });
+        }
+
+        // Generate a reset token
+        const resetToken = jwt.sign(
+            { id: user._id, type: 'passwordReset' }, 
+            process.env.JWT_SECRET_KEY, 
+            { expiresIn: "1h" }
+        );
+
+        console.log("Reset token generated:", resetToken);
+
+        // Generate the reset link
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+        // Send the reset link via email
+        await sendResetLink(email, resetLink);
+
+        res.status(200).json({ message: "Password reset link sent to your email" });
+    } catch (error) {
+        console.error("Error during password reset:", error.message);
+        res.status(500).json({ message: "Something went wrong. Please try again later." });
+    }
+};
+
+// reset password
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            return res.status(400).json({ message: "Token and password are required." });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(400).json({ message: "Invalid or expired token." });
+        }
+
+        // Hash the password with salt rounds = 10
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        console.log("New hashed password:", hashedPassword); // 🔍 Check if hashing works properly
+
+        user.password = hashedPassword;
+        await user.save();
+
+        console.log("Password successfully saved to DB."); 
+        res.status(200).json({ message: "Password reset successful." });
+    } catch (error) {
+        console.error("Error resetting password:", error.message);
+        res.status(500).json({ message: "Error resetting password. Please try again." });
+    }
+};
+//  Login user
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -60,12 +127,11 @@ export const loginUser = async (req, res) => {
         }
 
         console.log("User found:", user); // Debugging log
-
+       
         // Validate password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log("Password validation result:", isPasswordValid); // Debugging log
-        console.log("Provided password:", password); // Debugging log
-        console.log("Stored hashed password:", user.password); // Debugging log
+        const isPasswordValid = encrypt.comparePassword(user.password, password); // Use the helper function to compare passwords
+        console.log(password)
+        console.log(user.password);
 
         if (!isPasswordValid) {
             console.log("Password mismatch detected."); // Debugging log
