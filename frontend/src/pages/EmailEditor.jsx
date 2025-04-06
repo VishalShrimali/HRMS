@@ -1,15 +1,17 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import EmailEditor from "react-email-editor";
-import { Container, Button } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { Container, Button, Form } from "react-bootstrap";
 
 const CustomEmailEditor = () => {
     const emailEditorRef = useRef(null);
-    const location = useLocation();
-    const [templateData, setTemplateData] = useState(null);
+    const [searchParams] = useSearchParams();
+    const [emailId, setEmailId] = useState("");
     const [title, setTitle] = useState("");
+    const [templateData, setTemplateData] = useState(null);
+    const [recipientEmail, setRecipientEmail] = useState("");
+    const [isEditorReady, setIsEditorReady] = useState(false);
 
-    // ✅ Default template
     const defaultTemplate = {
         counters: { u_row: 3, u_column: 3, u_content_text: 3, u_content_image: 1, u_content_button: 1 },
         body: {
@@ -89,48 +91,59 @@ const CustomEmailEditor = () => {
         }
     };
 
-    // ✅ Fetch template by title from backend
     useEffect(() => {
-        const queryParams = new URLSearchParams(location.search);
-        const emailTitle = queryParams.get("title");
-        if (!emailTitle) return;
+        const emailIdFromURL = searchParams.get("emailId");
 
-        setTitle(emailTitle); // Set title for saving
+        if (emailIdFromURL) {
+            setEmailId(emailIdFromURL);
 
-        const fetchTemplateByTitle = async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/api/v1/templates/title/${encodeURIComponent(emailTitle)}`);
-                if (!response.ok) throw new Error("Failed to fetch template");
-                const data = await response.json();
-
-                if (data && data.design) {
-                    setTemplateData(data.design); // ✅ Load saved template
-                } else {
-                    setTemplateData(defaultTemplate); // ❌ No saved template? Use default
+            const fetchEmailTitle = async () => {
+                try {
+                    const response = await fetch(`http://localhost:8000/api/v1/emails/${emailIdFromURL}`);
+                    if (!response.ok) throw new Error("Email not found");
+                    const emailData = await response.json();
+                    setTitle(emailData.title || "Untitled");
+                } catch (error) {
+                    console.error("❌ Error fetching email:", error);
+                    setTitle("Untitled");
                 }
-            } catch (error) {
-                console.error("❌ Error fetching template:", error);
-                setTemplateData(defaultTemplate); // Load default if error
-            }
-        };
+            };
 
-        fetchTemplateByTitle();
-    }, [location.search]);
+            const fetchTemplate = async () => {
+                try {
+                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailIdFromURL}`);
+                    if (!response.ok) throw new Error("Template not found");
+                    const templateData2 = await response.json();
+                    console.log("✅ Fetched Template Design:", templateData2.design);
+                    setTemplateData(templateData2.design || defaultTemplate);
+                } catch (error) {
+                    console.error("❌ Error fetching template:", error);
+                    setTemplateData(defaultTemplate);
+                }
+            };
 
-    // ✅ Load template into the editor
+            fetchEmailTitle();
+            fetchTemplate();
+        } else {
+            setTitle("Untitled");
+            setTemplateData(defaultTemplate);
+        }
+    }, [searchParams]);
+
+    // ✅ Load template into editor when both editor and template are ready
+    useEffect(() => {
+        if (isEditorReady && templateData && emailEditorRef.current?.editor) {
+            console.log("🚀 Loading template into editor...");
+            emailEditorRef.current.editor.loadDesign(templateData);
+        }
+    }, [isEditorReady, templateData]);
+
+    // ✅ Set editor ready flag
     const onEditorReady = () => {
-        if (!emailEditorRef.current || !emailEditorRef.current.editor) {
-            console.error("Editor instance not available.");
-            return;
-        }
-
         console.log("✅ Editor is fully ready!");
-        if (templateData) {
-            emailEditorRef.current.editor.loadDesign(templateData); // ✅ Load correct template
-        }
+        setIsEditorReady(true);
     };
 
-    // ✅ Export email design
     const exportDesign = () => {
         if (emailEditorRef.current) {
             emailEditorRef.current.editor.exportHtml((data) => {
@@ -140,56 +153,98 @@ const CustomEmailEditor = () => {
             });
         }
     };
-    
-    // ✅ Save template to server
+
     const saveTemplate = async () => {
-        if (!title) {
-            alert("❌ No title found for the template.");
-            return;
+        if (!emailId) return alert("❌ No emailId found.");
+        if (!title) return alert("❌ Please enter a title for the template.");
+
+        emailEditorRef.current.editor.saveDesign(async (design) => {
+            emailEditorRef.current.editor.exportHtml(async (data) => {
+                const payload = {
+                    emailId,
+                    title,
+                    html: data.html,
+                    design
+                };
+
+                try {
+                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert("✅ Template saved successfully!");
+                    } else {
+                        alert(`❌ Failed to save: ${result.message}`);
+                    }
+                } catch (err) {
+                    console.error("❌ Error saving template:", err);
+                    alert("❌ Error occurred.");
+                }
+            });
+        });
+    };
+
+    const sendEmail = async () => {
+        if (!emailId || !recipientEmail) {
+            return alert("❌ Email ID or recipient missing");
         }
 
-        if (emailEditorRef.current) {
-            emailEditorRef.current.editor.saveDesign(async (design) => {
-                emailEditorRef.current.editor.exportHtml(async (data) => {
-                    const templateData = {
-                        title: title,
-                        html: data.html,
-                        design: design
-                    };
-
-                    try {
-                        const response = await fetch("http://localhost:8000/api/v1/templates", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(templateData),
-                        });
-
-                        const result = await response.json();
-                        if (response.ok) {
-                            alert("✅ Template saved successfully!");
-                        } else {
-                            alert(`❌ Failed to save template: ${result.message}`);
-                        }
-                    } catch (error) {
-                        console.error("❌ Error saving template:", error);
-                        alert("❌ Error saving template. Check console.");
-                    }
-                });
+        try {
+            const response = await fetch("http://localhost:8000/api/v1/templates/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    to: recipientEmail,
+                    emailId
+                })
             });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert("✅ Email sent!");
+            } else {
+                alert(`❌ Failed: ${result.message}`);
+            }
+        } catch (error) {
+            console.error("❌ Error sending email:", error);
+            alert("❌ Could not send email.");
         }
     };
 
     return (
         <Container className="mt-4">
             <h2>Email Template Builder</h2>
+            <Form.Group className="mb-3 mt-3" controlId="templateTitle">
+                <Form.Label>Template Title</Form.Label>
+                <Form.Control
+                    type="text"
+                    placeholder="Enter title for this template"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                />
+            </Form.Group>
             <p><strong>Editing Template:</strong> {title || "Untitled"}</p>
-            <EmailEditor ref={emailEditorRef} onLoad={onEditorReady} />
+            <EmailEditor ref={emailEditorRef} onReady={onEditorReady} />
             <div className="mt-3">
                 <Button variant="primary" onClick={exportDesign} className="me-2">
                     Export Template
                 </Button>
                 <Button variant="success" onClick={saveTemplate}>
                     Save Template
+                </Button>
+                <input
+                    type="email"
+                    placeholder="Recipient Email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    className="form-control mt-3"
+                />
+                <Button variant="warning" onClick={sendEmail} className="mt-2">
+                    Send Email
                 </Button>
             </div>
         </Container>

@@ -55,20 +55,6 @@ emailRoutes.delete("/:id", async (req, res) => {
   }
 });
 
-emailRoutes.get("/title/:title", async (req, res) => {
-    try {
-      const title = req.params.title;
-      const email = await EmailTemplate.findOne({ title: decodeURIComponent(title) });
-  
-      if (!email) {
-        return res.status(404).json({ message: "Template not found" });
-      }
-  
-      res.json(email);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching template by title", error });
-    }
-  });
-  
+
 
 export default emailRoutes;

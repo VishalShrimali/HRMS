@@ -100,7 +100,8 @@ const EmailDesigner = () => {
                                             variant="success"
                                             size="sm"
                                             className="me-1"
-                                            onClick={() => navigate(`/emaileditor?title=${encodeURIComponent(email.title)}`)}
+                                            onClick={() => navigate(`/emaileditor?emailId=${email._id}`)
+                                        }
                                         >
                                             📝 Builder
                                         </Button>
