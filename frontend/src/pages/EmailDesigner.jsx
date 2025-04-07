@@ -25,7 +25,7 @@ const EmailDesigner = () => {
     }, [fetchEmails]);
 
     const handleCreate = async () => {
-        if (!newEmail.title) return; // Basic validation
+        if (!newEmail.title) return; // Basic validation for title
         if (editingEmail) {
             await updateEmail(editingEmail._id, newEmail);
         } else {
