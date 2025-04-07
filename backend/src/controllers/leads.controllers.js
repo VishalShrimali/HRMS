@@ -34,10 +34,20 @@ export const getLeadById = async (req, res) => {
 // Create a new lead
 export const createLead = async (req, res) => {
     try {
-        const { firstName, lastName, email, phone, country } = req.body;
+        const {
+            firstName,
+            lastName,
+            email,
+            phone,
+            country,
+            secondPhoneNumber,
+            addresses,
+            dates,
+            userPreferences
+        } = req.body;
 
         // Validate required fields
-        if (!firstName || !lastName || !email || !phone || !country ) {
+        if (!firstName || !lastName || !email || !phone || !country) {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
@@ -50,9 +60,26 @@ export const createLead = async (req, res) => {
         // Create fullName and initialize other fields
         const fullName = `${firstName} ${lastName}`;
         const newLead = new Lead({
-            ...req.body,
+            firstName,
+            lastName,
             fullName,
-            dates: { joinDate: Date.now() },
+            email,
+            phone,
+            secondPhoneNumber,
+            country,
+            addresses,
+            dates: {
+                joinDate: dates?.joinDate || Date.now(),
+                birthDate: dates?.birthDate || "",
+                lastLogin: dates?.lastLogin || "",
+                passwordChangedAt: dates?.passwordChangedAt || "",
+            },
+            userPreferences: {
+                policy: userPreferences?.policy || "active",
+                whatsappMessageReceive: !!userPreferences?.whatsappMessageReceive,
+                browserNotifications: !!userPreferences?.browserNotifications,
+                emailReceive: !!userPreferences?.emailReceive,
+            }
         });
 
         const savedLead = await newLead.save();
@@ -65,30 +92,52 @@ export const createLead = async (req, res) => {
 // Update a lead
 export const updateLead = async (req, res) => {
     try {
-        const { firstName, lastName, email, phone, country } = req.body;
+        const {
+            firstName,
+            lastName,
+            fullName,
+            email,
+            phone,
+            secondPhoneNumber,
+            country,
+            addresses,
+            dates,
+            userPreferences
+        } = req.body;
 
-        // Validate required fields
-        if (!firstName && !lastName && !email && !phone && !country) {
-            return res.status(400).json({ message: "At least one field must be provided for update" });
+        const updateData = {};
+
+        if (firstName !== undefined) updateData.firstName = firstName;
+        if (lastName !== undefined) updateData.lastName = lastName;
+        if (fullName !== undefined) {
+            updateData.fullName = fullName;
+        } else if (firstName || lastName) {
+            const lead = await Lead.findById(req.params.id);
+            updateData.fullName = `${firstName || lead.firstName || ""} ${lastName || lead.lastName || ""}`.trim();
         }
 
-        // If firstName or lastName is updated, update fullName as well
-        if (firstName || lastName) {
-            req.body.fullName = `${firstName || ""} ${lastName || ""}`.trim();
-        }
+        if (email !== undefined) updateData.email = email;
+        if (phone !== undefined) updateData.phone = phone;
+        if (secondPhoneNumber !== undefined) updateData.secondPhoneNumber = secondPhoneNumber;
+        if (country !== undefined) updateData.country = country;
+        if (addresses !== undefined) updateData.addresses = addresses;
+        if (dates !== undefined) updateData.dates = dates;
+        if (userPreferences !== undefined) updateData.userPreferences = userPreferences;
 
-        const updatedLead = await Lead.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
-        });
+        const updatedLead = await Lead.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
 
         if (!updatedLead) {
             return res.status(404).json({ message: "Lead not found" });
         }
 
-        res.status(200).json({ message: "Lead updated successfully", updatedLead });
+        res.status(200).json({ message: "Lead updated successfully", lead: updatedLead });
     } catch (error) {
-        handleError(res, error);
+        console.error("Error updating lead:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 
@@ -104,28 +153,3 @@ export const deleteLead = async (req, res) => {
         handleError(res, error);
     }
 };
-
-// Leads with pagination
-// export const LeadsPagination = async (req, res) => {
-//     try {
-//         const { page = 1, limit = 10, search = "" } = req.query;
-
-//         const query = search
-//             ? { fullName: { $regex: search, $options: "i" } }
-//             : {};
-
-//         const leads = await Lead.find(query)
-//             .skip((page - 1) * limit)
-//             .limit(parseInt(limit));
-
-//         const totalLeads = await Lead.countDocuments(query);
-
-//         res.status(200).json({
-//             leads,
-//             totalPages: Math.ceil(totalLeads / limit),
-//             currentPage: parseInt(page),
-//         });
-//     } catch (error) {
-//         handleError(res, error);
-//     }
-// };
