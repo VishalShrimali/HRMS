@@ -128,4 +128,5 @@ router.post("/send", async (req, res) => {
       res.status(500).json({ message: "Server error" });
     }
   });
+  console.log("🚀 Template routes loaded");
 export default router;
