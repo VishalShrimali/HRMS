@@ -409,7 +409,7 @@ const LeadsTable = () => {
                       </td>
                       <td className="p-4 text-gray-700">{lead.country || "N/A"}</td>
                       <td className="p-4 text-gray-700">{lead.phone || "N/A"}</td>
-                      <td className="p-4 text-gray-700">{lead.joinDate ? new Date(lead.joinDate).toLocaleDateString() : "N/A"}</td>
+                      <td className="p-4 text-gray-700">{lead.dates.joinDate ? new Date(lead.dates.joinDate).toLocaleDateString() : "N/A"}</td>
                       <td className="p-4 flex space-x-2">
                         <button
                           className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
@@ -423,7 +423,7 @@ const LeadsTable = () => {
                               phoneNumber: lead.phoneNumber || "",
                               secondPhoneNumber: lead.secondPhoneNumber || "",
                               birthDate: lead.birthDate || "",
-                              joinDate: lead.joinDate || "",
+                              joinDate: lead.dates.joinDate || "",
                               address: {
                                 line1: lead.address?.line1 || "",
                                 line2: lead.address?.line2 || "",

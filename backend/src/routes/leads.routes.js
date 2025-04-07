@@ -30,11 +30,22 @@ const leadsRouter = express.Router();
 // };
 
 // Routes
-leadsRouter.get('/',authorizeRole, getLeads); // Get all 
-leadsRouter.get('/:id',authorizeRole,getLeadById); // Get a single lead by ID
+leadsRouter.get('/', (req, res, next) => {
+    authorizeRole(["ADMIN"], req, res, next);
+}, getLeads); // Get all 
+
+leadsRouter.get('/:id', (req, res, next) => {
+    authorizeRole(["ADMIN"], req, res, next);
+}, getLeadById); // Get a single lead by ID
+
 leadsRouter.post('/addlead', createLead); // Create a new lead
+
 leadsRouter.put('/:id', updateLead); // Update a lead by ID
-leadsRouter.delete('/:id', authorizeRole, deleteLead); // Delete a lead by ID
+
+leadsRouter.delete('/:id', (req, res, next) => {
+    authorizeRole(["ADMIN"], req, res, next);
+}, deleteLead); // Delete a lead by ID
+
 // leadsRouter.get('//pagination', LeadsPagination); // Get leads with pagination
 
 export default leadsRouter;

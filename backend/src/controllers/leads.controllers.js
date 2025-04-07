@@ -1,5 +1,4 @@
 import { Lead } from "../models/leads.models.js";
-import jwt from "jsonwebtoken";
 
 // Centralized error handler
 const handleError = (res, error, statusCode = 500) => {
@@ -12,7 +11,7 @@ const handleError = (res, error, statusCode = 500) => {
 // Fetch all leads
 export const getLeads = async (req, res) => {
     try {
-        const leads = await Lead.find().populate("role");
+        const leads = await Lead.find();
         res.status(200).json({ message: "Leads fetched successfully", leads });
     } catch (error) {
         handleError(res, error);
@@ -22,7 +21,7 @@ export const getLeads = async (req, res) => {
 // Fetch lead by ID
 export const getLeadById = async (req, res) => {
     try {
-        const lead = await Lead.findById(req.params.id).populate("role");
+        const lead = await Lead.findById(req.params.id);
         if (!lead) {
             return res.status(404).json({ message: "Lead not found" });
         }
@@ -116,7 +115,6 @@ export const deleteLead = async (req, res) => {
 //             : {};
 
 //         const leads = await Lead.find(query)
-//             .populate("role")
 //             .skip((page - 1) * limit)
 //             .limit(parseInt(limit));
 

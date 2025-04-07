@@ -49,11 +49,6 @@ const LeadSchema = new mongoose.Schema(
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
         dates: dateSchema, // Embed the date schema here
-        role: { 
-            type: mongoose.Schema.Types.ObjectId, 
-            ref: "Role", 
-            required: false
-        },
     },
     { timestamps: true }
 );
