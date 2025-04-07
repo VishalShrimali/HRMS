@@ -1,5 +1,5 @@
 // groupsController.js
-import { Group } from "../models/groups.models.js";
+import { Group } from "../models/group.models.js";
 
 // Centralized error handler
 const handleError = (res, error, statusCode = 500) => {

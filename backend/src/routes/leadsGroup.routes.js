@@ -7,13 +7,13 @@ import {
   updateGroup,
   deleteGroup,
   addMembersToGroup,
-} from "../controllers/groupsController.js";
-import authMiddleware from "../middleware/authMiddleware.js"; // Assuming authentication middleware
+} from "../controllers/leadsGroup.controllers.js";
+//import authMiddleware from "../middleware/auth.middlware.js"; // Assuming authentication middleware
 
-const groupRouter = express.groupRouter();
+const groupRouter = express.Router();
 
 // Protected routes (require authentication)
-groupRouter.use(authMiddleware);
+//groupRouter.use(authMiddleware);
 
 // CRUD Routes
 groupRouter.get("/", getGroups);

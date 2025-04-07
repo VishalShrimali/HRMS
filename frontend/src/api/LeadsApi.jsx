@@ -38,6 +38,11 @@ export const deleteLead = async (leadId, config = {}) => {
   }
 };
 
+export const getGroups = async () => {
+  const response = await axios.get("/groups"); // use your actual endpoint
+  return response.data;
+};
+
 export const updateLead = async (leadId, updatedData, config = {}) => {
   try {
     const response = await api.put(`/leads/${leadId}`, updatedData, config);

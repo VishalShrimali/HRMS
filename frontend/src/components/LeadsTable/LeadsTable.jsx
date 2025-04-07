@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
-//import { getGroups, addGroup, updateGroup, deleteGroup, addMemberToGroup } from "../../";
 import {
   Search, Upload, Download, Plus, ChevronLeft, ChevronRight,
   Edit, Trash, Users, X
@@ -12,19 +11,19 @@ import LeadsTableComponent from "./LeadsTableComponent";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
-  const [groups, setGroups] = useState([]); // State for groups
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingItem, setEditingItem] = useState(null); // Unified for leads and groups
+  const [editingItem, setEditingItem] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedItems, setSelectedItems] = useState([]); // Unified for leads and groups
+  const [selectedItems, setSelectedItems] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
-  const [selectedLeads, setSelectedLeads] = useState([]); // For adding to groups
+  const [selectedLeads, setSelectedLeads] = useState([]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -46,7 +45,6 @@ const LeadsTable = () => {
       country: "USA",
     },
     phone: "",
-    // Group-specific fields
     name: "",
     description: "",
   });
@@ -57,10 +55,11 @@ const LeadsTable = () => {
       Authorization: `Bearer ${token}`,
     },
   };
+  // /const paginatedLeads = leads.slice(startIndex, endIndex);
+
 
   const fileInputRef = useRef(null);
 
-  // Fetch leads and groups from API
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -91,7 +90,6 @@ const LeadsTable = () => {
     setLoading(true);
     Promise.all([fetchLeads(), fetchGroups()]).finally(() => setLoading(false));
   }, []);
-
   // Form validation
   const validateForm = () => {
     const errors = {};
