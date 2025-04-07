@@ -45,7 +45,7 @@ const LeadSchema = new mongoose.Schema(
             match: /^[0-9]{10,15}$/,
         },
         country: { type: String, required: true },
-        password: { type: String, required: true, minlength: 6 },
+        //password: { type: String, required: true, minlength: 6 },
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
         dates: dateSchema, // Embed the date schema here
