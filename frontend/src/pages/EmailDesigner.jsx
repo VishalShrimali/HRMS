@@ -12,7 +12,7 @@ const EmailDesigner = () => {
     const [editingEmail, setEditingEmail] = useState(null);
     const [newEmail, setNewEmail] = useState({ title: "", description: "" });
     const navigate = useNavigate();
- 
+
     const fetchEmails = useCallback(async () => {
         setLoading(true);
         const data = await getEmails(page, search);
