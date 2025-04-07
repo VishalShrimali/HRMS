@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
-const EmailTemplateSchema = new mongoose.Schema({
+const EmailSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   createdOn: { type: Date, default: Date.now },
 });
 
-const EmailTemplate = mongoose.model("EmailTemplate", EmailTemplateSchema);
+const Email = mongoose.model("Email", EmailSchema);
 
-export default EmailTemplate;
+export default Email;

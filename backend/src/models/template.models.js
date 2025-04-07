@@ -1,9 +1,19 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const EmailTemplate = new mongoose.Schema({
-    html: { type: String, required: true },
-    design: { type: Object, required: true }, // Store the full Unlayer design JSON
-    createdAt: { type: Date, default: Date.now }
+const templateSchema = new mongoose.Schema({
+  title: String,
+  html: String,
+  design: Object,
+  emailId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Email",
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-module.exports = mongoose.model("EmailTemplate", EmailTemplate);
+const Template = mongoose.model("Template", templateSchema);
+export default Template;
