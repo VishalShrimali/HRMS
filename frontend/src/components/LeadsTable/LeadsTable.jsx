@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import AddLeadModal from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
+import PaginationSection from "./PaginationSection";
+import LeadsTableComponent from "./LeadsTableComponent";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
@@ -458,154 +460,15 @@ const LeadsTable = () => {
         ) : error ? (
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-full bg-white shadow-md rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-blue-500 text-white">
-                  <tr>
-                    <th className="p-4 text-left">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        onChange={handleSelectAll}
-                        checked={
-                          selectedItems.length === paginatedItems.length &&
-                          paginatedItems.length > 0
-                        }
-                        disabled={activeTab === "groups" && paginatedItems.length === 0}
-                      />
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold">
-                      {activeTab === "personal" ? "Name & Email" : "Name"}
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold">
-                      {activeTab === "personal" ? "Country" : "Description"}
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold">
-                      {activeTab === "personal" ? "Phone" : "No. of Members"}
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold">
-                      {activeTab === "personal" ? "Date" : "Created On"}
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedItems.map((item) => (
-                    <tr key={item._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-4">
-                        <input
-                          type="checkbox"
-                          className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          checked={selectedItems.includes(item._id)}
-                          onChange={() => handleSelectItem(item._id)}
-                          disabled={activeTab === "groups" && !item.members} // Disable for groups with no members if needed
-                        />
-                      </td>
-                      <td className="p-4">
-                        {activeTab === "personal" ? (
-                          <>
-                            <div className="font-medium text-gray-900">{item.firstName} {item.lastName}</div>
-                            <div className="text-sm text-gray-500">{item.email}</div>
-                          </>
-                        ) : (
-                          <div className="text-gray-900">{item.name}</div>
-                        )}
-                      </td>
-                      <td className="p-4 text-gray-700">
-                        {activeTab === "personal" ? item.country || "N/A" : item.description || "N/A"}
-                      </td>
-                      <td className="p-4 text-gray-700">
-                        {activeTab === "personal" ? item.phone || "N/A" : item.members || 0}
-                      </td>
-                      <td className="p-4 text-gray-700">
-                        {activeTab === "personal"
-                          ? item.dates.joinDate ? new Date(item.dates.joinDate).toLocaleDateString() : "N/A"
-                          : new Date(item.createdOn).toLocaleString()}
-                      </td>
-                      <td className="p-4 flex space-x-2">
-                        <button
-                          className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
-                          onClick={() => {
-                            setEditingItem(item);
-                            setFormData(
-                              activeTab === "personal"
-                                ? {
-                                    firstName: item.firstName || "",
-                                    lastName: item.lastName || "",
-                                    email: item.email || "",
-                                    country: item.country || "USA (+1)",
-                                    phoneNumber: item.phoneNumber || "",
-                                    secondPhoneNumber: item.secondPhoneNumber || "",
-                                    birthDate: item.birthDate || "",
-                                    joinDate: item.dates.joinDate || "",
-                                    address: {
-                                      line1: item.address?.line1 || "",
-                                      line2: item.address?.line2 || "",
-                                      line3: item.address?.line3 || "",
-                                      pincode: item.address?.pincode || "",
-                                      city: item.address?.city || "",
-                                      state: item.address?.state || "",
-                                      county: item.address?.county || "",
-                                      country: item.address?.country || "USA",
-                                    },
-                                    phone: item.phone || "",
-                                    name: "",
-                                    description: "",
-                                  }
-                                : {
-                                    name: item.name || "",
-                                    description: item.description || "",
-                                    firstName: "",
-                                    lastName: "",
-                                    email: "",
-                                    country: "USA (+1)",
-                                    phoneNumber: "",
-                                    secondPhoneNumber: "",
-                                    birthDate: "",
-                                    joinDate: "",
-                                    address: {
-                                      line1: "",
-                                      line2: "",
-                                      line3: "",
-                                      pincode: "",
-                                      city: "",
-                                      state: "",
-                                      county: "",
-                                      country: "USA",
-                                    },
-                                    phone: "",
-                                  }
-                            );
-                            setShowEditModal(true);
-                          }}
-                        >
-                          <Edit size={14} className="mr-1" /> Edit
-                        </button>
-                        <button
-                          className="bg-red-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-red-700 transition-colors"
-                          onClick={() => handleDelete(item._id)}
-                        >
-                          <Trash size={14} className="mr-1" /> Delete
-                        </button>
-                        {activeTab === "groups" && (
-                          <button
-                            className="bg-blue-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-blue-600 transition-colors"
-                            onClick={() => {
-                              setSelectedLeads([]); // Reset selected leads
-                              handleAddMembers(item._id);
-                            }}
-                          >
-                            <Users size={14} className="mr-1" /> Members
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <LeadsTableComponent paginatedLeads={paginatedLeads} 
+          selectedLeads={selectedLeads}
+          handleSelectAll={handleSelectAll}
+          handleSelectLead={handleSelectLead}
+          setEditingLead={setEditingLead}
+          setFormData={setFormData}
+          setShowEditModal={setShowEditModal}
+          handleDelete={handleDelete}
+          />
         )}
 
         {/* Pagination Section */}
