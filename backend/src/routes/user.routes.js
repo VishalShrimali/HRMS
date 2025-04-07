@@ -6,7 +6,6 @@ import {
     updateUserProfile,
     deleteUser,
     getUsersWithPagination,
-    GetEmployeeProfileFromAdmin,
     addRoleToUser,
     forgotPassword,
     resetPassword, // Import the new controller
@@ -36,12 +35,12 @@ userRouter.post('/role', (req, res, next) => {
 });
 
 // Protected Routes
-userRouter.get('/leads',  (req, res, next) => {
-    console.log("AuthorizeRole middleware triggered");
-     authorizeRole(["ADMIN"], req, res, next);
-}, (req, res) => {
-    console.log("addRoleToUser controller triggered");
-    GetEmployeeProfileFromAdmin(req, res)} ); // Fetching leads for admin
+// userRouter.get('/leads',  (req, res, next) => {
+//     console.log("AuthorizeRole middleware triggered");
+//      authorizeRole(["ADMIN"], req, res, next);
+// }, (req, res) => {
+//     console.log("addRoleToUser controller triggered");
+//     GetEmployeeProfileFromAdmin(req, res)} ); // Fetching leads for admin
 
 userRouter.get('/profile', protect, getUserProfile);
 userRouter.put('/profile', protect, updateUserProfile);

@@ -9,6 +9,7 @@ import { sendGreetings } from "./src/utils/Greetings.utils.js";
 import roleRouter from "./src/routes/role.routes.js";
 import emailRoutes from "./src/routes/email.routes.js";
 import templateRoutes from "./src/routes/template.routes.js";
+import leadsRouter from "./src/routes/leads.routes.js";
 
 dotenv.config();
 
@@ -35,7 +36,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/roles", roleRouter);
 app.use("/api/v1/emails", emailRoutes);
 app.use("/api/v1/templates", templateRoutes);
-
+app.use("/api/v1/leads", leadsRouter);
 
 // Handle Non-Existent Routes
 app.use((req, res) => {

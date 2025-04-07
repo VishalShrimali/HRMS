@@ -26,7 +26,19 @@ const LeadsTable = () => {
     country: "USA (+1)",
     phoneNumber: "",
     secondPhoneNumber: "",
-    date: "",
+    birthDate: "",
+    joinDate: "",
+    address: {
+      line1: "",
+      line2: "",
+      line3: "",
+      pincode: "",
+      city: "",
+      state: "",
+      county: "",
+      country: "USA",
+    },
+    phone: "",
   });
 
   const token = localStorage.getItem("token");
@@ -61,18 +73,35 @@ const LeadsTable = () => {
       errors.email = "Valid email is required";
     if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
       errors.phoneNumber = "Valid 10-digit phone number is required";
-    if (formData.secondPhoneNumber && !/^\d{10}$/.test(formData.secondPhoneNumber))
-      errors.secondPhoneNumber = "Valid 10-digit phone number is required";
+    if (formData.country && !/^\d{10}$/.test(formData.country))
+    if (!formData.phone) errors.phone = "Phone is required";
+    if (!formData.birthDate) errors.birthDate = "Birth Date is required";
+    if (!formData.joinDate) errors.joinDate = "Join Date is required";
+    if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
+    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode))
+      errors.pincode = "Valid pincode is required";
+    if (!formData.address.city) errors.city = "City is required";
+    if (!formData.address.state) errors.state = "State is required";
+    if (!formData.address.country) errors.country = "Country is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    setFormErrors({ ...formErrors, [e.target.name]: "" });
+    const { name, value } = e.target;
+    if (name.startsWith("address.")) {
+      const addressField = name.split(".")[1];
+      setFormData({
+        ...formData,
+        address: { ...formData.address, [addressField]: value },
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+    setFormErrors({ ...formErrors, [name]: "" });
   };
 
   const handleAddSubmit = async (e) => {
@@ -123,9 +152,9 @@ const LeadsTable = () => {
 
   const handleExport = () => {
     const csv = [
-      "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Date",
+      "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
       ...leads.map((lead) =>
-        `${lead.firstName},${lead.lastName},${lead.email},${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.date || "N/A"}`
+        `${lead.firstName},${lead.lastName},${lead.email},${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.birthDate || "N/A"},${lead.joinDate || "N/A"},${lead.address.line1 || "N/A"},${lead.address.pincode || "N/A"},${lead.address.city || "N/A"},${lead.address.state || "N/A"},${lead.address.county || "N/A"},${lead.address.country || "N/A"},${lead.date || "N/A"}`
       ),
     ].join("\n");
 
@@ -146,10 +175,17 @@ const LeadsTable = () => {
     reader.onload = async (e) => {
       const rows = e.target.result.split("\n").slice(1);
       for (const row of rows) {
-        const [firstName, lastName, email, country, phoneNumber, secondPhoneNumber, date] = row.split(",").map((item) => item.trim());
+        const [
+          firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
+          birthDate, joinDate, line1, pincode, city, state, county, addressCountry, date
+        ] = row.split(",").map((item) => item.trim());
         if (firstName && lastName && email) {
           try {
-            await addLead({ firstName, lastName, email, country, phoneNumber, secondPhoneNumber, date }, apiConfig);
+            await addLead({
+              firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
+              birthDate, joinDate, address: { line1, pincode, city, state, county, country: addressCountry },
+              date
+            }, apiConfig);
           } catch (err) {
             console.error("Error importing lead:", err);
             setError(err.response?.data?.message || "Failed to import lead");
@@ -168,8 +204,19 @@ const LeadsTable = () => {
       email: "",
       country: "USA (+1)",
       phoneNumber: "",
-      secondPhoneNumber: "",
-      date: "",
+      birthDate: "",
+      joinDate: "",
+      address: {
+        line1: "",
+        line2: "",
+        line3: "",
+        pincode: "",
+        city: "",
+        state: "",
+        county: "",
+        country: "USA",
+      },
+      phone: "",
     });
     setEditingLead(null);
     setFormErrors({});
@@ -347,7 +394,19 @@ const LeadsTable = () => {
                               country: lead.country || "USA (+1)",
                               phoneNumber: lead.phoneNumber || "",
                               secondPhoneNumber: lead.secondPhoneNumber || "",
-                              date: lead.date || "",
+                              birthDate: lead.birthDate || "",
+                              joinDate: lead.joinDate || "",
+                              address: {
+                                line1: lead.address.line1 || "",
+                                line2: lead.address.line2 || "",
+                                line3: lead.address.line3 || "",
+                                pincode: lead.address.pincode || "",
+                                city: lead.address.city || "",
+                                state: lead.address.state || "",
+                                county: lead.address.county || "",
+                                country: lead.address.country || "USA",
+                              },
+                              phone: lead.phone || "",
                             });
                             setShowEditModal(true);
                           }}
@@ -394,135 +453,188 @@ const LeadsTable = () => {
 
         {/* Add Lead Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg w-full max-w-2xl p-6">
-              <div className="flex justify-between items-center border-b pb-4 mb-4">
-                <h5 className="text-xl font-semibold text-gray-800">Add Lead</h5>
-                <button
-                  className="text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <form onSubmit={handleAddSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.firstName ? "border-red-500" : "border-gray-300"}`}
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                    />
-                    {formErrors.firstName && (
-                      <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.lastName ? "border-red-500" : "border-gray-300"}`}
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
-                    />
-                    {formErrors.lastName && (
-                      <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.email ? "border-red-500" : "border-gray-300"}`}
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                    />
-                    {formErrors.email && (
-                      <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                  <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                      Country
-                    </label>
-                    <select
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      id="country"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                    >
-                      <option value="USA (+1)">USA (+1)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.phoneNumber ? "border-red-500" : "border-gray-300"}`}
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleChange}
-                    />
-                    {formErrors.phoneNumber && (
-                      <div className="text-red-500 text-sm mt-1">{formErrors.phoneNumber}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="secondPhoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                      Second Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.secondPhoneNumber ? "border-red-500" : "border-gray-300"}`}
-                      id="secondPhoneNumber"
-                      name="secondPhoneNumber"
-                      value={formData.secondPhoneNumber}
-                      onChange={handleChange}
-                    />
-                    {formErrors.secondPhoneNumber && (
-                      <div className="text-red-500 text-sm mt-1">{formErrors.secondPhoneNumber}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-8 flex justify-end space-x-4">
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
+            <div className="modal-dialog modal-lg" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Add Lead</h5>
                   <button
                     type="button"
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                    className="btn-close"
                     onClick={() => setShowAddModal(false)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                  >
-                    Submit
-                  </button>
+                  ></button>
                 </div>
-              </form>
+                <form onSubmit={handleAddSubmit}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label htmlFor="firstName" className="form-label">First Name</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.firstName ? "is-invalid" : ""}`}
+                          id="firstName"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.firstName && <div className="invalid-feedback">{formErrors.firstName}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="lastName" className="form-label">Last Name</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.lastName ? "is-invalid" : ""}`}
+                          id="lastName"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.lastName && <div className="invalid-feedback">{formErrors.lastName}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input
+                          type="email"
+                          className={`form-control ${formErrors.email ? "is-invalid" : ""}`}
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.email && <div className="invalid-feedback">{formErrors.email}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="phoneNumber" className="form-label">Phone Number</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.phoneNumber ? "is-invalid" : ""}`}
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleChange}
+                        />
+                        {formErrors.phoneNumber && <div className="invalid-feedback">{formErrors.phoneNumber}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="birthDate" className="form-label">Birth Date</label>
+                        <input
+                          type="date"
+                          className={`form-control ${formErrors.birthDate ? "is-invalid" : ""}`}
+                          id="birthDate"
+                          name="birthDate"
+                          value={formData.birthDate}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.birthDate && <div className="invalid-feedback">{formErrors.birthDate}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="joinDate" className="form-label">Join Date</label>
+                        <input
+                          type="date"
+                          className={`form-control ${formErrors.joinDate ? "is-invalid" : ""}`}
+                          id="joinDate"
+                          name="joinDate"
+                          value={formData.joinDate}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.joinDate && <div className="invalid-feedback">{formErrors.joinDate}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="country" className="form-label">Country</label>
+                        <select
+                          className="form-select"
+                          id="country"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                        >
+                          <option value="USA (+1)">USA (+1)</option>
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="addressLine1" className="form-label">Address Line 1</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.line1 ? "is-invalid" : ""}`}
+                          id="addressLine1"
+                          name="address.line1"
+                          value={formData.address.line1}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.line1 && <div className="invalid-feedback">{formErrors.line1}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="pincode" className="form-label">Pincode</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.pincode ? "is-invalid" : ""}`}
+                          id="pincode"
+                          name="address.pincode"
+                          value={formData.address.pincode}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.pincode && <div className="invalid-feedback">{formErrors.pincode}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="city" className="form-label">City</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.city ? "is-invalid" : ""}`}
+                          id="city"
+                          name="address.city"
+                          value={formData.address.city}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.city && <div className="invalid-feedback">{formErrors.city}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="state" className="form-label">State</label>
+                        <input
+                          type="text"
+                          className={`form-control ${formErrors.state ? "is-invalid" : ""}`}
+                          id="state"
+                          name="address.state"
+                          value={formData.address.state}
+                          onChange={handleChange}
+                          required
+                        />
+                        {formErrors.state && <div className="invalid-feedback">{formErrors.state}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label htmlFor="county" className="form-label">County</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="county"
+                          name="address.county"
+                          value={formData.address.county}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowAddModal(false)}
+                    >
+                      Close
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Submit
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

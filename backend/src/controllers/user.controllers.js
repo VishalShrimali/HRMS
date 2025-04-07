@@ -150,27 +150,7 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ message: "An error occurred during login. Please try again later." });
     }
 };
-// Fetching leads for admin
-export const GetEmployeeProfileFromAdmin = async (req, res) => {
-    try {
-      console.log("Fetching leads...");
-  
-      const leads = await User.find().populate("role");
-      console.log("Leads Fetched:", leads);
-  
-      // Make sure you only send the response once
-      return res.status(200).json({ message: "Leads fetched successfully", leads });
-      
-    } catch (error) {
-      console.error("Error Fetching Leads:", error.message);
-  
-      // Only respond with an error once
-      if (!res.headersSent) {
-        return res.status(500).json({ message: error.message });
-      }
-    }
-  };
-  
+
 // Get user profile
 export const getUserProfile = async (req, res) => {
     try {
@@ -214,15 +194,15 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-// Get all users (Admin/HR Admin only)
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find().select("-password");
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+// // Get all users (Admin/HR Admin only)
+// export const getAllUsers = async (req, res) => {
+//     try {
+//         const users = await User.find().select("-password");
+//         res.status(200).json(users);
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
 
 // Get user by ID (Admin/HR Admin only)
 export const getUserById = async (req, res) => {
