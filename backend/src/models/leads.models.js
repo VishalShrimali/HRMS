@@ -29,7 +29,8 @@ const dateSchema = new mongoose.Schema({
     birthDate: { type: Date},
 });
 const LeadSchema = new mongoose.Schema(
-    {
+    {   
+        groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
         fullName: { type: String, required: true, trim: true },
