@@ -16,6 +16,7 @@ const EmailDesigner = () => {
     const fetchEmails = useCallback(async () => {
         setLoading(true);
         const data = await getEmails(page, search);
+        console.log(data);
         setEmails(data);
         setLoading(false);
     }, [page, search]);
@@ -100,7 +101,7 @@ const EmailDesigner = () => {
                                             variant="success"
                                             size="sm"
                                             className="me-1"
-                                            onClick={() => navigate(`/emaileditor?title=${encodeURIComponent(email.title)}`)}
+                                            onClick={() => navigate(`/emaileditor?title=${encodeURIComponent(email.title)}&emailId=${encodeURIComponent(email._id)}`)}
                                         >
                                             📝 Builder
                                         </Button>

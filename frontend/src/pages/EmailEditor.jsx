@@ -171,7 +171,7 @@ const CustomEmailEditor = () => {
                         const response = await fetch("http://localhost:8000/api/v1/templates", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(templateData),
+                            body: JSON.stringify(payload),
                         });
 
                     const result = await response.json();

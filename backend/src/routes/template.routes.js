@@ -65,10 +65,10 @@ router.post("/send", async (req, res) => {
       console.log("📩 Looking for template with emailId:", emailId);
 
       // Get the template by emailId
-      const template = await Template.findOne({ emailId });
+      const template = await Template.findOne({ emailId }).populate('emailId');
   
       if (!template) {
-        return res.status(404).json({ message: "Template not found" });
+        return res.status(404).json({ message: "Template not found for : " + emailId });
       }
   
       // Configure the SMTP transporter
