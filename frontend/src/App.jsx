@@ -47,8 +47,8 @@ function App() {
             }
           />
           <Route path="roles" element={<RolesManager />} />
-          <Route path="email-designer" element={<EmailDesigner />} />
-          <Route path="email-editor" element={<CustomEmailEditor />}/>
+          <Route path="emaildesigner" element={<EmailDesigner />} />
+          <Route path="emaileditor" element={<CustomEmailEditor />}/>
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
         </Route>
