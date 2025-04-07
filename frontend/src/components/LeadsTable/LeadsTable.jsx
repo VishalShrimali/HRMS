@@ -1,34 +1,28 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
+//import { getGroups, addGroup, updateGroup, deleteGroup, addMemberToGroup } from "../../";
 import {
-  Search,
-  Upload,
-  Download,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Trash,
-  Users,
-  X,
+  Search, Upload, Download, Plus, ChevronLeft, ChevronRight,
+  Edit, Trash, Users, X
 } from "lucide-react";
-import AddLeadModel from "./AddLeadModel";
+import AddLeadModal from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
-import PaginationSection from "./PaginationSection";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
+  const [groups, setGroups] = useState([]); // State for groups
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingLead, setEditingLead] = useState(null);
+  const [editingItem, setEditingItem] = useState(null); // Unified for leads and groups
   const [formErrors, setFormErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedLeads, setSelectedLeads] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]); // Unified for leads and groups
   const [activeTab, setActiveTab] = useState("personal");
+  const [selectedLeads, setSelectedLeads] = useState([]); // For adding to groups
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -50,6 +44,9 @@ const LeadsTable = () => {
       country: "USA",
     },
     phone: "",
+    // Group-specific fields
+    name: "",
+    description: "",
   });
 
   const token = localStorage.getItem("token");
@@ -61,58 +58,60 @@ const LeadsTable = () => {
 
   const fileInputRef = useRef(null);
 
-  // Fetch leads from API with sanitization
+  // Fetch leads and groups from API
   const fetchLeads = async () => {
     setLoading(true);
     try {
       const data = await getLeads(apiConfig);
-      console.log("Raw API Response:", data);
-      const leadsArray = Array.isArray(data.leads)
-        ? data.leads
-        : Array.isArray(data)
-        ? data
-        : [];
-      const sanitizedLeads = leadsArray.filter(
-        (lead) =>
-          lead && typeof lead === "object" && lead.firstName && lead.lastName
-      );
-      console.log("Sanitized Leads:", sanitizedLeads);
+      const leadsArray = Array.isArray(data.leads) ? data.leads : Array.isArray(data) ? data : [];
+      const sanitizedLeads = leadsArray.filter((lead) => lead && typeof lead === "object" && lead.firstName && lead.lastName);
       setLeads(sanitizedLeads);
       setError(null);
     } catch (err) {
       console.error("Fetch Leads Error:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
-      setLeads([]);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const data = await getGroups(apiConfig);
+      const groupsArray = Array.isArray(data.groups) ? data.groups : Array.isArray(data) ? data : [];
+      const sanitizedGroups = groupsArray.filter((group) => group && typeof group === "object" && group.name);
+      setGroups(sanitizedGroups);
+    } catch (err) {
+      console.error("Fetch Groups Error:", err);
+      setError(err.response?.data?.message || "Failed to fetch groups");
     }
   };
 
   useEffect(() => {
-    fetchLeads();
+    setLoading(true);
+    Promise.all([fetchLeads(), fetchGroups()]).finally(() => setLoading(false));
   }, []);
 
   // Form validation
   const validateForm = () => {
     const errors = {};
-    if (!formData.firstName) errors.firstName = "First Name is required";
-    if (!formData.lastName) errors.lastName = "Last Name is required";
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = "Valid email is required";
-    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
-      errors.phoneNumber = "Valid 10-digit phone number is required";
-    if (!formData.phone) errors.phone = "Phone is required";
-    if (!formData.birthDate) errors.birthDate = "Birth Date is required";
-    if (!formData.joinDate) errors.joinDate = "Join Date is required";
-    if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
-    if (
-      !formData.address.pincode ||
-      !/^[0-9]{5,6}$/.test(formData.address.pincode)
-    )
-      errors.pincode = "Valid pincode is required";
-    if (!formData.address.city) errors.city = "City is required";
-    if (!formData.address.state) errors.state = "State is required";
-    if (!formData.address.country) errors.country = "Country is required";
+    if (activeTab === "personal") {
+      if (!formData.firstName) errors.firstName = "First Name is required";
+      if (!formData.lastName) errors.lastName = "Last Name is required";
+      if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
+        errors.email = "Valid email is required";
+      if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
+        errors.phoneNumber = "Valid 10-digit phone number is required";
+      if (!formData.phone) errors.phone = "Phone is required";
+      if (!formData.birthDate) errors.birthDate = "Birth Date is required";
+      if (!formData.joinDate) errors.joinDate = "Join Date is required";
+      if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
+      if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode))
+        errors.pincode = "Valid pincode is required";
+      if (!formData.address.city) errors.city = "City is required";
+      if (!formData.address.state) errors.state = "State is required";
+      if (!formData.address.country) errors.country = "Country is required";
+    } else if (activeTab === "groups") {
+      if (!formData.name) errors.name = "Name is required";
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -135,165 +134,101 @@ const LeadsTable = () => {
     setFormErrors({ ...formErrors, [name]: "" });
   };
 
-  // Handle Add Lead submission
+  // Handle Add submission (leads or groups)
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     try {
-      console.log("Adding Lead:", formData);
-      const response = await addLead(
-        { ...formData, date: new Date().toISOString() },
-        apiConfig
-      );
-      setLeads(
-        [...leads, response.lead].filter((lead) => lead && lead.firstName)
-      );
+      if (activeTab === "personal") {
+        console.log("Adding Lead:", formData);
+        const response = await addLead({ ...formData, date: new Date().toISOString() }, apiConfig);
+        setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
+      } else if (activeTab === "groups") {
+        console.log("Adding Group:", formData);
+        const response = await addGroup({ ...formData, createdOn: new Date().toISOString(), members: 0 }, apiConfig);
+        setGroups([...groups, response.group].filter((group) => group && group.name));
+      }
       setShowAddModal(false);
       resetForm();
       setError(null);
       fetchLeads();
+      fetchGroups();
     } catch (err) {
-      console.error("Add Lead Error:", err);
-      setError(err.response?.data?.message || "Failed to add lead");
+      console.error(`${activeTab === "personal" ? "Add Lead" : "Add Group"} Error:`, err);
+      setError(err.response?.data?.message || `Failed to add ${activeTab === "personal" ? "lead" : "group"}`);
     }
   };
 
-  // Handle Edit Lead submission
+  // Handle Edit submission (leads or groups)
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     try {
-      console.log("Updating Lead:", editingLead._id, formData);
-      const response = await updateLead(editingLead._id, formData, apiConfig);
-      setLeads(
-        leads
-          .map((lead) => (lead._id === editingLead._id ? response.lead : lead))
-          .filter((lead) => lead && lead.firstName)
-      );
+      if (activeTab === "personal" && editingItem) {
+        console.log("Updating Lead:", editingItem._id, formData);
+        const response = await updateLead(editingItem._id, formData, apiConfig);
+        setLeads(leads.map((lead) => (lead._id === editingItem._id ? response.lead : lead)).filter((lead) => lead && lead.firstName));
+      } else if (activeTab === "groups" && editingItem) {
+        console.log("Updating Group:", editingItem._id, formData);
+        const response = await updateGroup(editingItem._id, formData, apiConfig);
+        setGroups(groups.map((group) => (group._id === editingItem._id ? response.group : group)).filter((group) => group && group.name));
+      }
       setShowEditModal(false);
       resetForm();
       setError(null);
       fetchLeads();
+      fetchGroups();
     } catch (err) {
-      console.error("Edit Lead Error:", err);
-      setError(err.response?.data?.message || "Failed to update lead");
+      console.error(`${activeTab === "personal" ? "Edit Lead" : "Edit Group"} Error:`, err);
+      setError(err.response?.data?.message || `Failed to update ${activeTab === "personal" ? "lead" : "group"}`);
     }
   };
 
-  // Handle Delete Lead
+  // Handle Delete (leads or groups)
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this lead?")) {
+    if (window.confirm(`Are you sure you want to delete this ${activeTab === "personal" ? "lead" : "group"}?`)) {
       try {
-        console.log("Deleting Lead ID:", id);
-        await deleteLead(id, apiConfig);
-        setLeads(leads.filter((lead) => lead._id !== id));
-        setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
+        if (activeTab === "personal") {
+          console.log("Deleting Lead ID:", id);
+          await deleteLead(id, apiConfig);
+          setLeads(leads.filter((lead) => lead._id !== id));
+          setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
+        } else if (activeTab === "groups") {
+          console.log("Deleting Group ID:", id);
+          await deleteGroup(id, apiConfig);
+          setGroups(groups.filter((group) => group._id !== id));
+          setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
+        }
         setError(null);
         fetchLeads();
+        fetchGroups();
       } catch (err) {
-        console.error("Delete Lead Error:", err);
-        setError(err.response?.data?.message || "Failed to delete lead");
+        console.error(`Delete ${activeTab === "personal" ? "Lead" : "Group"} Error:`, err);
+        setError(err.response?.data?.message || `Failed to delete ${activeTab === "personal" ? "lead" : "group"}`);
       }
     }
   };
 
-  // Handle Export to CSV
-  const handleExport = () => {
+  // Handle Add Members to Group
+  const handleAddMembers = async (groupId) => {
+    if (selectedLeads.length === 0) {
+      setError("Please select at least one lead to add.");
+      return;
+    }
     try {
-      console.log("Exporting Leads:", leads);
-      const csv = [
-        "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
-        ...leads.map(
-          (lead) =>
-            `${lead.firstName || ""},${lead.lastName || ""},${
-              lead.email || ""
-            },${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${
-              lead.secondPhoneNumber || "N/A"
-            },${lead.birthDate || "N/A"},${lead.joinDate || "N/A"},${
-              lead.address?.line1 || "N/A"
-            },${lead.address?.pincode || "N/A"},${
-              lead.address?.city || "N/A"
-            },${lead.address?.state || "N/A"},${
-              lead.address?.county || "N/A"
-            },${lead.address?.country || "N/A"},${lead.date || "N/A"}`
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "leads.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const group = groups.find(g => g._id === groupId);
+      const updatedMembers = group.members + selectedLeads.length;
+      await addMemberToGroup(groupId, selectedLeads, apiConfig);
+      setGroups(groups.map(g => g._id === groupId ? { ...g, members: updatedMembers } : g));
+      setSelectedLeads([]);
+      setError(null);
+      fetchGroups();
     } catch (err) {
-      console.error("Export Error:", err);
-      setError("Failed to export leads");
+      console.error("Add Members Error:", err);
+      setError(err.response?.data?.message || "Failed to add members");
     }
-  };
-
-  // Handle Import from CSV
-  const handleImport = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const rows = e.target.result.split("\n").slice(1);
-      for (const row of rows) {
-        const [
-          firstName,
-          lastName,
-          email,
-          country,
-          phoneNumber,
-          secondPhoneNumber,
-          birthDate,
-          joinDate,
-          line1,
-          pincode,
-          city,
-          state,
-          county,
-          addressCountry,
-          date,
-        ] = row.split(",").map((item) => item.trim());
-        if (firstName && lastName && email) {
-          try {
-            console.log("Importing Lead:", { firstName, lastName, email });
-            await addLead(
-              {
-                firstName,
-                lastName,
-                email,
-                country,
-                phoneNumber,
-                secondPhoneNumber,
-                birthDate,
-                joinDate,
-                address: {
-                  line1,
-                  pincode,
-                  city,
-                  state,
-                  county,
-                  country: addressCountry,
-                },
-                date,
-              },
-              apiConfig
-            );
-          } catch (err) {
-            console.error("Import Error:", err);
-            setError(err.response?.data?.message || "Failed to import lead");
-          }
-        }
-      }
-      fetchLeads();
-    };
-    reader.readAsText(file);
   };
 
   // Reset form data
@@ -318,39 +253,110 @@ const LeadsTable = () => {
         country: "USA",
       },
       phone: "",
+      name: "",
+      description: "",
     });
-    setEditingLead(null);
+    setEditingItem(null);
     setFormErrors({});
   };
 
-  // Handle lead selection
-  const handleSelectLead = (id) => {
-    setSelectedLeads((prev) =>
-      prev.includes(id) ? prev.filter((leadId) => leadId !== id) : [...prev, id]
+  // Handle item selection (leads or groups)
+  const handleSelectItem = (id) => {
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
   const handleSelectAll = (e) => {
+    const currentItems = activeTab === "personal" ? paginatedLeads : paginatedGroups;
     if (e.target.checked) {
-      setSelectedLeads(paginatedLeads.map((lead) => lead._id));
+      setSelectedItems(currentItems.map((item) => item._id));
     } else {
-      setSelectedLeads([]);
+      setSelectedItems([]);
     }
   };
 
-  // Filter and paginate leads with defensive check
-  const filteredLeads = leads.filter((lead) =>
-    lead && lead.firstName && lead.lastName
-      ? (lead.firstName + " " + lead.lastName)
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      : false
-  );
-  const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
-  const paginatedLeads = filteredLeads.slice(
+  // Filter and paginate items based on active tab
+  const filteredItems = activeTab === "personal"
+    ? leads.filter((lead) =>
+        lead && lead.firstName && lead.lastName
+          ? (lead.firstName + " " + lead.lastName).toLowerCase().includes(searchTerm.toLowerCase())
+          : false
+      )
+    : groups.filter((group) =>
+        group && group.name
+          ? group.name.toLowerCase().includes(searchTerm.toLowerCase())
+          : false
+      );
+  const totalPages = Math.ceil(filteredItems.length / rowsPerPage);
+  const paginatedItems = filteredItems.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  // Handle Export to CSV (only for leads for now)
+  const handleExport = () => {
+    if (activeTab === "personal") {
+      try {
+        console.log("Exporting Leads:", leads);
+        const csv = [
+          "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
+          ...leads.map((lead) =>
+            `${lead.firstName || ""},${lead.lastName || ""},${lead.email || ""},${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${lead.secondPhoneNumber || "N/A"},${lead.birthDate || "N/A"},${lead.joinDate || "N/A"},${lead.address?.line1 || "N/A"},${lead.address?.pincode || "N/A"},${lead.address?.city || "N/A"},${lead.address?.state || "N/A"},${lead.address?.county || "N/A"},${lead.address?.country || "N/A"},${lead.date || "N/A"}`
+          ),
+        ].join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "leads.csv";
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Export Error:", err);
+        setError("Failed to export leads");
+      }
+    } else {
+      setError("Export is only available for Personal Leads.");
+    }
+  };
+
+  // Handle Import from CSV (only for leads for now)
+  const handleImport = async (event) => {
+    if (activeTab === "personal") {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const rows = e.target.result.split("\n").slice(1);
+        for (const row of rows) {
+          const [
+            firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
+            birthDate, joinDate, line1, pincode, city, state, county, addressCountry, date
+          ] = row.split(",").map((item) => item.trim());
+          if (firstName && lastName && email) {
+            try {
+              console.log("Importing Lead:", { firstName, lastName, email });
+              await addLead({
+                firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
+                birthDate, joinDate, address: { line1, pincode, city, state, county, country: addressCountry },
+                date
+              }, apiConfig);
+            } catch (err) {
+              console.error("Import Error:", err);
+              setError(err.response?.data?.message || "Failed to import lead");
+            }
+          }
+        }
+        fetchLeads();
+      };
+      reader.readAsText(file);
+    } else {
+      setError("Import is only available for Personal Leads.");
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -359,9 +365,11 @@ const LeadsTable = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
             <Users className="mr-2" size={20} />
-            <h2 className="text-2xl font-semibold text-gray-800">Leads</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              {activeTab === "personal" ? "Leads" : "Groups"}
+            </h2>
             <span className="ml-2 text-gray-500">
-              ({leads.length} Records Found)
+              ({activeTab === "personal" ? leads.length : groups.length} Records Found)
             </span>
           </div>
           <div className="relative">
@@ -375,31 +383,20 @@ const LeadsTable = () => {
                 setCurrentPage(1);
               }}
             />
-            <Search
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={16}
-            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
           </div>
         </div>
 
         {/* Tabs Section */}
         <div className="flex mb-6 border-b">
           <button
-            className={`px-6 py-2 -mb-px ${
-              activeTab === "personal"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500"
-            } font-medium focus:outline-none`}
+            className={`px-6 py-2 -mb-px ${activeTab === "personal" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"} font-medium focus:outline-none`}
             onClick={() => setActiveTab("personal")}
           >
             Personal Leads
           </button>
           <button
-            className={`px-6 py-2 -mb-px ${
-              activeTab === "groups"
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500"
-            } font-medium focus:outline-none ml-2`}
+            className={`px-6 py-2 -mb-px ${activeTab === "groups" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"} font-medium focus:outline-none ml-2`}
             onClick={() => setActiveTab("groups")}
           >
             Groups
@@ -415,16 +412,19 @@ const LeadsTable = () => {
               ref={fileInputRef}
               onChange={handleImport}
               accept=".csv"
+              disabled={activeTab === "groups"}
             />
             <button
               className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
               onClick={() => fileInputRef.current.click()}
+              disabled={activeTab === "groups"}
             >
               <Upload className="mr-2" size={16} /> Import
             </button>
             <button
               className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
               onClick={handleExport}
+              disabled={activeTab === "groups"}
             >
               <Download className="mr-2" size={16} /> Export
             </button>
@@ -469,87 +469,114 @@ const LeadsTable = () => {
                         className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         onChange={handleSelectAll}
                         checked={
-                          selectedLeads.length === paginatedLeads.length &&
-                          paginatedLeads.length > 0
+                          selectedItems.length === paginatedItems.length &&
+                          paginatedItems.length > 0
                         }
+                        disabled={activeTab === "groups" && paginatedItems.length === 0}
                       />
                     </th>
                     <th className="p-4 text-left text-sm font-semibold">
-                      Name & Email
+                      {activeTab === "personal" ? "Name & Email" : "Name"}
                     </th>
                     <th className="p-4 text-left text-sm font-semibold">
-                      Country
+                      {activeTab === "personal" ? "Country" : "Description"}
                     </th>
                     <th className="p-4 text-left text-sm font-semibold">
-                      Phone
+                      {activeTab === "personal" ? "Phone" : "No. of Members"}
                     </th>
                     <th className="p-4 text-left text-sm font-semibold">
-                      Date
+                      {activeTab === "personal" ? "Date" : "Created On"}
                     </th>
-                    <th className="p-4 text-left text-sm font-semibold">
-                      Actions
-                    </th>
+                    <th className="p-4 text-left text-sm font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedLeads.map((lead) => (
-                    <tr
-                      key={lead._id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
+                  {paginatedItems.map((item) => (
+                    <tr key={item._id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-4">
                         <input
                           type="checkbox"
                           className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          checked={selectedLeads.includes(lead._id)}
-                          onChange={() => handleSelectLead(lead._id)}
+                          checked={selectedItems.includes(item._id)}
+                          onChange={() => handleSelectItem(item._id)}
+                          disabled={activeTab === "groups" && !item.members} // Disable for groups with no members if needed
                         />
                       </td>
                       <td className="p-4">
-                        <div className="font-medium text-gray-900">
-                          {lead.firstName} {lead.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {lead.email}
-                        </div>
+                        {activeTab === "personal" ? (
+                          <>
+                            <div className="font-medium text-gray-900">{item.firstName} {item.lastName}</div>
+                            <div className="text-sm text-gray-500">{item.email}</div>
+                          </>
+                        ) : (
+                          <div className="text-gray-900">{item.name}</div>
+                        )}
                       </td>
                       <td className="p-4 text-gray-700">
-                        {lead.country || "N/A"}
+                        {activeTab === "personal" ? item.country || "N/A" : item.description || "N/A"}
                       </td>
                       <td className="p-4 text-gray-700">
-                        {lead.phone || "N/A"}
+                        {activeTab === "personal" ? item.phone || "N/A" : item.members || 0}
                       </td>
                       <td className="p-4 text-gray-700">
-                        {lead.dates.joinDate
-                          ? new Date(lead.dates.joinDate).toLocaleDateString()
-                          : "N/A"}
+                        {activeTab === "personal"
+                          ? item.dates.joinDate ? new Date(item.dates.joinDate).toLocaleDateString() : "N/A"
+                          : new Date(item.createdOn).toLocaleString()}
                       </td>
                       <td className="p-4 flex space-x-2">
                         <button
                           className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
                           onClick={() => {
-                            setEditingLead(lead);
-                            setFormData({
-                              firstName: lead.firstName || "",
-                              lastName: lead.lastName || "",
-                              email: lead.email || "",
-                              country: lead.country || "USA (+1)",
-                              phoneNumber: lead.phoneNumber || "",
-                              secondPhoneNumber: lead.secondPhoneNumber || "",
-                              birthDate: lead.birthDate || "",
-                              joinDate: lead.dates.joinDate || "",
-                              address: {
-                                line1: lead.address?.line1 || "",
-                                line2: lead.address?.line2 || "",
-                                line3: lead.address?.line3 || "",
-                                pincode: lead.address?.pincode || "",
-                                city: lead.address?.city || "",
-                                state: lead.address?.state || "",
-                                county: lead.address?.county || "",
-                                country: lead.address?.country || "USA",
-                              },
-                              phone: lead.phone || "",
-                            });
+                            setEditingItem(item);
+                            setFormData(
+                              activeTab === "personal"
+                                ? {
+                                    firstName: item.firstName || "",
+                                    lastName: item.lastName || "",
+                                    email: item.email || "",
+                                    country: item.country || "USA (+1)",
+                                    phoneNumber: item.phoneNumber || "",
+                                    secondPhoneNumber: item.secondPhoneNumber || "",
+                                    birthDate: item.birthDate || "",
+                                    joinDate: item.dates.joinDate || "",
+                                    address: {
+                                      line1: item.address?.line1 || "",
+                                      line2: item.address?.line2 || "",
+                                      line3: item.address?.line3 || "",
+                                      pincode: item.address?.pincode || "",
+                                      city: item.address?.city || "",
+                                      state: item.address?.state || "",
+                                      county: item.address?.county || "",
+                                      country: item.address?.country || "USA",
+                                    },
+                                    phone: item.phone || "",
+                                    name: "",
+                                    description: "",
+                                  }
+                                : {
+                                    name: item.name || "",
+                                    description: item.description || "",
+                                    firstName: "",
+                                    lastName: "",
+                                    email: "",
+                                    country: "USA (+1)",
+                                    phoneNumber: "",
+                                    secondPhoneNumber: "",
+                                    birthDate: "",
+                                    joinDate: "",
+                                    address: {
+                                      line1: "",
+                                      line2: "",
+                                      line3: "",
+                                      pincode: "",
+                                      city: "",
+                                      state: "",
+                                      county: "",
+                                      country: "USA",
+                                    },
+                                    phone: "",
+                                  }
+                            );
                             setShowEditModal(true);
                           }}
                         >
@@ -557,10 +584,21 @@ const LeadsTable = () => {
                         </button>
                         <button
                           className="bg-red-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-red-700 transition-colors"
-                          onClick={() => handleDelete(lead._id)}
+                          onClick={() => handleDelete(item._id)}
                         >
                           <Trash size={14} className="mr-1" /> Delete
                         </button>
+                        {activeTab === "groups" && (
+                          <button
+                            className="bg-blue-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-blue-600 transition-colors"
+                            onClick={() => {
+                              setSelectedLeads([]); // Reset selected leads
+                              handleAddMembers(item._id);
+                            }}
+                          >
+                            <Users size={14} className="mr-1" /> Members
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -571,24 +609,39 @@ const LeadsTable = () => {
         )}
 
         {/* Pagination Section */}
-        <PaginationSection
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          totalPages={totalPages}
-        />
+        <div className="flex justify-center items-center mt-6 space-x-4">
+          <button
+            className="bg-white border border-gray-300 rounded-l-md px-4 py-2 flex items-center text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-gray-700">
+            Page {currentPage} of {totalPages || 1}
+          </span>
+          <button
+            className="bg-white border border-gray-300 rounded-r-md px-4 py-2 flex items-center text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
 
-        {/* Add Lead Modal */}
+        {/* Add Modal */}
         {showAddModal && (
-          <AddLeadModel
+          <AddLeadModal
             handleAddSubmit={handleAddSubmit}
             handleChange={handleChange}
             formData={formData}
             formErrors={formErrors}
             setShowAddModal={setShowAddModal}
+            activeTab={activeTab}
           />
         )}
 
-        {/* Edit Lead Modal */}
+        {/* Edit Modal */}
         {showEditModal && (
           <EditLeadModal
             formData={formData}
@@ -596,6 +649,7 @@ const LeadsTable = () => {
             handleChange={handleChange}
             handleEditSubmit={handleEditSubmit}
             setShowEditModal={setShowEditModal}
+            activeTab={activeTab}
           />
         )}
       </div>
