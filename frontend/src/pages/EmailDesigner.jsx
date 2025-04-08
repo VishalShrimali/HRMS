@@ -45,9 +45,24 @@ const EmailDesigner = () => {
     };
 
     const handleDelete = async (id) => {
-        await deleteEmail(id);
-        fetchEmails();
+        if (!window.confirm("Are you sure you want to delete this email and its template?")) return;
+    
+        try {
+            // Delete the email record
+            await deleteEmail(id);
+    
+            // Delete the associated template
+            await fetch(`http://localhost:8000/api/v1/templates/email/${id}`, {
+                method: "DELETE",
+            });
+    
+            fetchEmails(); // Refresh email list
+        } catch (error) {
+            console.error("❌ Error deleting email or template:", error);
+            alert("❌ Failed to delete email or template.");
+        }
     };
+    
 
     const handleCloseModal = () => {
         setShowModal(false);

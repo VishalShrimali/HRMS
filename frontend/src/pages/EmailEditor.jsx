@@ -168,8 +168,9 @@ const CustomEmailEditor = () => {
                 };
 
                     try {
-                        const response = await fetch("http://localhost:8000/api/v1/templates", {
-                            method: "POST",
+                        const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, 
+                            {
+                            method: "PUT",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(payload),
                         });

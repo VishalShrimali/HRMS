@@ -128,5 +128,18 @@ router.post("/send", async (req, res) => {
       res.status(500).json({ message: "Server error" });
     }
   });
-  console.log("🚀 Template routes loaded");
+
+  router.delete('/email/:emailId', async (req, res) => {
+    const { emailId } = req.params;
+    try {
+        const deleted = await Template.findOneAndDelete({ emailId });
+        if (!deleted) {
+            return res.status(404).json({ message: 'Template not found' });
+        }
+        res.json({ message: 'Template deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 export default router;
