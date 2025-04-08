@@ -23,7 +23,7 @@ const Leads = () => {
       setLeads(data);
     } catch (err) {
       setError('Failed to fetch leads. Please log in.');
-      navigate('/login');
+      navigate('/auth/login');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ const Leads = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    navigate('/login');
+    navigate('/auth/login');
   };
 
   return (

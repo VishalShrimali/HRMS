@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    country: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    country: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -22,11 +22,11 @@ const Register = () => {
     e.preventDefault();
     console.log("Submitting form data:", formData); // Debugging log
     try {
-      await axios.post('http://localhost:8000/api/v1/user/register', formData);
-      navigate('/login');
+      await axios.post("http://localhost:8000/api/v1/user/register", formData);
+      navigate("/auth/login");
     } catch (err) {
       console.error("Error during registration:", err.response?.data); // Debugging log
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
     }
   };
 
@@ -110,10 +110,10 @@ const Register = () => {
           </button>
         </form>
         <p className="mt-4 text-center">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-500 hover:underline">
+          Already have an account?{" "}
+          <Link to="/auth/login" className="text-blue-500 hover:underline">
             Login
-          </a>
+          </Link>
         </p>
       </div>
     </div>

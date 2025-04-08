@@ -34,7 +34,7 @@ const Navbar = ({ toggleSidebar, setIsAuthenticated }) => {
     localStorage.removeItem("adminName");
     window.dispatchEvent(new Event("storage")); 
     setIsAuthenticated(false);
-    navigate("/login");
+    navigate("/auth/login");
   };
 
   return (
@@ -77,7 +77,7 @@ const Navbar = ({ toggleSidebar, setIsAuthenticated }) => {
           </div>
         ) : (
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/auth/login")}
             className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors duration-200"
           >
             Sign In

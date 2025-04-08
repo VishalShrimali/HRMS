@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Login = ({ setIsAuthenticated }) => {
@@ -64,15 +64,15 @@ const Login = ({ setIsAuthenticated }) => {
           </button>
         </form>
         <p className="mt-4 text-center">
-          <a href="/forgot-password" className="text-blue-500 hover:underline">
+          <Link to="/auth/password/forgot" className="text-blue-500 hover:underline">
             Forgot Password?
-          </a>
+          </Link>
         </p>
         <p className="mt-2 text-center">
           Don’t have an account?{' '}
-          <a href="/register" className="text-blue-500 hover:underline">
-            Register
-          </a>
+          <Link to="/auth/register" className="text-blue-500 hover:underline">
+            Forgot Password?
+          </Link>
         </p>
       </div>
     </div>
