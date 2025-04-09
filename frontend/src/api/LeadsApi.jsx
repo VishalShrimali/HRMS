@@ -1,17 +1,10 @@
-import axios from "axios";
+import { API } from "./BASEURL";
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const api = API();
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-export const getLeads = async (config = {}) => {
+export const getLeads = async () => {
   try {
-    const response = await api.get("/leads", config);
+    const response = await api.get("/leads");
     return response.data;
   } catch (error) {
     console.error("Error fetching leads:", error);
@@ -19,9 +12,9 @@ export const getLeads = async (config = {}) => {
   }
 };
 
-export const addLead = async (leadData, config = {}) => {
+export const addLead = async (leadData) => {
   try {
-    const response = await api.post("/leads/addlead", leadData, config);
+    const response = await api.post("/leads/addlead", leadData);
     return response.data;
   } catch (error) {
     console.error("Error adding lead:", error);
@@ -29,9 +22,9 @@ export const addLead = async (leadData, config = {}) => {
   }
 };
 
-export const deleteLead = async (leadId, config = {}) => {
+export const deleteLead = async (leadId) => {
   try {
-    await api.delete(`/leads/${leadId}`, config);
+    await api.delete(`/leads/${leadId}`);
   } catch (error) {
     console.error("Error deleting lead:", error);
     throw error;
@@ -39,13 +32,13 @@ export const deleteLead = async (leadId, config = {}) => {
 };
 
 export const getGroups = async () => {
-  const response = await axios.get("/groups"); // use your actual endpoint
+  const response = await api.get("/groups"); // use your actual endpoint
   return response.data;
 };
 
-export const updateLead = async (leadId, updatedData, config = {}) => {
+export const updateLead = async (leadId, updatedData) => {
   try {
-    const response = await api.put(`/leads/${leadId}`, updatedData, config);
+    const response = await api.put(`/leads/${leadId}`, updatedData);
     return response.data;
   } catch (error) {
     console.error("Error updating lead:", error);

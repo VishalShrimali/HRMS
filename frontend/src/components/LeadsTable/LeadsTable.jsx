@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
-import {
-  Search,
-  Upload,
-  Download,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Trash,
-  Users,
-} from "lucide-react";
+import { Search, Users } from "lucide-react";
 import AddLeadModel from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
@@ -54,21 +44,13 @@ const LeadsTable = () => {
     phone: "",
   });
 
-  const token = localStorage.getItem("token");
-  const apiConfig = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-
   const fileInputRef = useRef(null);
 
   // Fetch leads from API with sanitization
-  const fetchLeads = async () => {
+  const fetchLeads = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getLeads(apiConfig);
-      console.log("Raw API Response:", data);
+      const data = await getLeads();
       const leadsArray = Array.isArray(data.leads)
         ? data.leads
         : Array.isArray(data)
@@ -78,21 +60,19 @@ const LeadsTable = () => {
         (lead) =>
           lead && typeof lead === "object" && lead.firstName && lead.lastName
       );
-      console.log("Sanitized Leads:", sanitizedLeads);
       setLeads(sanitizedLeads);
       setError(null);
     } catch (err) {
-      console.error("Fetch Leads Error:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
       setLeads([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [fetchLeads]);
 
   // Form validation
   const validateForm = () => {
@@ -143,11 +123,10 @@ const LeadsTable = () => {
     if (!validateForm()) return;
 
     try {
-      console.log("Adding Lead:", formData);
-      const response = await addLead(
-        { ...formData, date: new Date().toISOString() },
-        apiConfig
-      );
+      const response = await addLead({
+        ...formData,
+        date: new Date().toISOString(),
+      });
       setLeads(
         [...leads, response.lead].filter((lead) => lead && lead.firstName)
       );
@@ -156,7 +135,6 @@ const LeadsTable = () => {
       setError(null);
       fetchLeads();
     } catch (err) {
-      console.error("Add Lead Error:", err);
       setError(err.response?.data?.message || "Failed to add lead");
     }
   };
@@ -167,8 +145,7 @@ const LeadsTable = () => {
     if (!validateForm()) return;
 
     try {
-      console.log("Updating Lead:", editingLead._id, formData);
-      const response = await updateLead(editingLead._id, formData, apiConfig);
+      const response = await updateLead(editingLead._id, formData);
       setLeads(
         leads
           .map((lead) => (lead._id === editingLead._id ? response.lead : lead))
@@ -179,7 +156,6 @@ const LeadsTable = () => {
       setError(null);
       fetchLeads();
     } catch (err) {
-      console.error("Edit Lead Error:", err);
       setError(err.response?.data?.message || "Failed to update lead");
     }
   };
@@ -188,14 +164,12 @@ const LeadsTable = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
-        console.log("Deleting Lead ID:", id);
-        await deleteLead(id, apiConfig);
+        await deleteLead(id);
         setLeads(leads.filter((lead) => lead._id !== id));
         setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
         setError(null);
         fetchLeads();
       } catch (err) {
-        console.error("Delete Lead Error:", err);
         setError(err.response?.data?.message || "Failed to delete lead");
       }
     }
@@ -204,7 +178,6 @@ const LeadsTable = () => {
   // Handle Export to CSV
   const handleExport = () => {
     try {
-      console.log("Exporting Leads:", leads);
       const csv = [
         "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
         ...leads.map(
@@ -231,8 +204,7 @@ const LeadsTable = () => {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Export Error:", err);
-      setError("Failed to export leads");
+      setError("Failed to export leads : " + err);
     }
   };
 
@@ -264,31 +236,26 @@ const LeadsTable = () => {
         ] = row.split(",").map((item) => item.trim());
         if (firstName && lastName && email) {
           try {
-            console.log("Importing Lead:", { firstName, lastName, email });
-            await addLead(
-              {
-                firstName,
-                lastName,
-                email,
-                country,
-                phoneNumber,
-                secondPhoneNumber,
-                birthDate,
-                joinDate,
-                address: {
-                  line1,
-                  pincode,
-                  city,
-                  state,
-                  county,
-                  country: addressCountry,
-                },
-                date,
+            await addLead({
+              firstName,
+              lastName,
+              email,
+              country,
+              phoneNumber,
+              secondPhoneNumber,
+              birthDate,
+              joinDate,
+              address: {
+                line1,
+                pincode,
+                city,
+                state,
+                county,
+                country: addressCountry,
               },
-              apiConfig
-            );
+              date,
+            });
           } catch (err) {
-            console.error("Import Error:", err);
             setError(err.response?.data?.message || "Failed to import lead");
           }
         }
@@ -469,12 +436,11 @@ const LeadsTable = () => {
           </>
         )}
 
-        { activeTab === "groups" && (
+        {activeTab === "groups" && (
           <>
             <GroupsComponent />
           </>
         )}
-
       </div>
     </div>
   );
