@@ -55,8 +55,8 @@ export const importLeads = async (file) => {
   formData.append('file', file); // Matches server-side multer.single('file')
 
   try {
-    const res = await axios.post(
-      `${API_BASE_URL}/leads/importleads`,
+    const res = await api.post(
+      `/leads/importleads`,
       formData
       // No need to set Content-Type; Axios handles it automatically with FormData
     );
