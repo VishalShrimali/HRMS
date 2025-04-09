@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Component, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -11,14 +11,13 @@ import ResetPassword from "./pages/ResetPassword"; // Import ResetPassword
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import LeadTable from "./components/LeadsTable/LeadsTable";
-import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";
 import RolesManager from "./components/RolesManager/RolesManager";
 import EmailDesigner from "./pages/EmailDesigner";
 import CustomEmailEditor from "./pages/EmailEditor";
 
 const Protected = ({ isAuthenticated, children }) => {
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/auth/login" />;
 };
 
 function App() {
@@ -47,18 +46,25 @@ function App() {
             }
           />
           <Route path="roles" element={<RolesManager />} />
-          <Route path="emaildesigner" element={<EmailDesigner />} />
-          <Route path="emaileditor" element={<CustomEmailEditor />}/>
+          <Route path="email">
+            <Route index path="designer" element={<EmailDesigner />} />
+            <Route path="editor" element={<CustomEmailEditor />} />
+          </Route>
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
         </Route>
-        <Route
-          path="/login"
-          element={<Login setIsAuthenticated={setIsAuthenticated} />}
-        />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} /> {/* Add Reset Password route */}
-        <Route path="/register" element={<Register />} />
+        <Route path="auth">
+          <Route path="register" element={<Register />} />
+          <Route
+            path="login"
+            element={<Login setIsAuthenticated={setIsAuthenticated} />}
+          />
+          <Route path="password">
+            <Route path="forgot" element={<ForgotPassword />} />
+            <Route path="reset" element={<ResetPassword />} />{" "}
+          </Route>
+        </Route>
+        {/* Add Reset Password route */}
       </Routes>
     </Router>
   );

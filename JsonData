@@ -1,0 +1,354 @@
+[{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad99"
+  },
+  "firstName": "Aarav",
+  "lastName": "Shah",
+  "fullName": "Aarav Shah",
+  "email": "aarav.shah@example.com",
+  "phone": "9876543210",
+  "country": "India",
+  "password": "secureAarav@1",
+  "addresses": [
+    {
+      "line1": "101 Galaxy Heights",
+      "line2": "Near Shivaji Park",
+      "pincode": "400028",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": true,
+    "browserNotifications": true,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240101,
+    "lastLogin": "2025-04-06T12:00:00Z",
+    "passwordChangedAt": "2025-04-01T08:00:00Z",
+    "birthDate": "2000-06-15"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9a"
+  },
+  "firstName": "Meera",
+  "lastName": "Desai",
+  "fullName": "Meera Desai",
+  "email": "meera.desai@example.com",
+  "phone": "9812345678",
+  "country": "India",
+  "password": "Meera@1234",
+  "addresses": [
+    {
+      "line1": "12B Rosewood Apartments",
+      "pincode": "380015",
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": false,
+    "browserNotifications": false,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240214,
+    "lastLogin": "2025-03-30T14:45:00Z",
+    "passwordChangedAt": "2025-02-28T09:00:00Z",
+    "birthDate": "1999-11-25"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9b"
+  },
+  "firstName": "Kabir",
+  "lastName": "Verma",
+  "fullName": "Kabir Verma",
+  "email": "kabir.verma@example.com",
+  "phone": "9988776655",
+  "country": "India",
+  "password": "KabirSecure12",
+  "addresses": [
+    {
+      "line1": "Plot 45, Shanti Enclave",
+      "line2": "Sector 21",
+      "pincode": "122002",
+      "city": "Gurgaon",
+      "state": "Haryana",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "nonactive",
+    "whatsappMessageReceive": false,
+    "browserNotifications": false,
+    "emailReceive": false
+  },
+  "dates": {
+    "joinDate": 20240305,
+    "lastLogin": "2025-03-28T07:20:00Z",
+    "passwordChangedAt": "2025-03-15T10:30:00Z",
+    "birthDate": "1998-09-12"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9c"
+  },
+  "firstName": "Ishita",
+  "lastName": "Mehta",
+  "fullName": "Ishita Mehta",
+  "email": "ishita.mehta@example.com",
+  "phone": "9123456780",
+  "country": "India",
+  "password": "ishita2025!",
+  "addresses": [
+    {
+      "line1": "201 Lavender Towers",
+      "line2": "Nr. Citylight",
+      "pincode": "395007",
+      "city": "Surat",
+      "state": "Gujarat",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": true,
+    "browserNotifications": true,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240120,
+    "lastLogin": "2025-04-01T11:45:00Z",
+    "passwordChangedAt": "2025-03-29T15:00:00Z",
+    "birthDate": "2001-03-03"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9d"
+  },
+  "firstName": "Yash",
+  "lastName": "Jain",
+  "fullName": "Yash Jain",
+  "email": "yash.jain@example.com",
+  "phone": "9876501234",
+  "country": "India",
+  "password": "yashSecure456",
+  "addresses": [
+    {
+      "line1": "Bungalow 9",
+      "line2": "Hilltop View",
+      "pincode": "411001",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": false,
+    "browserNotifications": true,
+    "emailReceive": false
+  },
+  "dates": {
+    "joinDate": 20240310,
+    "lastLogin": "2025-04-05T16:10:00Z",
+    "passwordChangedAt": "2025-03-18T13:00:00Z",
+    "birthDate": "1997-07-07"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9e"
+  },
+  "firstName": "Simran",
+  "lastName": "Kapoor",
+  "fullName": "Simran Kapoor",
+  "email": "simran.kapoor@example.com",
+  "phone": "9012345678",
+  "country": "India",
+  "password": "simran7890",
+  "addresses": [
+    {
+      "line1": "402 Ocean Breeze",
+      "pincode": "600001",
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "nonactive",
+    "whatsappMessageReceive": true,
+    "browserNotifications": false,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240130,
+    "lastLogin": "2025-03-15T09:15:00Z",
+    "passwordChangedAt": "2025-03-10T12:30:00Z",
+    "birthDate": "2002-01-18"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ad9f"
+  },
+  "firstName": "Rohit",
+  "lastName": "Singh",
+  "fullName": "Rohit Singh",
+  "email": "rohit.singh@example.com",
+  "phone": "7894561230",
+  "country": "India",
+  "password": "rohit@4567",
+  "addresses": [
+    {
+      "line1": "Street 22",
+      "line2": "Main Bazaar",
+      "pincode": "110006",
+      "city": "Delhi",
+      "state": "Delhi",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": true,
+    "browserNotifications": true,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240315,
+    "lastLogin": "2025-04-02T10:00:00Z",
+    "passwordChangedAt": "2025-03-20T14:00:00Z",
+    "birthDate": "1995-12-30"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ada0"
+  },
+  "firstName": "Priya",
+  "lastName": "Nair",
+  "fullName": "Priya Nair",
+  "email": "priya.nair@example.com",
+  "phone": "9876512340",
+  "country": "India",
+  "password": "priyaSecure90",
+  "addresses": [
+    {
+      "line1": "Flat 18",
+      "line2": "Palm Residency",
+      "pincode": "682001",
+      "city": "Kochi",
+      "state": "Kerala",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "active",
+    "whatsappMessageReceive": false,
+    "browserNotifications": false,
+    "emailReceive": true
+  },
+  "dates": {
+    "joinDate": 20240322,
+    "lastLogin": "2025-04-04T08:15:00Z",
+    "passwordChangedAt": "2025-03-25T16:30:00Z",
+    "birthDate": "1996-04-12"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f2868f938ced601284ada1"
+  },
+  "firstName": "Dev",
+  "lastName": "Patel",
+  "fullName": "Dev Patel",
+  "email": "dev.patel@example.com",
+  "phone": "9090909090",
+  "country": "India",
+  "password": "devpatel321",
+  "addresses": [
+    {
+      "line1": "Block C",
+      "line2": "Near Nirma Circle",
+      "pincode": "382481",
+      "city": "Gandhinagar",
+      "state": "Gujarat",
+      "country": "India"
+    }
+  ],
+  "userPreferences": {
+    "policy": "nonactive",
+    "whatsappMessageReceive": true,
+    "browserNotifications": true,
+    "emailReceive": false
+  },
+  "dates": {
+    "joinDate": 20240401,
+    "lastLogin": "2025-04-05T18:20:00Z",
+    "passwordChangedAt": "2025-04-02T11:00:00Z",
+    "birthDate": "2000-10-10"
+  }
+},
+{
+  "_id": {
+    "$oid": "67f37eeb49a67e14472a6792"
+  },
+  "firstName": "Vishal",
+  "lastName": "Shrimali",
+  "fullName": "Vishal Shrimali",
+  "email": "devpatel12@gmail.com",
+  "phone": "08141912139",
+  "country": "USA (+1)",
+  "dates": {
+    "joinDate": 1744010987667,
+    "_id": {
+      "$oid": "67f37eeb49a67e14472a6793"
+    }
+  },
+  "addresses": [],
+  "createdAt": {
+    "$date": "2025-04-07T07:29:47.671Z"
+  },
+  "updatedAt": {
+    "$date": "2025-04-07T07:29:47.671Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67f3817749a67e14472a684e"
+  },
+  "firstName": "Vishal",
+  "lastName": "Shrimali",
+  "fullName": "Vishal Shrimali",
+  "email": "triadbyte12@gmail.com",
+  "phone": "08141912139",
+  "country": "USA (+1)",
+  "dates": {
+    "joinDate": 1744011639624,
+    "_id": {
+      "$oid": "67f3817749a67e14472a684f"
+    }
+  },
+  "addresses": [],
+  "createdAt": {
+    "$date": "2025-04-07T07:40:39.625Z"
+  },
+  "updatedAt": {
+    "$date": "2025-04-07T07:40:39.625Z"
+  },
+  "__v": 0
+}]
