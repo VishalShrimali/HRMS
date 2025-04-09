@@ -74,24 +74,25 @@ const LeadsTable = () => {
     fetchLeads();
   }, [fetchLeads]);
 
-  // Form validation
   const validateForm = () => {
     const errors = {};
     if (!formData.firstName) errors.firstName = "First Name is required";
     if (!formData.lastName) errors.lastName = "Last Name is required";
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = "Valid email is required";
-    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
-      errors.phoneNumber = "Valid 10-digit phone number is required";
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Valid email is required";
+    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber)) errors.phoneNumber = "Valid 10-digit phone number is required";
     if (!formData.phone) errors.phone = "Phone is required";
     if (!formData.birthDate) errors.birthDate = "Birth Date is required";
     if (!formData.joinDate) errors.joinDate = "Join Date is required";
     if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
+<<<<<<< HEAD
+    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode)) errors.pincode = "Valid pincode is required";
+=======
     if (
       !formData.address.pincode ||
       !/^[0-9]{5,6}$/.test(formData.address.pincode)
     )
       errors.pincode = "Valid pincode is required";
+>>>>>>> e7a496821d0c13554a2b2d9b9ed88d63450fcdfe
     if (!formData.address.city) errors.city = "City is required";
     if (!formData.address.state) errors.state = "State is required";
     if (!formData.address.country) errors.country = "Country is required";
@@ -99,7 +100,6 @@ const LeadsTable = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name.startsWith("address.")) {
@@ -117,11 +117,9 @@ const LeadsTable = () => {
     setFormErrors({ ...formErrors, [name]: "" });
   };
 
-  // Handle Add Lead submission
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     try {
       const response = await addLead({
         ...formData,
@@ -130,6 +128,7 @@ const LeadsTable = () => {
       setLeads(
         [...leads, response.lead].filter((lead) => lead && lead.firstName)
       );
+>>>>>>> e7a496821d0c13554a2b2d9b9ed88d63450fcdfe
       setShowAddModal(false);
       resetForm();
       setError(null);
@@ -139,11 +138,9 @@ const LeadsTable = () => {
     }
   };
 
-  // Handle Edit Lead submission
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     try {
       const response = await updateLead(editingLead._id, formData);
       setLeads(
@@ -160,7 +157,6 @@ const LeadsTable = () => {
     }
   };
 
-  // Handle Delete Lead
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
@@ -175,7 +171,6 @@ const LeadsTable = () => {
     }
   };
 
-  // Handle Export to CSV
   const handleExport = () => {
     try {
       const csv = [
@@ -208,9 +203,26 @@ const LeadsTable = () => {
     }
   };
 
-  // Handle Import from CSV
   const handleImport = async (event) => {
     const file = event.target.files[0];
+<<<<<<< HEAD
+    if (!file) {
+      setError('No file selected');
+      return;
+    }
+  
+    try {
+      console.log('Uploading file:', file.name, file.size, file.type); // Debug log
+      const response = await importLeads(file); // Get the response data
+      console.log('Import successful:', response); // Log success
+      await fetchLeads();
+      setError(null); // Clear errors on success
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to import leads';
+      console.error('Import failed:', errorMessage, err); // Log full error
+      setError(errorMessage); // Display error to user
+    }
+=======
     if (!file) return;
 
     const reader = new FileReader();
@@ -263,9 +275,10 @@ const LeadsTable = () => {
       fetchLeads();
     };
     reader.readAsText(file);
+>>>>>>> e7a496821d0c13554a2b2d9b9ed88d63450fcdfe
   };
+  
 
-  // Reset form data
   const resetForm = () => {
     setFormData({
       firstName: "",
@@ -292,7 +305,6 @@ const LeadsTable = () => {
     setFormErrors({});
   };
 
-  // Handle lead selection
   const handleSelectLead = (id) => {
     setSelectedLeads((prev) =>
       prev.includes(id) ? prev.filter((leadId) => leadId !== id) : [...prev, id]
@@ -307,7 +319,6 @@ const LeadsTable = () => {
     }
   };
 
-  // Filter and paginate leads with defensive check
   const filteredLeads = leads.filter((lead) =>
     lead && lead.firstName && lead.lastName
       ? (lead.firstName + " " + lead.lastName)
@@ -315,6 +326,7 @@ const LeadsTable = () => {
           .includes(searchTerm.toLowerCase())
       : false
   );
+
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
   const paginatedLeads = filteredLeads.slice(
     (currentPage - 1) * rowsPerPage,
@@ -447,3 +459,5 @@ const LeadsTable = () => {
 };
 
 export default LeadsTable;
+
+

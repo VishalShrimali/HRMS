@@ -1,10 +1,14 @@
 import express from 'express';
+import upload from '../middleware/upload.middleware.js';
+
 import {
     getLeads,
     getLeadById,
     createLead,
     updateLead,
     deleteLead,
+     exportLeads,
+    importLeads,
     
 } from '../controllers/leads.controllers.js';
 import { authorizeRole } from '../middleware/auth.middlware.js';
@@ -39,7 +43,8 @@ leadsRouter.get('/:id', (req, res, next) => {
 }, getLeadById); // Get a single lead by ID
 
 leadsRouter.post('/addlead', createLead); // Create a new lead
-
+leadsRouter.post('/importleads', upload.single('file'), importLeads); // Create a new lead
+leadsRouter.get('/export', exportLeads)
 leadsRouter.put('/:id', updateLead); // Update a lead by ID
 
 leadsRouter.delete('/:id', (req, res, next) => {

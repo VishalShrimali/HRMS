@@ -12,6 +12,7 @@
   "dependencies": {
     "@shadcn/ui": "^0.0.4",
     "axios": "^1.8.3",
+    "blob": "^0.1.0",
     "bootstrap": "^5.3.3",
     "lucide-react": "^0.483.0",
     "papaparse": "^5.5.2",
