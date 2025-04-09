@@ -53,4 +53,55 @@ export const updateLead = async (leadId, updatedData, config = {}) => {
   }
 };
 
+export const importLeads = async (file) => {
+  if (!file) {
+    throw new Error('No file provided');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file); // Matches server-side multer.single('file')
+
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/leads/importleads`,
+      formData
+      // No need to set Content-Type; Axios handles it automatically with FormData
+    );
+    return res.data; // Should return { message: "Leads imported successfully", importedCount: X }
+  } catch (error) {
+    // Extract a meaningful error message
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Failed to import leads';
+
+    console.error('Error importing leads:', errorMessage, error);
+
+    // Throw a new error with a user-friendly message
+    throw new Error(errorMessage);
+  }
+};
+export const exportLeads = async () => {
+  try {
+    const response = await api.get('/leads/export', {
+      responseType: 'blob', // Important for file downloads
+    });
+
+    const blob = new Blob([response.data], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'leads_export.csv';
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error exporting leads:", error);
+    throw error;
+  }
+};
+
+
 export default api;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
+import { getLeads, addLead, updateLead, deleteLead, importLeads } from "../../api/LeadsApi";
 import {
   Search, Upload, Download, Plus, ChevronLeft, ChevronRight,
   Edit, Trash, Users, X
@@ -52,19 +52,15 @@ const LeadsTable = () => {
 
   const fileInputRef = useRef(null);
 
-  // Fetch leads from API with sanitization
   const fetchLeads = async () => {
     setLoading(true);
     try {
       const data = await getLeads(apiConfig);
-      console.log("Raw API Response:", data);
       const leadsArray = Array.isArray(data.leads) ? data.leads : Array.isArray(data) ? data : [];
       const sanitizedLeads = leadsArray.filter((lead) => lead && typeof lead === "object" && lead.firstName && lead.lastName);
-      console.log("Sanitized Leads:", sanitizedLeads);
       setLeads(sanitizedLeads);
       setError(null);
     } catch (err) {
-      console.error("Fetch Leads Error:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
       setLeads([]);
     } finally {
@@ -76,21 +72,17 @@ const LeadsTable = () => {
     fetchLeads();
   }, []);
 
-  // Form validation
   const validateForm = () => {
     const errors = {};
     if (!formData.firstName) errors.firstName = "First Name is required";
     if (!formData.lastName) errors.lastName = "Last Name is required";
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = "Valid email is required";
-    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
-      errors.phoneNumber = "Valid 10-digit phone number is required";
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Valid email is required";
+    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber)) errors.phoneNumber = "Valid 10-digit phone number is required";
     if (!formData.phone) errors.phone = "Phone is required";
     if (!formData.birthDate) errors.birthDate = "Birth Date is required";
     if (!formData.joinDate) errors.joinDate = "Join Date is required";
     if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
-    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode))
-      errors.pincode = "Valid pincode is required";
+    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode)) errors.pincode = "Valid pincode is required";
     if (!formData.address.city) errors.city = "City is required";
     if (!formData.address.state) errors.state = "State is required";
     if (!formData.address.country) errors.country = "Country is required";
@@ -98,7 +90,6 @@ const LeadsTable = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name.startsWith("address.")) {
@@ -116,13 +107,10 @@ const LeadsTable = () => {
     setFormErrors({ ...formErrors, [name]: "" });
   };
 
-  // Handle Add Lead submission
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     try {
-      console.log("Adding Lead:", formData);
       const response = await addLead({ ...formData, date: new Date().toISOString() }, apiConfig);
       setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
       setShowAddModal(false);
@@ -130,18 +118,14 @@ const LeadsTable = () => {
       setError(null);
       fetchLeads();
     } catch (err) {
-      console.error("Add Lead Error:", err);
       setError(err.response?.data?.message || "Failed to add lead");
     }
   };
 
-  // Handle Edit Lead submission
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     try {
-      console.log("Updating Lead:", editingLead._id, formData);
       const response = await updateLead(editingLead._id, formData, apiConfig);
       setLeads(leads.map((lead) => (lead._id === editingLead._id ? response.lead : lead)).filter((lead) => lead && lead.firstName));
       setShowEditModal(false);
@@ -149,32 +133,26 @@ const LeadsTable = () => {
       setError(null);
       fetchLeads();
     } catch (err) {
-      console.error("Edit Lead Error:", err);
       setError(err.response?.data?.message || "Failed to update lead");
     }
   };
 
-  // Handle Delete Lead
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
-        console.log("Deleting Lead ID:", id);
         await deleteLead(id, apiConfig);
         setLeads(leads.filter((lead) => lead._id !== id));
         setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
         setError(null);
         fetchLeads();
       } catch (err) {
-        console.error("Delete Lead Error:", err);
         setError(err.response?.data?.message || "Failed to delete lead");
       }
     }
   };
 
-  // Handle Export to CSV
   const handleExport = () => {
     try {
-      console.log("Exporting Leads:", leads);
       const csv = [
         "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
         ...leads.map((lead) =>
@@ -190,44 +168,31 @@ const LeadsTable = () => {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Export Error:", err);
       setError("Failed to export leads");
     }
   };
 
-  // Handle Import from CSV
   const handleImport = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const rows = e.target.result.split("\n").slice(1);
-      for (const row of rows) {
-        const [
-          firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
-          birthDate, joinDate, line1, pincode, city, state, county, addressCountry, date
-        ] = row.split(",").map((item) => item.trim());
-        if (firstName && lastName && email) {
-          try {
-            console.log("Importing Lead:", { firstName, lastName, email });
-            await addLead({
-              firstName, lastName, email, country, phoneNumber, secondPhoneNumber,
-              birthDate, joinDate, address: { line1, pincode, city, state, county, country: addressCountry },
-              date
-            }, apiConfig);
-          } catch (err) {
-            console.error("Import Error:", err);
-            setError(err.response?.data?.message || "Failed to import lead");
-          }
-        }
-      }
-      fetchLeads();
-    };
-    reader.readAsText(file);
+    if (!file) {
+      setError('No file selected');
+      return;
+    }
+  
+    try {
+      console.log('Uploading file:', file.name, file.size, file.type); // Debug log
+      const response = await importLeads(file); // Get the response data
+      console.log('Import successful:', response); // Log success
+      await fetchLeads();
+      setError(null); // Clear errors on success
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to import leads';
+      console.error('Import failed:', errorMessage, err); // Log full error
+      setError(errorMessage); // Display error to user
+    }
   };
+  
 
-  // Reset form data
   const resetForm = () => {
     setFormData({
       firstName: "",
@@ -254,7 +219,6 @@ const LeadsTable = () => {
     setFormErrors({});
   };
 
-  // Handle lead selection
   const handleSelectLead = (id) => {
     setSelectedLeads((prev) =>
       prev.includes(id) ? prev.filter((leadId) => leadId !== id) : [...prev, id]
@@ -269,12 +233,12 @@ const LeadsTable = () => {
     }
   };
 
-  // Filter and paginate leads with defensive check
   const filteredLeads = leads.filter((lead) =>
     lead && lead.firstName && lead.lastName
       ? (lead.firstName + " " + lead.lastName).toLowerCase().includes(searchTerm.toLowerCase())
       : false
   );
+
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
   const paginatedLeads = filteredLeads.slice(
     (currentPage - 1) * rowsPerPage,
@@ -494,5 +458,6 @@ const LeadsTable = () => {
   );
 };
 
-
 export default LeadsTable;
+
+
