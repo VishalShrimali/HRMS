@@ -3,6 +3,9 @@ import fs from 'fs'; // Regular fs for streams
 import csv from 'csv-parser';
 import validator from 'validator';
 import { Lead } from '../models/leads.models.js';
+import mongoose from 'mongoose';
+import { Parser } from 'json2csv';
+import { log } from 'console';
 
 
 // Centralized error handler
@@ -25,21 +28,24 @@ export const getLeads = async (req, res) => {
 
 // Fetch lead by ID
 export const getLeadById = async (req, res) => {
-    console.log("Fetching lead with ID:", req.params.id); // Debugging
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({ message: 'Invalid lead ID' });
+    }
+
     try {
-        const lead = await Lead.findById(req.params.id);
+        const lead = await Lead.findById(id);
         if (!lead) {
-            return res.status(404).json({ message: "Lead not found" });
+            return res.status(404).json({ message: 'Lead not found' });
         }
-        console.log("Fetched lead details:", lead); // Debugging
         res.status(200).json(lead);
     } catch (error) {
-        console.error("Error fetching lead by ID:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error('Error fetching lead by ID:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
-
-
 
 // Create a new lead
 export const createLead = async (req, res) => {
@@ -164,101 +170,79 @@ export const deleteLead = async (req, res) => {
     }
 };
 
-
-
 export const importLeads = async (req, res) => {
-    try {
-      console.log("Uploaded file info:", req.file);
+  try {
+    const rows = req.body; // Now expecting an array of lead objects (from PapaParse)
+    const leads = [];
+    const errors = [];
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ message: 'No data provided.' });
+    }
+
+    const sanitize = (val) => (typeof val === 'string' ? val.trim() : '');
+
+    rows.forEach((row, index) => {
+      const fullName = `${sanitize(row['First Name'])} ${sanitize(row['Last Name'])}`.trim();
+      const email = sanitize(row['Email']);
+
+      if (!fullName) {
+        errors.push(`Row ${index + 1}: Missing name`);
+        return;
+      }
+
+      if (!email || !validator.isEmail(email)) {
+        errors.push(`Row ${index + 1}: Invalid or missing email`);
+        return;
+      }
+
+      const lead = {
+        name: fullName,
+        email: email.toLowerCase(),
+        country: sanitize(row['Country']),
+        phoneNumber: sanitize(row['Phone Number']),
+        birthDate: row['Birth Date'] ? new Date(row['Birth Date']) : null,
+        joinDate: row['Join Date'] ? new Date(row['Join Date']) : null,
+        address: {
+          line1: sanitize(row['Address Line 1']),
+          pincode: sanitize(row['Pincode']),
+          city: sanitize(row['City']),
+          state: sanitize(row['State']),
+          country: sanitize(row['Address Country']),
+        },
+        createdAt: new Date(),
+      };
+      console.log(lead);
       
-      if (!req.file?.path || !req.file.originalname.endsWith('.csv')) {
-        return res.status(400).json({ 
-          message: 'Please upload a valid CSV file' 
-        });
-      }
-  
-      const filePath = req.file.path;
-      const leads = [];
-      const errors = [];
-  
-      await new Promise((resolve, reject) => {
-        fs.createReadStream(filePath)
-          .pipe(csv())
-          .on('data', (row) => {
-            console.log('Parsed CSV row:', row); // For debugging
-  
-            // Combine First Name and Last Name into a single name field
-            const fullName = `${row['First Name']?.trim() || ''} ${row['Last Name']?.trim() || ''}`.trim();
-            if (!fullName) {
-              errors.push(`Missing name in row: ${JSON.stringify(row)}`);
-              return;
-            }
-  
-            if (!row.Email?.trim() || !validator.isEmail(row.Email.trim())) {
-              errors.push(`Invalid email in row: ${JSON.stringify(row)}`);
-              return;
-            }
-  
-            leads.push({
-              name: fullName,
-              email: row.Email.trim().toLowerCase(),
-              country: row.Country || '',
-              phoneNumber: row['Phone Number'] || '',
-              birthDate: row['Birth Date'] ? new Date(row['Birth Date']) : null,
-              joinDate: row['Join Date'] || null,
-              address: {
-                line1: row['Address Line 1'] || '',
-                pincode: row.Pincode || '',
-                city: row.City || '',
-                state: row.State || '',
-                country: row['Address Country'] || ''
-              },
-              createdAt: new Date()
-            });
-          })
-          .on('end', () => {
-            console.log('Total leads parsed:', leads.length);
-            console.log('Errors:', errors);
-            resolve();
-          })
-          .on('error', reject);
-      });
-  
-      if (leads.length === 0) {
-        return res.status(400).json({ 
-          message: 'No valid leads found in CSV',
-          errors: errors.length > 0 ? errors : ['CSV file is empty or invalid format']
-        });
-      }
-  
-      const result = await Lead.insertMany(leads, { ordered: false });
-      await fsPromises.unlink(filePath);
-  
-      console.log(`Imported ${result.length} leads successfully`);
-      return res.status(200).json({
-        message: 'Leads imported successfully',
-        importedCount: result.length,
-        errors: errors.length > 0 ? errors : undefined
-      });
-  
-    } catch (error) {
-      if (req.file?.path) {
-        try {
-          await fsPromises.unlink(req.file.path);
-        } catch (cleanupError) {
-          console.error('Error cleaning up file:', cleanupError);
-        }
-      }
-  
-      console.error('Error importing leads:', error);
-      return res.status(500).json({ 
-        message: 'Failed to import leads',
-        error: error.message || 'An unexpected error occurred'
+      leads.push(lead);
+    });
+
+    if (leads.length === 0) {
+      return res.status(400).json({
+        message: 'No valid leads found.',
+        errors: errors.length ? errors : ['Empty or invalid data'],
       });
     }
-  };
 
- // Adjust path if needed
- export const exportLeads = async (req, res) => {
+    const result = await Lead.insertMany(leads, { ordered: false });
+
+    res.status(200).json({
+      message: 'Leads imported successfully!',
+      importedCount: result.length,
+      failedCount: errors.length,
+      errors: errors.length ? errors : undefined,
+    });
+  } catch (error) {
+    console.error('Import Error:', error);
+    res.status(500).json({
+      message: 'Failed to import leads',
+      error: error.message || 'Something went wrong',
+    });
+  }
+};
+
+//  Adjust path if needed
+export const exportLeads = async (req, res) => {
     try {
         const leads = await Lead.find();
 
@@ -300,4 +284,25 @@ export const importLeads = async (req, res) => {
         res.status(500).json({ message: "Failed to export leads" });
     }
 };
+
+// export const exportLeads = async () => {
+//   try {
+//     const response = await api.get('/leads/export', {
+//       responseType: 'blob', // Important for file downloads
+//     });
+
+//     const blob = new Blob([response.data], { type: 'text/csv' });
+//     const url = window.URL.createObjectURL(blob);
+
+//     const a = document.createElement('a');
+//     a.href = url;
+//     a.download = 'leads_export.csv';
+//     a.click();
+
+//     window.URL.revokeObjectURL(url);
+//   } catch (error) {
+//     console.error('Error exporting leads:', error);
+//     throw error;
+//   }
+// };
 

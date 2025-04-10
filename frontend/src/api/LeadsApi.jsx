@@ -1,5 +1,6 @@
 import { API } from "./BASEURL";
 import axios from "axios";
+import Papa from "papaparse"; // Install this library using `npm install papaparse`
 
 const api = API();
 
@@ -52,18 +53,46 @@ export const importLeads = async (file) => {
     throw new Error('No file provided');
   }
 
-  const formData = new FormData();
-  formData.append('file', file); // Matches server-side multer.single('file')
-
   try {
-    const res = await api.post(
-      `/leads/importleads`,
-      formData
-      // No need to set Content-Type; Axios handles it automatically with FormData
-    );
-    return res.data; // Should return { message: "Leads imported successfully", importedCount: X }
+    // Parse the CSV file into JSON
+    const jsonData = await new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => resolve(results.data),
+        error: (error) => reject(error),
+      });
+    });
+
+    console.log('Parsed JSON data:', jsonData);
+
+    if (!Array.isArray(jsonData) || jsonData.length === 0) {
+      throw new Error('The uploaded CSV file is empty or invalid.');
+    }
+
+    // 🔄 Map camelCase keys to the backend's expected headers
+    const convertKeys = (row) => ({
+      'First Name': row.firstName || '',
+      'Last Name': row.lastName || '',
+      'Email': row.email || '',
+      'Phone Number': row.phone || '',
+      'Second Phone Number': row.secondPhoneNumber || '',
+      'Birth Date': row.birthDate || '',
+      'Join Date': row.joinDate || '',
+      'Address Line 1': row.addressLine1 || '',
+      'Pincode': row.pincode || '',
+      'City': row.city || '',
+      'State': row.state || '',
+      'Country': row.country || '',
+      'Address Country': row.addressCountry || '',
+    });
+
+    const formattedData = jsonData.map(convertKeys);
+
+    // ✅ Send formatted data to backend
+    const response = await api.post('/leads/importleads', formattedData);
+    return response.data;
   } catch (error) {
-    // Extract a meaningful error message
     const errorMessage =
       error.response?.data?.message ||
       error.response?.data?.error ||
@@ -71,11 +100,11 @@ export const importLeads = async (file) => {
       'Failed to import leads';
 
     console.error('Error importing leads:', errorMessage, error);
-
-    // Throw a new error with a user-friendly message
     throw new Error(errorMessage);
   }
 };
+
+
 export const exportLeads = async () => {
   try {
     const response = await api.get('/leads/export', {
@@ -92,7 +121,7 @@ export const exportLeads = async () => {
 
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    console.error("Error exporting leads:", error);
+    console.error('Error exporting leads:', error);
     throw error;
   }
 };
@@ -107,6 +136,5 @@ export const getLeadById = async (leadId) => {
     throw error;
   }
 };
-
 
 export default api;

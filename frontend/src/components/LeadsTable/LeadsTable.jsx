@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getLeads, addLead, updateLead, deleteLead, getLeadById } from "../../api/LeadsApi";
+import { getLeads, addLead, updateLead, deleteLead, getLeadById, importLeads, exportLeads } from "../../api/LeadsApi";
 import { Search, Users } from "lucide-react";
 import AddLeadModel from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
@@ -172,92 +172,33 @@ const LeadsTable = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const csv = [
-        "First Name,Last Name,Email,Country,Phone Number,Second Phone Number,Birth Date,Join Date,Address Line 1,Pincode,City,State,County,Country,Date",
-        ...leads.map(
-          (lead) =>
-            `${lead.firstName || ""},${lead.lastName || ""},${
-              lead.email || ""
-            },${lead.country || "N/A"},${lead.phoneNumber || "N/A"},${
-              lead.secondPhoneNumber || "N/A"
-            },${lead.birthDate || "N/A"},${lead.joinDate || "N/A"},${
-              lead.address?.line1 || "N/A"
-            },${lead.address?.pincode || "N/A"},${
-              lead.address?.city || "N/A"
-            },${lead.address?.state || "N/A"},${
-              lead.address?.county || "N/A"
-            },${lead.address?.country || "N/A"},${lead.date || "N/A"}`
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "leads.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await exportLeads(); // This will trigger the download
+      setError(null);
     } catch (err) {
-      setError("Failed to export leads : " + err);
+      console.error("Export Error:", err);
+      setError("Failed to export leads");
     }
   };
 
   const handleImport = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      setError("No file selected");
+      console.error("Import Error: No file selected");
+      return;
+    }
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const rows = e.target.result.split("\n").slice(1);
-      for (const row of rows) {
-        const [
-          firstName,
-          lastName,
-          email,
-          country,
-          phoneNumber,
-          secondPhoneNumber,
-          birthDate,
-          joinDate,
-          line1,
-          pincode,
-          city,
-          state,
-          county,
-          addressCountry,
-          date,
-        ] = row.split(",").map((item) => item.trim());
-        if (firstName && lastName && email) {
-          try {
-            await addLead({
-              firstName,
-              lastName,
-              email,
-              country,
-              phoneNumber,
-              secondPhoneNumber,
-              birthDate,
-              joinDate,
-              address: {
-                line1,
-                pincode,
-                city,
-                state,
-                county,
-                country: addressCountry,
-              },
-              date,
-            });
-          } catch (err) {
-            setError(err.response?.data?.message || "Failed to import lead");
-          }
-        }
-      }
-      fetchLeads();
-    };
-    reader.readAsText(file);
+    try {
+      const response = await importLeads(file);
+      console.log("Import Response:", response);
+      fetchLeads(); // Refresh the leads list
+      setError(null);
+    } catch (err) {
+      console.error("Import Error:", err.response || err.message || err);
+      setError(err.message || "Failed to import leads");
+    }
   };
 
   const handleOpenAddModal = () => {

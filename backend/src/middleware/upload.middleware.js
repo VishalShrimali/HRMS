@@ -1,70 +1,56 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import { fileURLToPath } from 'url';
-import fs from 'fs/promises';
 
+// Fix for __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer storage configuration
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error);
-    }
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    try {
-      const ext = path.extname(file.originalname);
-      const basename = path.basename(file.originalname, ext);
-      const sanitizedName = basename.replace(/[^a-zA-Z0-9]/g, '-');
-      const uniqueName = `${Date.now()}-${sanitizedName}${ext}`;
-      cb(null, uniqueName);
-    } catch (error) {
-      cb(error);
-    }
-  }
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
 });
 
+// File filter to allow only CSV files
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['text/csv', 'application/vnd.ms-excel'];
+  const allowedTypes = ['text/csv'];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only CSV files are allowed'), false);
+    cb(new Error('Invalid file type. Only CSV files are allowed.'));
   }
 };
 
-// Create the Multer instance
+// Multer middleware
 const upload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 1,
-  }
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
-// Export the Multer instance as default
 export default upload;
 
-// Optionally export the custom middleware separately if needed
-export const uploadErrorHandler = (req, res, next) => {
-  upload.single('file')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      return res.status(400).json({
-        message: 'Upload error',
-        error: err.message
-      });
-    } else if (err) {
-      return res.status(400).json({
-        message: 'Invalid file',
-        error: err.message
-      });
+// Optional: Middleware for cleanup (in case you want to remove uploaded files on error)
+export const cleanupUploadedFile = async (req, res, next) => {
+  if (req.file?.path) {
+    try {
+      await fsPromises.unlink(req.file.path);
+    } catch (cleanupError) {
+      console.error('Error cleaning up file:', cleanupError);
     }
-    next();
-  });
+  }
+  next();
 };

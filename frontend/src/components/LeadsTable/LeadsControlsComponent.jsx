@@ -1,15 +1,28 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Upload, Download, Plus } from 'lucide-react';
-
+import { importLeads } from '../../api/LeadsApi'; // Ensure the correct path to LeadsApi
+import axios from 'axios';
+import Papa from 'papaparse'; // Ensure you have this library installed
 const LeadsControlsComponent = ({
-  fileInputRef,
-  handleImport,
   handleExport,
   rowsPerPage,
   setRowsPerPage,
   setCurrentPage,
   setShowAddModal,
 }) => {
+  const fileInputRef = useRef(null);
+
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return alert('Please select a file.');
+
+    try {
+      const response = await importLeads(file); // ✅ Now just pass the file
+      alert(response.message || 'Leads imported successfully!');
+    } catch (err) {
+      alert(err.message || 'Import failed');
+    }
+  };
   return (
     <div className="flex justify-between items-center mb-6">
       <div className="flex space-x-4">
