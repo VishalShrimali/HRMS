@@ -65,31 +65,7 @@ const LeadsTableComponent = ({
                 <td className="p-4 flex space-x-2">
                   <button
                     className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
-                    onClick={() => {
-                      setEditingLead(lead);
-                      setFormData({
-                        firstName: lead.firstName || '',
-                        lastName: lead.lastName || '',
-                        email: lead.email || '',
-                        country: lead.country || 'USA (+1)',
-                        phoneNumber: lead.phoneNumber || '',
-                        secondPhoneNumber: lead.secondPhoneNumber || '',
-                        birthDate: lead.birthDate || '',
-                        joinDate: lead.dates.joinDate || '',
-                        address: {
-                          line1: lead.address?.line1 || '',
-                          line2: lead.address?.line2 || '',
-                          line3: lead.address?.line3 || '',
-                          pincode: lead.address?.pincode || '',
-                          city: lead.address?.city || '',
-                          state: lead.address?.state || '',
-                          county: lead.address?.county || '',
-                          country: lead.address?.country || 'USA',
-                        },
-                        phone: lead.phone || '',
-                      });
-                      setShowEditModal(true);
-                    }}
+                    onClick={() => setEditingLead(lead._id)} // Ensure this is correctly triggering
                   >
                     <Edit size={14} className="mr-1" /> Edit
                   </button>

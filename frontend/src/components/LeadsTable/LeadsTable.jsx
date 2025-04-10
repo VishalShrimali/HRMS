@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getLeads, addLead, updateLead, deleteLead } from "../../api/LeadsApi";
+import { getLeads, addLead, updateLead, deleteLead, getLeadById } from "../../api/LeadsApi";
 import { Search, Users } from "lucide-react";
 import AddLeadModel from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
 import LeadsControlsComponent from "./LeadsControlsComponent";
 import LeadsTableComponent from "./LeadsTableComponent";
-import GroupsComponent from "./GroupsComponent";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
@@ -15,7 +14,7 @@ const LeadsTable = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingLead, setEditingLead] = useState(null);
+  const [editingLead, setEditingLeadState] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -42,7 +41,14 @@ const LeadsTable = () => {
       country: "USA",
     },
     phone: "",
+    userPreferences: {
+      policy: "active",
+      whatsappMessageReceive: false,
+      browserNotifications: false,
+      emailReceive: false,
+    },
   });
+  
 
   const fileInputRef = useRef(null);
 
@@ -253,7 +259,11 @@ const LeadsTable = () => {
     };
     reader.readAsText(file);
   };
-  
+
+  const handleOpenAddModal = () => {
+    resetForm(); // Reset the form data to initial empty values
+    setShowAddModal(true);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -276,8 +286,14 @@ const LeadsTable = () => {
         country: "USA",
       },
       phone: "",
+      userPreferences: {
+        policy: "active",
+        whatsappMessageReceive: false,
+        browserNotifications: false,
+        emailReceive: false,
+      },
     });
-    setEditingLead(null);
+    setEditingLeadState(null);
     setFormErrors({});
   };
 
@@ -292,6 +308,47 @@ const LeadsTable = () => {
       setSelectedLeads(paginatedLeads.map((lead) => lead._id));
     } else {
       setSelectedLeads([]);
+    }
+  };
+
+  const setEditingLead = async (leadId) => {
+    try {
+      const lead = await getLeadById(leadId);
+      console.log("API Response:", lead); // Debugging
+
+      // Extract the first address from the addresses array
+      const address = lead.addresses?.[0] || {};
+
+      setFormData({
+        firstName: lead.firstName || "",
+        lastName: lead.lastName || "",
+        email: lead.email || "",
+        phone: lead.phone || "",
+        birthDate: lead.dates?.birthDate || "",
+        joinDate: lead.dates?.joinDate || "",
+        address: {
+          line1: address.line1 || "",
+          line2: address.line2 || "",
+          line3: address.line3 || "",
+          pincode: address.pincode || "",
+          city: address.city || "",
+          state: address.state || "",
+          county: address.county || "",
+          country: address.country || "",
+        },
+        userPreferences: {
+          policy: lead.userPreferences?.policy || "active",
+          whatsappMessageReceive: lead.userPreferences?.whatsappMessageReceive || false,
+          browserNotifications: lead.userPreferences?.browserNotifications || false,
+          emailReceive: lead.userPreferences?.emailReceive || false,
+        },
+      });
+
+      setEditingLeadState(lead);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error("Failed to fetch lead details:", err);
+      setError("Failed to load lead data for editing");
     }
   };
 
@@ -365,6 +422,7 @@ const LeadsTable = () => {
 
         {activeTab === "personal" && (
           <>
+            {/* Add Lead Modal Trigger */}
             <LeadsControlsComponent
               fileInputRef={fileInputRef}
               handleExport={handleExport}
@@ -372,7 +430,7 @@ const LeadsTable = () => {
               rowsPerPage={rowsPerPage}
               setRowsPerPage={setRowsPerPage}
               setCurrentPage={setCurrentPage}
-              setShowAddModal={setShowAddModal}
+              setShowAddModal={handleOpenAddModal} // Use the new function here
             />
 
             {/* Table Section */}

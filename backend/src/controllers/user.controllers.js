@@ -139,7 +139,7 @@ export const loginUser = async (req, res) => {
         }
 
         // Generate token
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
         res.status(200).json({ 
             message: "Login successful", 
             token, 

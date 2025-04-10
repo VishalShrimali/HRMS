@@ -25,16 +25,21 @@ export const getLeads = async (req, res) => {
 
 // Fetch lead by ID
 export const getLeadById = async (req, res) => {
+    console.log("Fetching lead with ID:", req.params.id); // Debugging
     try {
         const lead = await Lead.findById(req.params.id);
         if (!lead) {
             return res.status(404).json({ message: "Lead not found" });
         }
+        console.log("Fetched lead details:", lead); // Debugging
         res.status(200).json(lead);
     } catch (error) {
-        handleError(res, error);
+        console.error("Error fetching lead by ID:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 };
+
+
 
 // Create a new lead
 export const createLead = async (req, res) => {
@@ -295,5 +300,4 @@ export const importLeads = async (req, res) => {
         res.status(500).json({ message: "Failed to export leads" });
     }
 };
-  
-  
+

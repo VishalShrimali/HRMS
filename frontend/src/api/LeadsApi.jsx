@@ -1,4 +1,5 @@
 import { API } from "./BASEURL";
+import axios from "axios";
 
 const api = API();
 
@@ -92,6 +93,17 @@ export const exportLeads = async () => {
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error exporting leads:", error);
+    throw error;
+  }
+};
+
+export const getLeadById = async (leadId) => {
+  try {
+    const response = await api.get(`/leads/${leadId}`); // ✅ use your baseURL instance
+    console.log("API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching lead by ID:", error);
     throw error;
   }
 };
