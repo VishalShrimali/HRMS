@@ -32,6 +32,18 @@ const isSuperAdmin = (req, res, next) => {
     next();
 };
 
+const decodeJWTGetUser = async (headers) => {
+    let decoded;
+    try {
+        const token = headers.authorization?.split(" ")[1]; // Extract token
+        decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    } catch (err) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    
+    return await User.findById(decoded.id).populate("role").select("-password");    // User is Returned in the End.
+ }
+
 // New function to authorize specific roles or an array of roles
 const authorizeRole = async (roles, req, res, next) => {
     try {
@@ -74,4 +86,4 @@ const authorizeRole = async (roles, req, res, next) => {
     };
 }
 
-export { protect, isSuperAdmin, authorizeRole };
+export { protect, isSuperAdmin, authorizeRole, decodeJWTGetUser };

@@ -19,7 +19,7 @@ const groupRouter = express.Router();
 // CRUD Routes
 groupRouter.get("" ,getGroups);
 groupRouter.get("/:id", getGroupById);
-groupRouter.post("/", createGroup);
+groupRouter.post("/create", createGroup);
 groupRouter.put("/:id", updateGroup);
 groupRouter.delete("/:id", deleteGroup);
 
