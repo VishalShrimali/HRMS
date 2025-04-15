@@ -1,5 +1,4 @@
 import { API } from "./BASEURL";
-import axios from "axios";
 import Papa from "papaparse"; // Install this library using `npm install papaparse`
 
 const api = API();

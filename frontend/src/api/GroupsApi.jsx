@@ -1,6 +1,7 @@
 // frontend/src/api/GroupsApi.js
 import { API_BASE_URL } from "./BASEURL";
 
+<<<<<<< HEAD
 export const fetchGroups = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -78,3 +79,45 @@ export const createGroup = async (groupData) => {
   }
   return await response.json();
 };
+=======
+const api = API();
+const fetchGroups = async () => {
+  try {
+    const response = await api.get("/groups");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+const handleAddSubmit = async (
+  e,
+  fetchData,
+  groupFormData,
+  setFormErrors,
+  setShowAddGroupModal,
+  setGroupFormData
+) => {
+  e.preventDefault();
+  setFormErrors({});
+
+  try {
+    const response = await api.post("/groups/create", groupFormData);
+
+    const data = response;
+
+    if (!response.ok) {
+      setFormErrors(data.errors || { general: "Something went wrong." });
+    } else {
+      setShowAddGroupModal(false);
+      setGroupFormData({ name: "", description: "" });
+      fetchData(); // Refresh group list
+    }
+  } catch (err) {
+    console.error("Error submitting group:", err);
+    setFormErrors({ general: "Server error" });
+  }
+};
+
+export { fetchGroups, handleAddSubmit };
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a

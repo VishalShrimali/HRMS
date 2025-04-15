@@ -6,7 +6,11 @@ import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
 import LeadsControlsComponent from "./LeadsControlsComponent";
 import LeadsTableComponent from "./LeadsTableComponent";
+<<<<<<< HEAD
 import GroupsTable from "../GroupsComponents/GroupTable"; // Import GroupsTable
+=======
+import GroupsComponent from '../GroupsComponents/GroupsComponent'
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);

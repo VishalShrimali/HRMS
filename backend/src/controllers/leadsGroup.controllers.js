@@ -1,6 +1,7 @@
 // groupsController.js
 import express from "express";
 import { Group } from "../models/group.models.js";
+import { decodeJWTGetUser } from "../middleware/auth.middlware.js";
 
 // groupsController.js
 
@@ -8,12 +9,15 @@ import { Group } from "../models/group.models.js";
 const handleError = (res, error, statusCode = 500) => {
   console.error(error.message || error);
   if (!res.headersSent) {
-    res.status(statusCode).json({ message: error.message || "Internal Server Error" });
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Internal Server Error" });
   }
 };
 
 export const getGroups = async (req, res) => {
   try {
+<<<<<<< HEAD
     const groups = await Group.find().populate("members", "firstName lastName email");
     const transformedGroups = groups.map((group) => ({
       id: group._id.toString(),
@@ -23,6 +27,13 @@ export const getGroups = async (req, res) => {
       createdOn: group.createdDate.toISOString().split("T")[0],
     }));
     res.status(200).json({ message: "Groups fetched successfully", groups: transformedGroups });
+=======
+    const groups = await Group.find().populate(
+      "leads",
+      "firstName lastName email"
+    ); // Populate lead details
+    res.status(200).json({ message: "Groups fetched successfully", groups });
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a
   } catch (error) {
     handleError(res, error);
   }
@@ -33,7 +44,10 @@ export const getGroups = async (req, res) => {
 // Fetch group by ID
 export const getGroupById = async (req, res) => {
   try {
-    const group = await Group.findById(req.params.id).populate("members", "firstName lastName email");
+    const group = await Group.findById(req.params.id).populate(
+      "leads",
+      "firstName lastName email"
+    );
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
     }
@@ -46,6 +60,10 @@ export const getGroupById = async (req, res) => {
 // Create a new group
 export const createGroup = async (req, res) => {
   try {
+    let authUser = await decodeJWTGetUser(req.headers);
+
+    console.log(authUser);
+
     const { name, description } = req.body;
 
     // Validate required fields
@@ -62,11 +80,14 @@ export const createGroup = async (req, res) => {
     const newGroup = new Group({
       name,
       description: description || "",
+      createdBy: authUser._id,
       members: [],
     });
 
     const savedGroup = await newGroup.save();
-    res.status(201).json({ message: "Group created successfully", group: savedGroup });
+    res
+      .status(201)
+      .json({ message: "Group created successfully", group: savedGroup });
   } catch (error) {
     handleError(res, error);
   }
@@ -91,7 +112,9 @@ export const updateGroup = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    res.status(200).json({ message: "Group updated successfully", group: updatedGroup });
+    res
+      .status(200)
+      .json({ message: "Group updated successfully", group: updatedGroup });
   } catch (error) {
     handleError(res, error);
   }
@@ -104,7 +127,9 @@ export const deleteGroup = async (req, res) => {
     if (!deletedGroup) {
       return res.status(404).json({ message: "Group not found" });
     }
-    res.status(200).json({ message: "Group deleted successfully", deletedGroup });
+    res
+      .status(200)
+      .json({ message: "Group deleted successfully", deletedGroup });
   } catch (error) {
     handleError(res, error);
   }
@@ -113,9 +138,11 @@ export const deleteGroup = async (req, res) => {
 // Add members to a group
 export const addMembersToGroup = async (req, res) => {
   try {
-    const { memberIds } = req.body; // Array of lead IDs
-    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
-      return res.status(400).json({ message: "At least one member ID is required" });
+    const { leadIds } = req.body; // Array of lead IDs
+    if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one lead ID is required" });
     }
 
     const group = await Group.findById(req.params.id);
@@ -123,11 +150,21 @@ export const addMembersToGroup = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
+<<<<<<< HEAD
     const newMembers = [...new Set([...group.members, ...memberIds])]; // Avoid duplicates
     group.members = newMembers;
+=======
+    // Verify that memberIds are valid Lead IDs (optional, depending on your needs)
+    // This could be enhanced with a check against the Lead model
+    const newLeads = [...new Set([...group.leads, ...leadIds])]; // Avoid duplicates
+    group.leads = newLeads;
+
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a
     const updatedGroup = await group.save();
 
-    res.status(200).json({ message: "Members added successfully", group: updatedGroup });
+    res
+      .status(200)
+      .json({ message: "Leads added successfully", group: updatedGroup });
   } catch (error) {
     handleError(res, error);
   }
