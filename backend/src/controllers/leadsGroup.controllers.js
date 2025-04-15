@@ -1,9 +1,12 @@
 // groupsController.js
+import express from "express";
 import { Group } from "../models/group.models.js";
 import { decodeJWTGetUser } from "../middleware/auth.middlware.js";
 import User from "../models/user.model.js";
 
-// Centralized error handler
+// groupsController.js
+
+
 const handleError = (res, error, statusCode = 500) => {
   console.error(error.message || error);
   if (!res.headersSent) {
@@ -13,9 +16,19 @@ const handleError = (res, error, statusCode = 500) => {
   }
 };
 
-// Fetch all groups
 export const getGroups = async (req, res) => {
   try {
+<<<<<<< HEAD
+    const groups = await Group.find().populate("members", "firstName lastName email");
+    const transformedGroups = groups.map((group) => ({
+      id: group._id.toString(),
+      name: group.name,
+      description: group.description || "-",
+      contacts: group.members.length,
+      createdOn: group.createdDate.toISOString().split("T")[0],
+    }));
+    res.status(200).json({ message: "Groups fetched successfully", groups: transformedGroups });
+=======
     const groups = await Group.find().populate(
       "leads",
       "firstName lastName email"
@@ -23,10 +36,13 @@ export const getGroups = async (req, res) => {
 
     console.log(groups);
     res.status(200).json({ message: "Groups fetched successfully", groups });
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a
   } catch (error) {
     handleError(res, error);
   }
 };
+
+// ... other functions unchanged
 
 // Fetch group by ID
 export const getGroupById = async (req, res) => {
@@ -137,11 +153,16 @@ export const addMembersToGroup = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
+<<<<<<< HEAD
+    const newMembers = [...new Set([...group.members, ...memberIds])]; // Avoid duplicates
+    group.members = newMembers;
+=======
     // Verify that memberIds are valid Lead IDs (optional, depending on your needs)
     // This could be enhanced with a check against the Lead model
     const newLeads = [...new Set([...group.leads, ...leadIds])]; // Avoid duplicates
     group.leads = newLeads;
 
+>>>>>>> 242b43d564d65e279c16418da246f70fa3f4e42a
     const updatedGroup = await group.save();
 
     res

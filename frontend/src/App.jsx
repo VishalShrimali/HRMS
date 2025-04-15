@@ -15,14 +15,18 @@ import Home from "./pages/Home";
 import RolesManager from "./components/RolesManager/RolesManager";
 import EmailDesigner from "./pages/EmailDesigner";
 import CustomEmailEditor from "./pages/EmailEditor";
-
+let token = localStorage.getItem("token");
 const Protected = ({ isAuthenticated, children }) => {
-  return isAuthenticated ? children : <Navigate to="/auth/login" />;
+  return isAuthenticated ? children : <Navigate to="/user/login" />;
 };
 
 function App() {
+  console.log(token);
   const [isAuthenticated, setIsAuthenticated] = useState(
+    
     !!localStorage.getItem("token")
+
+    
   );
 
   return (
@@ -59,12 +63,9 @@ function App() {
             path="login"
             element={<Login setIsAuthenticated={setIsAuthenticated} />}
           />
-          <Route path="password">
-            <Route path="forgot" element={<ForgotPassword />} />
-            <Route path="reset" element={<ResetPassword />} />{" "}
-          </Route>
+          <Route path="forgot-passward" element={<ForgotPassword />} />
         </Route>
-        {/* Add Reset Password route */}
+        <Route path="reset-password" element={<ResetPassword />} /> {/* Moved here */}
       </Routes>
     </Router>
   );

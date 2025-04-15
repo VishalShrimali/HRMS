@@ -44,7 +44,7 @@ const EditLeadModal = ({
           <InputField label="Pincode" name="address.pincode" value={formData.address?.pincode || ""} onChange={handleChange} error={formErrors.pincode} />
           <InputField label="City" name="address.city" value={formData.address?.city || ""} onChange={handleChange} error={formErrors.city} />
           <InputField label="State" name="address.state" value={formData.address?.state || ""} onChange={handleChange} error={formErrors.state} />
-          <InputField label="County" name="address.county" value={formData.address?.county || ""} onChange={handleChange} />
+        
           <InputField label="Country" name="address.country" value={formData.address?.country || ""} onChange={handleChange} error={formErrors.country} />
 
           {/* Submit */}

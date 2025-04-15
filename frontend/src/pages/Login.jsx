@@ -64,7 +64,7 @@ const Login = ({ setIsAuthenticated }) => {
           </button>
         </form>
         <p className="mt-4 text-center">
-          <Link to="/auth/password/forgot" className="text-blue-500 hover:underline">
+          <Link to="/auth/forgot-passward" className="text-blue-500 hover:underline">
             Forgot Password?
           </Link>
         </p>

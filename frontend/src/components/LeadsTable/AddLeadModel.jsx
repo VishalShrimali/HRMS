@@ -22,7 +22,7 @@ const AddLeadModel = ({
       >
         <div className="bg-white rounded-lg w-full max-w-2xl p-6">
           <div className="flex justify-between items-center border-b pb-4 mb-4">
-            <h5 className="text-xl font-semibold text-gray-800">Add Lead</h5>
+            <h5 className="text-lg font-medium text-gray-800">Add Lead</h5>
             <button
               className="text-gray-500 hover:text-gray-700"
               onClick={() => setShowAddModal(false)}

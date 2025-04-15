@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -24,11 +25,11 @@ const ForgotPassword = () => {
         { email }
       );
       setMessage(
-        response.data.message || "Password reset link sent to your email"
+        response.data.message || "Password  link sent to your email"
       );
       setError("");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send reset link");
+      setError(err.response?.data?.message || "Failed to send  link");
       setMessage("");
     } finally {
       setLoading(false);
@@ -70,7 +71,7 @@ const ForgotPassword = () => {
 
         <p className="mt-4 text-center">
           Back to{" "}
-          <Link to="/auth/login" className="text-blue-500 hover:underline">
+          <Link to="/user/login" className="text-blue-500 hover:underline">
             Login
           </Link>
         </p>
