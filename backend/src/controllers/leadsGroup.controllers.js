@@ -1,7 +1,10 @@
 // groupsController.js
+import express from "express";
 import { Group } from "../models/group.models.js";
 
-// Centralized error handler
+// groupsController.js
+
+
 const handleError = (res, error, statusCode = 500) => {
   console.error(error.message || error);
   if (!res.headersSent) {
@@ -9,15 +12,23 @@ const handleError = (res, error, statusCode = 500) => {
   }
 };
 
-// Fetch all groups
 export const getGroups = async (req, res) => {
   try {
-    const groups = await Group.find().populate("members", "firstName lastName email"); // Populate member details
-    res.status(200).json({ message: "Groups fetched successfully", groups });
+    const groups = await Group.find().populate("members", "firstName lastName email");
+    const transformedGroups = groups.map((group) => ({
+      id: group._id.toString(),
+      name: group.name,
+      description: group.description || "-",
+      contacts: group.members.length,
+      createdOn: group.createdDate.toISOString().split("T")[0],
+    }));
+    res.status(200).json({ message: "Groups fetched successfully", groups: transformedGroups });
   } catch (error) {
     handleError(res, error);
   }
 };
+
+// ... other functions unchanged
 
 // Fetch group by ID
 export const getGroupById = async (req, res) => {
@@ -112,8 +123,6 @@ export const addMembersToGroup = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    // Verify that memberIds are valid Lead IDs (optional, depending on your needs)
-    // This could be enhanced with a check against the Lead model
     const newMembers = [...new Set([...group.members, ...memberIds])]; // Avoid duplicates
     group.members = newMembers;
     const updatedGroup = await group.save();

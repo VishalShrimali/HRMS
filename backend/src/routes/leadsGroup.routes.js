@@ -1,29 +1,24 @@
-// groupsRoutes.js
-import express from "express";
 import {
   getGroups,
   getGroupById,
   createGroup,
   updateGroup,
   deleteGroup,
-  addMembersToGroup,
-} from "../controllers/leadsGroup.controllers.js";
-import { authorizeRole } from '../middleware/auth.middlware.js';
-//import authMiddleware from "../middleware/auth.middlware.js"; // Assuming authentication middleware
+  addMembersToGroup
+} from "../controllers/leadsGroup.controllers.js"; // <-- Corrected file name
+import express from "express";
+import { authorizeRole } from "../middleware/auth.middlware.js"; // Correct typo
 
 const groupRouter = express.Router();
 
-// Protected routes (require authentication)
-//groupRouter.use(authMiddleware);
-
 // CRUD Routes
-groupRouter.get("" ,getGroups);
-groupRouter.get("/:id", getGroupById);
-groupRouter.post("/", createGroup);
+groupRouter.get("/", authorizeRole, getGroups); // Explicit "/"
+groupRouter.get("/:id", authorizeRole, getGroupById);
+groupRouter.post("/creategroup", createGroup);
 groupRouter.put("/:id", updateGroup);
 groupRouter.delete("/:id", deleteGroup);
 
-// Member management route
-groupRouter.post("/members/:id", addMembersToGroup);
+// Member management route (match controller)
+// groupRouter.put("/:id/members", addMembersToGroup);
 
 export default groupRouter;

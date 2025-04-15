@@ -6,6 +6,7 @@ import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
 import LeadsControlsComponent from "./LeadsControlsComponent";
 import LeadsTableComponent from "./LeadsTableComponent";
+import GroupsTable from "../GroupsComponents/GroupTable"; // Import GroupsTable
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
@@ -20,6 +21,14 @@ const LeadsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
+  const [showActionBar, setShowActionBar] = useState(false); // State to control the action bar visibility
+
+  const [showGroupModal, setShowGroupModal] = useState(false); // State for group modal
+  const [groupFormData, setGroupFormData] = useState({
+    groupName: "",
+    description: "",
+    members: [],
+  });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -252,6 +261,48 @@ const LeadsTable = () => {
     }
   };
 
+  useEffect(() => {
+    setShowActionBar(selectedLeads.length > 0); // Show the action bar if leads are selected
+  }, [selectedLeads]);
+
+  const handleCreateGroup = () => {
+    if (selectedLeads.length === 0) {
+      alert("Please select at least one lead to create a group.");
+      return;
+    }
+
+    setGroupFormData({
+      groupName: "",
+      description: "",
+      members: selectedLeads, // Pre-fill selected leads as members
+    });
+    setShowGroupModal(true);
+  };
+
+  const handleSaveGroup = () => {
+    if (!groupFormData.groupName || !groupFormData.description) {
+      alert("Group name and description are required.");
+      return;
+    }
+
+    // Logic to save the group (e.g., API call or state update)
+    console.log("Group Created:", groupFormData);
+    setShowGroupModal(false);
+    setSelectedLeads([]); // Clear selected leads after creating the group
+  };
+
+  const handleChangeGroup = () => {
+    alert("Change Group functionality triggered!");
+    // Add logic to change the group of selected leads
+  };
+
+  const handleDeleteSelected = () => {
+    if (window.confirm("Are you sure you want to delete the selected leads?")) {
+      setLeads(leads.filter((lead) => !selectedLeads.includes(lead._id)));
+      setSelectedLeads([]);
+    }
+  };
+
   const setEditingLead = async (leadId) => {
     try {
       const lead = await getLeadById(leadId);
@@ -314,9 +365,11 @@ const LeadsTable = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
             <Users className="mr-2" size={20} />
-            <h2 className="text-2xl font-semibold text-gray-800">Leads</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              {activeTab === "personal" ? "Leads" : "Groups"}
+            </h2>
             <span className="ml-2 text-gray-500">
-              ({leads.length} Records Found)
+              ({activeTab === "personal" ? leads.length : 0} Records Found)
             </span>
           </div>
           <div className="relative">
@@ -360,6 +413,33 @@ const LeadsTable = () => {
             Groups
           </button>
         </div>
+
+        {/* Action Bar */}
+        {showActionBar && (
+          <div className="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-between items-center shadow-lg">
+            <span>{selectedLeads.length} Leads Selected</span>
+            <div>
+              <button
+                className="px-4 py-2 bg-blue-500 rounded mr-2"
+                onClick={handleCreateGroup}
+              >
+                Create Group
+              </button>
+              <button
+                className="px-4 py-2 bg-yellow-500 rounded mr-2"
+                onClick={handleChangeGroup}
+              >
+                Change Group
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 rounded"
+                onClick={handleDeleteSelected}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
 
         {activeTab === "personal" && (
           <>
@@ -425,7 +505,7 @@ const LeadsTable = () => {
 
         {activeTab === "groups" && (
           <>
-            <GroupsComponent />
+            <GroupsTable /> {/* Render GroupsTable when "Groups" tab is active */}
           </>
         )}
       </div>

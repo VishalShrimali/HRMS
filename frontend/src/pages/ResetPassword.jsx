@@ -13,6 +13,8 @@ const ResetPassword = () => {
 
   // Extracting token from URL
   const token = new URLSearchParams(location.search).get('token');
+  console.log(token);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ const ResetPassword = () => {
       setError('');
       
       // Redirect to login page after successful reset
-      setTimeout(() => navigate('/auth/login'), 2000);
+      setTimeout(() => navigate('/user/login'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reset password');
       setMessage('');

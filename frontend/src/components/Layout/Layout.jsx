@@ -7,7 +7,7 @@ const Layout = ({ children, setIsAuthenticated }) => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
-    navigate('/auth/login');
+    navigate('/user/login');
   };
 
   return (
