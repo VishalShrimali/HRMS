@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { getAllUsers } from "../../api/GroupsApi";
+import React, { useCallback, useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { getAllUsers } from '../../api/GroupsApi';
 
 const AddLeadToGroupModal = ({
   showAddLeadModal,
@@ -10,7 +10,6 @@ const AddLeadToGroupModal = ({
   handleAddLeadToGroupSubmit,
   selectedGroup,
 }) => {
-
   const [users, setUsers] = useState([]);
 
   const fetchAllUsers = useCallback(async () => {
@@ -18,7 +17,7 @@ const AddLeadToGroupModal = ({
       const response = await getAllUsers();
       setUsers(response.data.users);
     } catch (error) {
-      console.error("Failed to fetch users:", error.message);
+      console.error('Failed to fetch users:', error.message);
     }
   }, []);
 
@@ -27,7 +26,7 @@ const AddLeadToGroupModal = ({
       fetchAllUsers();
     }
   }, [showAddLeadModal, fetchAllUsers]);
-  
+
   return (
     <>
       {showAddLeadModal && (
@@ -47,7 +46,6 @@ const AddLeadToGroupModal = ({
                 <X size={20} />
               </button>
             </div>
-  
             <form onSubmit={handleAddLeadToGroupSubmit}>
               <div className="grid grid-cols-1 gap-4">
                 <div>
@@ -60,15 +58,15 @@ const AddLeadToGroupModal = ({
                     className="p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select User --</option>
-                    {Array.isArray(users) && users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.firstName} {user.lastName} ({user.email})
-                      </option>
-                    ))}
+                    {Array.isArray(users) &&
+                      users.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.firstName} {user.lastName} ({user.email})
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
-  
               <div className="mt-6 flex justify-end">
                 <button
                   type="submit"
@@ -83,6 +81,6 @@ const AddLeadToGroupModal = ({
       )}
     </>
   );
-}  
+};
 
 export default AddLeadToGroupModal;

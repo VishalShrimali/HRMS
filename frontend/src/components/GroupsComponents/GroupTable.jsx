@@ -1,147 +1,88 @@
-// GroupTable.jsx
-import React, { useState, useEffect } from "react";
-import { fetchGroups, deleteGroup, updateGroup, createGroup } from "../../api/GroupsApi";
-import AddGroupModal from "./AddGroupModal";
+import React from 'react';
+import { Edit, Trash } from 'lucide-react';
 
-const GroupTable = () => {
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showGroupModal, setShowGroupModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState(null); // For editing a group
-
-  const fetchGroupsData = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchGroups();
-      setGroups(data.groups); // Access groups array
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (groupId) => {
-    if (window.confirm("Are you sure you want to delete this group?")) {
-      try {
-        await deleteGroup(groupId);
-        setGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
-        alert("Group deleted successfully");
-      } catch (err) {
-        alert(`Failed to delete group: ${err.message}`);
-      }
-    }
-  };
-
-  const handleSaveGroup = async (groupData) => {
-    if (editingGroup) {
-      // Update group
-      try {
-        const updatedGroup = await updateGroup(editingGroup.id, groupData);
-        setGroups((prevGroups) =>
-          prevGroups.map((group) =>
-            group.id === editingGroup.id ? { ...group, ...updatedGroup.group } : group
-          )
-        );
-        alert("Group updated successfully");
-      } catch (err) {
-        alert(`Failed to update group: ${err.message}`);
-      }
-    } else {
-      // Add new group
-      try {
-        const newGroup = await createGroup(groupData); // Call the API to create a new group
-        setGroups((prevGroups) => [...prevGroups, newGroup.group]); // Add the new group to the state
-        alert("Group created successfully");
-      } catch (err) {
-        alert(`Failed to create group: ${err.message}`);
-      }
-    }
-    setShowGroupModal(false);
-    setEditingGroup(null);
-  };
-
-  const handleEdit = (group) => {
-    setEditingGroup(group);
-    setShowGroupModal(true);
-  };
-
-  useEffect(() => {
-    fetchGroupsData();
-  }, []);
-
+const GroupTable = ({
+  setSelectedGroup = () => {},
+  setShowAddLeadModal = () => {},
+  paginatedGroups = [],
+  selectedGroups = [],
+  handleSelectAll = () => {},
+  handleSelectGroup = () => {},
+  setEditingGroup = () => {},
+  setGroupFormData = () => {},
+  setShowEditModal = () => {},
+  handleDelete = () => {},
+}) => {
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-end mb-3">
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setEditingGroup(null); // Clear editing state
-            setShowGroupModal(true); // Open modal for adding a new group
-          }}
-        >
-          + Add Group
-        </button>
-      </div>
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="alert alert-danger text-center" role="alert">
-          {error}
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-bordered table-hover">
-            <thead className="table-light">
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>No. of Contacts</th>
-                <th>Created On</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groups.map((group) => (
-                <tr key={group.id}>
-                  <td>{group.name}</td>
-                  <td>{group.description || "-"}</td>
-                  <td>{group.contacts}</td>
-                  <td>{group.createdOn}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => handleEdit(group)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(group.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {showGroupModal && (
-        <AddGroupModal
-          showGroupModal={showGroupModal}
-          setShowGroupModal={setShowGroupModal}
-          handleSaveGroup={handleSaveGroup}
-          editingGroup={editingGroup} // Pass the group being edited
-        />
-      )}
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white shadow-md rounded-lg divide-y divide-gray-200">
+        <thead className="bg-blue-500 text-white">
+          <tr>
+            <th className="p-4 text-left">
+              <input
+                type="checkbox"
+                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                onChange={handleSelectAll}
+                checked={
+                  Array.isArray(selectedGroups) &&
+                  Array.isArray(paginatedGroups) &&
+                  selectedGroups.length === paginatedGroups.length &&
+                  paginatedGroups.length > 0
+                }
+              />
+            </th>
+            <th className="p-4 text-left text-sm font-semibold">Name</th>
+            <th className="p-4 text-left text-sm font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {paginatedGroups.map((group) => (
+            <tr key={group._id} className="hover:bg-gray-50 transition-colors">
+              <td className="p-4">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                  checked={selectedGroups.includes(group._id)}
+                  onChange={() => handleSelectGroup(group._id)}
+                />
+              </td>
+              <td className="p-4 text-gray-900 font-medium">
+                <div>{group.name}</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {(group.leads || []).length} lead{(group.leads || []).length !== 1 ? 's' : ''} assigned
+                </div>
+              </td>
+              <td className="p-4 flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedGroup(group);
+                    setShowAddLeadModal(true);
+                  }}
+                  className="bg-blue-600 px-3 py-1 text-white rounded hover:bg-blue-700"
+                >
+                  Add Lead
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingGroup(group);
+                    setGroupFormData({ name: group.name || '', description: group.description || '' });
+                    setShowEditModal(true);
+                  }}
+                  className="bg-gray-500 px-3 py-1 text-white rounded flex items-center hover:bg-gray-600"
+                >
+                  <Edit size={14} className="mr-1" /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(group._id)}
+                  className="bg-red-600 px-3 py-1 text-white rounded flex items-center hover:bg-red-700"
+                >
+                  <Trash size={14} className="mr-1" /> Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

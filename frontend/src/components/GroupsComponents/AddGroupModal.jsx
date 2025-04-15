@@ -1,134 +1,75 @@
-import React, { useState, useEffect } from "react";
+import React from 'react';
+import { X } from 'lucide-react';
 
-const AddGroupModal = ({ showGroupModal, setShowGroupModal, handleSaveGroup, editingGroup }) => {
-  const [groupFormData, setGroupFormData] = useState({
-    groupName: "",
-    description: "",
-  });
-
-  useEffect(() => {
-    if (editingGroup) {
-      setGroupFormData({
-        groupName: editingGroup.name,
-        description: editingGroup.description,
-      });
-    } else {
-      setGroupFormData({
-        groupName: "",
-        description: "",
-      });
-    }
-  }, [editingGroup]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleSaveGroup(groupFormData); // Pass the form data to the parent component
-  };
-
+const AddGroupModel = ({
+  formData,
+  formErrors,
+  showAddGroupModal,
+  handleChange,
+  handleAddSubmit,
+  setShowAddGroupModal,
+}) => {
   return (
-    <>
-      {showGroupModal && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h3 className="text-xl font-semibold mb-4">
-              {editingGroup ? "Edit Group" : "Create Group"}
-            </h3>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700">Group Name</label>
+    <dialog
+      open={showAddGroupModal}
+      className="fixed w-full m-0 h-[100vh] inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div className="bg-white rounded-lg w-full max-w-2xl p-6">
+        <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <h5 className="text-xl font-semibold text-gray-800">
+            {formData._id ? 'Edit Group' : 'Add Group'}
+          </h5>
+          <button
+            className="text-gray-500 hover:text-gray-700"
+            onClick={() => setShowAddGroupModal(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="overflow-y-auto max-h-[80vh]">
+          <form onSubmit={handleAddSubmit}>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Group Name
+                </label>
                 <input
                   type="text"
-                  name="groupName"
-                  value={groupFormData.groupName}
-                  onChange={(e) =>
-                    setGroupFormData({ ...groupFormData, groupName: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  required
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {formErrors.name && (
+                  <p className="text-red-500 text-sm">{formErrors.name}</p>
+                )}
               </div>
-              <div className="mb-4">
-                <label className="block text-gray-700">Description</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
                 <textarea
                   name="description"
-                  value={groupFormData.description}
-                  onChange={(e) =>
-                    setGroupFormData({ ...groupFormData, description: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                ></textarea>
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="4"
+                />
               </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-500 text-white rounded mr-2"
-                  onClick={() => setShowGroupModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                {formData._id ? 'Update' : 'Save'}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
-    </>
-  );
-};
-
-const AddLeadModel = ({ setShowAddModal, onAddLead }) => {
-  const [formErrors, setFormErrors] = useState({});
-  const [formData, setFormData] = useState({
-    dates: {
-      birthDate: "",
-      joinDate: "",
-    },
-    address: {
-      line1: "",
-      line2: "",
-      line3: "",
-      pincode: "",
-      city: "",
-      state: "",
-      county: "",
-      country: "",
-    },
-    userPreferences: {
-      policy: "active",
-      whatsappMessageReceive: false,
-      browserNotifications: false,
-      emailReceive: false,
-    },
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-  });
-
-  const handleAddSubmit = (e) => {
-    e.preventDefault();
-
-    if (validateForm()) {
-      console.log("Form submitted successfully:", formData);
-      onAddLead(formData); // Call the callback with the form data
-      setShowAddModal(false); // Close the modal
-    } else {
-      console.log("Form validation failed:", formErrors);
-    }
-  };
-
-  return (
-    <dialog open>
-      {/* Form content */}
-      <form onSubmit={handleAddSubmit}>
-        {/* Form fields */}
-        <button type="submit">Save</button>
-      </form>
+      </div>
     </dialog>
   );
 };
 
-export default AddGroupModal;
-export { AddLeadModel };
+export default AddGroupModel;

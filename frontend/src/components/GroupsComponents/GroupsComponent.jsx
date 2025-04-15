@@ -8,7 +8,7 @@ import {
 } from "../../api/GroupsApi";
 import GroupsControlsComponent from "./GroupsControlsComponent";
 import AddGroupModel from "./AddGroupModel";
-import GroupTable from "./GroupTable";
+import {GroupTable} from "./GroupTable";
 import AddLeadToGroupModal from "./AddLeadToGroupModal";
 
 // Project Files
