@@ -26,6 +26,8 @@ leadsRouter.get('/:id', (req, res, next) => {
     authorizeRole(["ADMIN"], req, res, next);
 }, getLeadById); // Get a single lead by ID
 
+
+
 leadsRouter.post('/addlead', createLead); // Create a new lead
 leadsRouter.put('/:id', updateLead); // Update a lead by ID
 

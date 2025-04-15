@@ -10,6 +10,14 @@ const fetchGroups = async () => {
   }
 };
 
+const getAllUsers = async () => {
+  const response = await api.get("/user/list/all");
+
+  console.log("Data : ", response);
+
+  return response;
+};
+
 const handleAddSubmit = async (
   e,
   fetchData,
@@ -39,4 +47,25 @@ const handleAddSubmit = async (
   }
 };
 
-export { fetchGroups, handleAddSubmit };
+const handleAddLeadtoGroup = async (e, selectedGroupId, selectedUserId, setShowAddLeadModal, setSelectedUserId ) => {
+  e.preventDefault();
+  if (!selectedUserId || !selectedGroupId) return;
+
+  try {
+    const res = await api.put(`/groups/${selectedGroupId}/${selectedUserId}`);
+
+    const data = res
+
+    if (res.statusText == 'OK') {
+      setShowAddLeadModal(false);
+      setSelectedUserId("");
+      // Refresh group list if needed
+    } else {
+      console.error(data || "Error adding lead");
+    }
+  } catch (err) {
+    alert(err.response?.data?.message)
+  }
+};
+
+export { fetchGroups, handleAddSubmit, getAllUsers, handleAddLeadtoGroup };

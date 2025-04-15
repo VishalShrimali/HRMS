@@ -251,6 +251,17 @@ export const addRoleToUser = async (req, res) => {
     }
 };
 
+export const getAllUsersWithFirstNameLastNameId = async (req, res) => {
+    try {
+        const users = await User.find({}, "firstName lastName _id email");
+        res.status(200).json({ users });
+    } catch (error) {
+        console.error("Error in getAllUsersWithFirstNameLastNameId:", error.message);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 export const getUsersWithPagination = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = "" } = req.query;

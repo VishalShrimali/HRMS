@@ -7,9 +7,8 @@ import {
   updateGroup,
   deleteGroup,
   addMembersToGroup,
-} from "../controllers/leadsGroup.controllers.js";
-import { authorizeRole } from '../middleware/auth.middlware.js';
-//import authMiddleware from "../middleware/auth.middlware.js"; // Assuming authentication middleware
+  addLeadToGroup 
+} from "../controllers/leadsGroup.controllers.js"; 
 
 const groupRouter = express.Router();
 
@@ -22,6 +21,7 @@ groupRouter.get("/:id", getGroupById);
 groupRouter.post("/create", createGroup);
 groupRouter.put("/:id", updateGroup);
 groupRouter.delete("/:id", deleteGroup);
+groupRouter.put('/:id/:uid' , addLeadToGroup );
 
 // Member management route
 groupRouter.post("/members/:id", addMembersToGroup);

@@ -1,7 +1,9 @@
-import React from 'react';
-import { Edit, Trash } from 'lucide-react';
+import React from "react";
+import { Edit, Trash } from "lucide-react";
 
 const GroupTable = ({
+  setSelectedGroup,
+  setShowAddLeadModal,
   paginatedGroups,
   selectedGroups,
   handleSelectAll,
@@ -34,7 +36,10 @@ const GroupTable = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedGroups.map((group) => (
-              <tr key={group._id} className="hover:bg-gray-50 transition-colors">
+              <tr
+                key={group._id}
+                className="hover:bg-gray-50 transition-colors"
+              >
                 <td className="p-4">
                   <input
                     type="checkbox"
@@ -43,14 +48,30 @@ const GroupTable = ({
                     onChange={() => handleSelectGroup(group._id)}
                   />
                 </td>
-                <td className="p-4 text-gray-900 font-medium">{group.name}</td>
+                <td className="p-4 text-gray-900 font-medium">
+                  <div>{group.name}</div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {group.leads.length} lead
+                    {group.leads.length !== 1 ? "s" : ""} assigned
+                  </div>
+                </td>
+
                 <td className="p-4 flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setSelectedGroup(group);
+                      setShowAddLeadModal(true);
+                    }}
+                    className="bg-blue-600 px-3 py-1 text-white rounded"
+                  >
+                    Add Lead
+                  </button>
                   <button
                     className="bg-gray-500 text-white px-3 py-1 rounded-lg flex items-center hover:bg-gray-600 transition-colors"
                     onClick={() => {
                       setEditingGroup(group);
                       setGroupFormData({
-                        name: group.name || '',
+                        name: group.name || "",
                       });
                       setShowEditModal(true);
                     }}

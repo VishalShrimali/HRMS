@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getLeads, addLead, updateLead, deleteLead, getLeadById, importLeads, exportLeads } from "../../api/LeadsApi";
+import {
+  getLeads,
+  addLead,
+  updateLead,
+  deleteLead,
+  getLeadById,
+  importLeads,
+  exportLeads,
+} from "../../api/LeadsApi";
 import { Search, Users } from "lucide-react";
 import AddLeadModel from "./AddLeadModel";
 import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
 import LeadsControlsComponent from "./LeadsControlsComponent";
 import LeadsTableComponent from "./LeadsTableComponent";
-import GroupsComponent from '../GroupsComponents/GroupsComponent'
+import GroupsComponent from "../GroupsComponents/GroupsComponent";
+import { fetchGroups } from "../../api/GroupsApi";
 
 const LeadsTable = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [groups, setGroups] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,16 +31,20 @@ const LeadsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
+  const [groupOptions, setGroupOptions] = useState([]);
 
   const [formData, setFormData] = useState({
+    groupId: "",
     firstName: "",
     lastName: "",
     email: "",
     country: "USA (+1)",
     phoneNumber: "",
     secondPhoneNumber: "",
-    birthDate: "",
-    joinDate: "",
+    dates: {
+      birthDate: "",
+      joinDate: "",
+    },
     address: {
       line1: "",
       line2: "",
@@ -49,7 +63,6 @@ const LeadsTable = () => {
       emailReceive: false,
     },
   });
-  
 
   const fileInputRef = useRef(null);
 
@@ -85,11 +98,19 @@ const LeadsTable = () => {
     const errors = {};
     if (!formData.firstName) errors.firstName = "First Name is required";
     if (!formData.lastName) errors.lastName = "Last Name is required";
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Valid email is required";
-    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber)) errors.phoneNumber = "Valid 10-digit phone number is required";
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
+      errors.email = "Valid email is required";
+    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
+      errors.phoneNumber = "Valid 10-digit phone number is required";
     if (!formData.phone) errors.phone = "Phone is required";
-    if (!formData.birthDate) errors.birthDate = "Birth Date is required";
-    if (!formData.joinDate) errors.joinDate = "Join Date is required";
+    
+    if (!formData.dates?.birthDate) {
+      errors.birthDate = "Birth date is required";
+    }
+    
+    if (!formData.dates?.joinDate) {
+      errors.joinDate = "Join date is required";
+    }
     if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
     if (
       !formData.address.pincode ||
@@ -105,11 +126,18 @@ const LeadsTable = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+  
     if (name.startsWith("address.")) {
-      const addressField = name.split(".")[1];
+      const field = name.split(".")[1];
       setFormData({
         ...formData,
-        address: { ...formData.address, [addressField]: value },
+        address: { ...formData.address, [field]: value },
+      });
+    } else if (name.startsWith("dates.")) {
+      const field = name.split(".")[1];
+      setFormData({
+        ...formData,
+        dates: { ...formData.dates, [field]: value },
       });
     } else {
       setFormData({
@@ -117,8 +145,10 @@ const LeadsTable = () => {
         [name]: value,
       });
     }
+  
     setFormErrors({ ...formErrors, [name]: "" });
   };
+  
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -280,8 +310,10 @@ const LeadsTable = () => {
         },
         userPreferences: {
           policy: lead.userPreferences?.policy || "active",
-          whatsappMessageReceive: lead.userPreferences?.whatsappMessageReceive || false,
-          browserNotifications: lead.userPreferences?.browserNotifications || false,
+          whatsappMessageReceive:
+            lead.userPreferences?.whatsappMessageReceive || false,
+          browserNotifications:
+            lead.userPreferences?.browserNotifications || false,
           emailReceive: lead.userPreferences?.emailReceive || false,
         },
       });
@@ -307,6 +339,19 @@ const LeadsTable = () => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  const fetchData = React.useCallback(async () => {
+    await fetchGroups().then((data) => {
+      setGroups(data.groups || []);
+      setGroupOptions(
+        (data.groups || []).map((g) => ({ label: g.name, value: g._id }))
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div className="flex h-screen">
@@ -403,6 +448,7 @@ const LeadsTable = () => {
             {/* Add Lead Modal */}
             {showAddModal && (
               <AddLeadModel
+                groupOptions={groupOptions}
                 handleAddSubmit={handleAddSubmit}
                 handleChange={handleChange}
                 formData={formData}
@@ -435,5 +481,3 @@ const LeadsTable = () => {
 };
 
 export default LeadsTable;
-
-

@@ -1,25 +1,33 @@
 // Installed dependencies:
 // ===============================================================
 import React, { useEffect, useState } from "react";
-import { fetchGroups, handleAddSubmit } from "../../api/GroupsApi";
+import {
+  fetchGroups,
+  handleAddSubmit,
+  handleAddLeadtoGroup,
+} from "../../api/GroupsApi";
 import GroupsControlsComponent from "./GroupsControlsComponent";
 import AddGroupModel from "./AddGroupModel";
 import GroupTable from "./GroupTable";
+import AddLeadToGroupModal from "./AddLeadToGroupModal";
 
 // Project Files
 // ===============================================================
 
 const GroupsComponent = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [ setCurrentPage] = useState(1);
   const [groups, setGroups] = useState([]);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [groupFormData, setGroupFormData] = useState({
     name: "",
     leads: [],
     createdBy: "",
-    createdDate: ""
+    createdDate: "",
   });
 
   const fetchData = React.useCallback(async () => {
@@ -42,6 +50,10 @@ const GroupsComponent = () => {
     setGroupFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
+  const handleUserChange = (e) => {
+    setSelectedUserId(e.target.value);
+  };
+
   return (
     <>
       <GroupsControlsComponent
@@ -53,6 +65,8 @@ const GroupsComponent = () => {
 
       <GroupTable
         paginatedGroups={groups}
+        setShowAddLeadModal={setShowAddLeadModal}
+        setSelectedGroup={setSelectedGroup}
         selectedGroups={[]} // hook up if needed
         handleSelectAll={() => {}}
         handleSelectGroup={() => {}}
@@ -83,6 +97,23 @@ const GroupsComponent = () => {
           setShowAddGroupModal={setShowAddGroupModal}
         />
       )}
+
+      <AddLeadToGroupModal
+        showAddLeadModal={showAddLeadModal}
+        setShowAddLeadModal={setShowAddLeadModal}
+        selectedUserId={selectedUserId}
+        handleUserChange={handleUserChange}
+        handleAddLeadToGroupSubmit={(e) =>
+          handleAddLeadtoGroup(
+            e,
+            selectedGroup._id,
+            selectedUserId,
+            setShowAddLeadModal,
+            selectedUserId
+          )
+        }
+        selectedGroup={selectedGroup}
+      />
     </>
   );
 };

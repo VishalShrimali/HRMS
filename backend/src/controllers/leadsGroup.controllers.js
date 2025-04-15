@@ -1,6 +1,7 @@
 // groupsController.js
 import { Group } from "../models/group.models.js";
 import { decodeJWTGetUser } from "../middleware/auth.middlware.js";
+import User from "../models/user.model.js";
 
 // Centralized error handler
 const handleError = (res, error, statusCode = 500) => {
@@ -19,6 +20,8 @@ export const getGroups = async (req, res) => {
       "leads",
       "firstName lastName email"
     ); // Populate lead details
+
+    console.log(groups);
     res.status(200).json({ message: "Groups fetched successfully", groups });
   } catch (error) {
     handleError(res, error);
@@ -148,3 +151,44 @@ export const addMembersToGroup = async (req, res) => {
     handleError(res, error);
   }
 };
+
+
+// Add a lead to a group using :id (group ID) and :uid (user ID)
+export const addLeadToGroup = async (req, res) => {
+  try {
+    const { id, uid } = req.params; // Extract group ID and user ID from params
+
+    console.log("LEad : ", id, uid);
+
+    // Find the group by ID
+    const group = await Group.findById(id);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Check if the user (lead) exists by user ID (uid)
+    const user = await User.findById(uid); // Assuming you have a User model
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the user is already a lead in the group
+    if (group.leads.includes(uid)) {
+      return res.status(400).json({ message: "User is already a lead in this group" });
+    }
+
+    // Add the user as a lead in the group
+    group.leads.push(uid);
+
+    const updatedGroup = await group.save();
+
+
+
+    res
+      .status(200)
+      .json({ message: "Lead added successfully", group: updatedGroup });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+

@@ -8,7 +8,8 @@ import {
     getUsersWithPagination,
     addRoleToUser,
     forgotPassword,
-    resetPassword, // Import the new controller
+    resetPassword,
+    getAllUsersWithFirstNameLastNameId, // Import the new controller
 } from "../controllers/user.controllers.js";
 import { authorizeRole, protect}  from "../middleware/auth.middlware.js";
 
@@ -51,6 +52,11 @@ userRouter.get('/list', (req, res, next) => {
     authorizeRole(["ADMIN", "Super Admin"], req, res, next);
 }, (req, res) => {
     getUsersWithPagination(req, res);
+});
+userRouter.get('/list/all', (req, res, next) => {
+    authorizeRole(["ADMIN", "Super Admin"], req, res, next);
+}, (req, res) => {
+    getAllUsersWithFirstNameLastNameId(req, res);
 });
 
 // // Admin and HR Admin Routes

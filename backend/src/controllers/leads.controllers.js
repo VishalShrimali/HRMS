@@ -1,11 +1,8 @@
-import fsPromises from 'fs/promises'; // Promise-based methods
-import fs from 'fs'; // Regular fs for streams
-import csv from 'csv-parser';
 import validator from 'validator';
 import { Lead } from '../models/leads.models.js';
+import { Group } from '../models/group.models.js';
 import mongoose from 'mongoose';
 import { Parser } from 'json2csv';
-import { log } from 'console';
 
 
 // Centralized error handler
@@ -46,11 +43,11 @@ export const getLeadById = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-
 // Create a new lead
 export const createLead = async (req, res) => {
     try {
         const {
+            groupId,
             firstName,
             lastName,
             email,
@@ -85,10 +82,10 @@ export const createLead = async (req, res) => {
             country,
             addresses,
             dates: {
-                joinDate: dates?.joinDate || Date.now(),
-                birthDate: dates?.birthDate || "",
-                lastLogin: dates?.lastLogin || "",
-                passwordChangedAt: dates?.passwordChangedAt || "",
+                joinDate: dates?.joinDate ? new Date(dates?.joinDate).getTime() : Date.now(),
+                birthDate: dates?.birthDate ? new Date(dates?.birthDate).getTime() : "",
+                lastLogin: dates?.lastLogin ? new Date(dates?.lastLogin).getTime() : "",
+                passwordChangedAt: dates?.passwordChangedAt ? new Date(dates?.passwordChangedAt).getTime() : "",
             },
             userPreferences: {
                 policy: userPreferences?.policy || "active",
@@ -99,11 +96,27 @@ export const createLead = async (req, res) => {
         });
 
         const savedLead = await newLead.save();
+
+        if (groupId !== "") {
+            // Find the group by groupId and add the new lead's _id to the leads array
+            const group = await Group.findById(groupId);
+            if (!group) {
+                return res.status(400).json({ message: "Group not found" });
+            }
+
+            // Add the lead's _id to the group's leads array
+            group.leads.push(savedLead._id);
+
+            // Save the updated group
+            await group.save();
+        }
+
         res.status(201).json({ message: "Lead created successfully", savedLead });
     } catch (error) {
         handleError(res, error);
     }
 };
+
 
 // Update a lead
 export const updateLead = async (req, res) => {
@@ -125,9 +138,8 @@ export const updateLead = async (req, res) => {
 
         if (firstName !== undefined) updateData.firstName = firstName;
         if (lastName !== undefined) updateData.lastName = lastName;
-        if (fullName !== undefined) {
-            updateData.fullName = fullName;
-        } else if (firstName || lastName) {
+        if (fullName !== undefined) updateData.fullName = fullName;
+        else if (firstName || lastName) {
             const lead = await Lead.findById(req.params.id);
             updateData.fullName = `${firstName || lead.firstName || ""} ${lastName || lead.lastName || ""}`.trim();
         }
@@ -137,8 +149,25 @@ export const updateLead = async (req, res) => {
         if (secondPhoneNumber !== undefined) updateData.secondPhoneNumber = secondPhoneNumber;
         if (country !== undefined) updateData.country = country;
         if (addresses !== undefined) updateData.addresses = addresses;
-        if (dates !== undefined) updateData.dates = dates;
-        if (userPreferences !== undefined) updateData.userPreferences = userPreferences;
+
+        // Handle updating dates and userPreferences fields
+        if (dates !== undefined) {
+            updateData.dates = {
+                joinDate: dates?.joinDate ? new Date(dates?.joinDate).getTime() : Date.now(),
+                birthDate: dates?.birthDate ? new Date(dates?.birthDate).getTime() : "",
+                lastLogin: dates?.lastLogin ? new Date(dates?.lastLogin).getTime() : "",
+                passwordChangedAt: dates?.passwordChangedAt ? new Date(dates?.passwordChangedAt).getTime() : "",
+            };
+        }
+
+        if (userPreferences !== undefined) {
+            updateData.userPreferences = {
+                policy: userPreferences?.policy || "active",
+                whatsappMessageReceive: !!userPreferences?.whatsappMessageReceive,
+                browserNotifications: !!userPreferences?.browserNotifications,
+                emailReceive: !!userPreferences?.emailReceive,
+            };
+        }
 
         const updatedLead = await Lead.findByIdAndUpdate(
             req.params.id,
@@ -156,6 +185,8 @@ export const updateLead = async (req, res) => {
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+
+
 
 // Delete a lead
 export const deleteLead = async (req, res) => {
