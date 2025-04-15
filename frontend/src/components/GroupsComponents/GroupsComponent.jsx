@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { fetchGroups, handleAddSubmit } from "../../api/GroupsApi";
 import GroupsControlsComponent from "./GroupsControlsComponent";
 import AddGroupModel from "./AddGroupModel";
+import GroupTable from "./GroupTable";
 
 // Project Files
 // ===============================================================
@@ -16,7 +17,9 @@ const GroupsComponent = () => {
   const [formErrors, setFormErrors] = useState({});
   const [groupFormData, setGroupFormData] = useState({
     name: "",
-    description: "",
+    leads: [],
+    createdBy: "",
+    createdDate: ""
   });
 
   const fetchData = React.useCallback(async () => {
@@ -39,8 +42,6 @@ const GroupsComponent = () => {
     setGroupFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  
-
   return (
     <>
       <GroupsControlsComponent
@@ -50,13 +51,35 @@ const GroupsComponent = () => {
         setShowAddGroupModal={setShowAddGroupModal}
       />
 
+      <GroupTable
+        paginatedGroups={groups}
+        selectedGroups={[]} // hook up if needed
+        handleSelectAll={() => {}}
+        handleSelectGroup={() => {}}
+        setEditingGroup={() => {}}
+        setGroupFormData={() => {}}
+        setShowEditModal={() => {}}
+        handleDelete={(id) => {
+          console.log("Delete group with id:", id);
+        }}
+      />
+
       {showAddGroupModal && (
         <AddGroupModel
           formData={groupFormData}
           formErrors={formErrors}
           showAddGroupModal={showAddGroupModal}
           handleChange={handleChange}
-          handleAddSubmit={(e) => handleAddSubmit(e, fetchData, groupFormData, setFormErrors, setShowAddGroupModal, setGroupFormData)}
+          handleAddSubmit={(e) =>
+            handleAddSubmit(
+              e,
+              fetchData,
+              groupFormData,
+              setFormErrors,
+              setShowAddGroupModal,
+              setGroupFormData
+            )
+          }
           setShowAddGroupModal={setShowAddGroupModal}
         />
       )}
