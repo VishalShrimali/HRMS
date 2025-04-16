@@ -1,5 +1,5 @@
-import React from 'react';
-import { Edit, Trash } from 'lucide-react';
+import React from "react";
+import { Edit, Trash } from "lucide-react";
 
 const GroupTable = ({
   setSelectedGroup = () => {},
@@ -47,9 +47,17 @@ const GroupTable = ({
                 />
               </td>
               <td className="p-4 text-gray-900 font-medium">
-                <div>{group.name}</div>
+                <div
+                  className="text-blue-600 cursor-pointer hover:underline"
+                  onClick={() =>
+                    (window.location.href = `/leads?groupId=${group._id}`)
+                  }
+                >
+                  {group.name}
+                </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {(group.leads || []).length} lead{(group.leads || []).length !== 1 ? 's' : ''} assigned
+                  {(group.leads || []).length} lead
+                  {(group.leads || []).length !== 1 ? "s" : ""} assigned
                 </div>
               </td>
               <td className="p-4 flex gap-2">
@@ -65,7 +73,10 @@ const GroupTable = ({
                 <button
                   onClick={() => {
                     setEditingGroup(group);
-                    setGroupFormData({ name: group.name || '', description: group.description || '' });
+                    setGroupFormData({
+                      name: group.name || "",
+                      description: group.description || "",
+                    });
                     setShowEditModal(true);
                   }}
                   className="bg-gray-500 px-3 py-1 text-white rounded flex items-center hover:bg-gray-600"

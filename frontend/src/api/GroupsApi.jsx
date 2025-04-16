@@ -32,7 +32,7 @@ export const fetchGroups = async () => {
 export const addGroup = async (groupData) => {
   try {
     const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}/groups/creategroup`;
+    const url = `${API_BASE_URL}/groups/create`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {

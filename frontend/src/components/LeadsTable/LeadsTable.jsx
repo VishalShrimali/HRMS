@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   getLeads,
   addLead,
@@ -7,18 +7,24 @@ import {
   getLeadById,
   importLeads,
   exportLeads,
-} from '../../api/LeadsApi';
-import { Search, Users } from 'lucide-react';
-// import AddLeadModel from './AddLeadModel';
-// import EditLeadModal from './EditLeadModal';
-import PaginationSection from './PaginationSection';
-import LeadsControlsComponent from './LeadsControlsComponent';
-import LeadsTableComponent from './LeadsTableComponent';
-import { fetchGroups, addGroup, updateGroup, deleteGroup, getAllUsers } from '../../api/GroupsApi';
-import GroupTable from '../GroupsComponents/GroupTable';
-import AddGroupModel from '../GroupsComponents/AddGroupModel';
-import AddLeadToGroupModal from '../GroupsComponents/AddLeadToGroupModal';
-import GroupsControlsComponent from '../GroupsComponents/GroupsControlsComponent';
+} from "../../api/LeadsApi";
+import { Search, Users } from "lucide-react";
+import AddLeadModal from "./AddLeadModel";
+import EditLeadModal from './EditLeadModel';
+import PaginationSection from "./PaginationSection";
+import LeadsControlsComponent from "./LeadsControlsComponent";
+import LeadsTableComponent from "./LeadsTableComponent";
+import {
+  fetchGroups,
+  addGroup,
+  updateGroup,
+  deleteGroup,
+  getAllUsers,
+} from "../../api/GroupsApi";
+import GroupTable from "../GroupsComponents/GroupTable";
+import AddGroupModel from "../GroupsComponents/AddGroupModel";
+import AddLeadToGroupModal from "../GroupsComponents/AddLeadToGroupModal";
+import GroupsControlsComponent from "../GroupsComponents/GroupsControlsComponent";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -49,46 +55,49 @@ const LeadsTable = () => {
   const [showEditLeadModal, setShowEditLeadModal] = useState(false);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
-  const [groupFormData, setGroupFormData] = useState({ name: '', description: '' });
+  const [groupFormData, setGroupFormData] = useState({
+    name: "",
+    description: "",
+  });
   const [groupFormErrors, setGroupFormErrors] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingLead, setEditingLeadState] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState([]);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState("personal");
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    groupId: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    country: 'USA (+1)',
-    phoneNumber: '',
-    secondPhoneNumber: '',
+    groupId: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    country: "USA (+1)",
+    phoneNumber: "",
+    secondPhoneNumber: "",
     dates: {
-      birthDate: '',
-      joinDate: '',
+      birthDate: "",
+      joinDate: "",
     },
     address: {
-      line1: '',
-      line2: '',
-      line3: '',
-      pincode: '',
-      city: '',
-      state: '',
-      county: '',
-      country: 'USA',
+      line1: "",
+      line2: "",
+      line3: "",
+      pincode: "",
+      city: "",
+      state: "",
+      county: "",
+      country: "USA",
     },
-    phone: '',
+    phone: "",
     userPreferences: {
-      policy: 'active',
+      policy: "active",
       whatsappMessageReceive: false,
       browserNotifications: false,
       emailReceive: false,
@@ -106,12 +115,13 @@ const LeadsTable = () => {
         ? data
         : [];
       const sanitizedLeads = leadsArray.filter(
-        (lead) => lead && typeof lead === 'object' && lead.firstName && lead.lastName
+        (lead) =>
+          lead && typeof lead === "object" && lead.firstName && lead.lastName
       );
       setLeads(sanitizedLeads);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch leads');
+      setError(err.response?.data?.message || "Failed to fetch leads");
       setLeads([]);
     } finally {
       setLoading(false);
@@ -123,9 +133,11 @@ const LeadsTable = () => {
     try {
       const data = await fetchGroups();
       setGroups(data.groups || []);
-      setGroupOptions((data.groups || []).map((g) => ({ label: g.name, value: g._id })));
+      setGroupOptions(
+        (data.groups || []).map((g) => ({ label: g.name, value: g._id }))
+      );
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch groups');
+      setError(err.response?.data?.message || "Failed to fetch groups");
       setGroups([]);
     }
   }, []);
@@ -138,21 +150,24 @@ const LeadsTable = () => {
   // Validate lead form
   const validateLeadForm = () => {
     const errors = {};
-    if (!formData.firstName) errors.firstName = 'First Name is required';
-    if (!formData.lastName) errors.lastName = 'Last Name is required';
+    if (!formData.firstName) errors.firstName = "First Name is required";
+    if (!formData.lastName) errors.lastName = "Last Name is required";
     if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = 'Valid email is required';
+      errors.email = "Valid email is required";
     if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
-      errors.phoneNumber = 'Valid 10-digit phone number is required';
-    if (!formData.phone) errors.phone = 'Phone is required';
-    if (!formData.dates?.birthDate) errors.birthDate = 'Birth date is required';
-    if (!formData.dates?.joinDate) errors.joinDate = 'Join date is required';
-    if (!formData.address.line1) errors.line1 = 'Address Line 1 is required';
-    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode))
-      errors.pincode = 'Valid pincode is required';
-    if (!formData.address.city) errors.city = 'City is required';
-    if (!formData.address.state) errors.state = 'State is required';
-    if (!formData.address.country) errors.country = 'Country is required';
+      errors.phoneNumber = "Valid 10-digit phone number is required";
+    if (!formData.phone) errors.phone = "Phone is required";
+    if (!formData.dates?.birthDate) errors.birthDate = "Birth date is required";
+    if (!formData.dates?.joinDate) errors.joinDate = "Join date is required";
+    if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
+    if (
+      !formData.address.pincode ||
+      !/^[0-9]{5,6}$/.test(formData.address.pincode)
+    )
+      errors.pincode = "Valid pincode is required";
+    if (!formData.address.city) errors.city = "City is required";
+    if (!formData.address.state) errors.state = "State is required";
+    if (!formData.address.country) errors.country = "Country is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -160,7 +175,7 @@ const LeadsTable = () => {
   // Validate group form
   const validateGroupForm = () => {
     const errors = {};
-    if (!groupFormData.name) errors.name = 'Group name is required';
+    if (!groupFormData.name) errors.name = "Group name is required";
     setGroupFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -168,14 +183,14 @@ const LeadsTable = () => {
   // Handle lead form changes
   const handleLeadChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith('address.')) {
-      const field = name.split('.')[1];
+    if (name.startsWith("address.")) {
+      const field = name.split(".")[1];
       setFormData({
         ...formData,
         address: { ...formData.address, [field]: value },
       });
-    } else if (name.startsWith('dates.')) {
-      const field = name.split('.')[1];
+    } else if (name.startsWith("dates.")) {
+      const field = name.split(".")[1];
       setFormData({
         ...formData,
         dates: { ...formData.dates, [field]: value },
@@ -186,7 +201,7 @@ const LeadsTable = () => {
         [name]: value,
       });
     }
-    setFormErrors({ ...formErrors, [name]: '' });
+    setFormErrors({ ...formErrors, [name]: "" });
   };
 
   // Handle group form changes
@@ -196,7 +211,7 @@ const LeadsTable = () => {
       ...groupFormData,
       [name]: value,
     });
-    setGroupFormErrors({ ...groupFormErrors, [name]: '' });
+    setGroupFormErrors({ ...groupFormErrors, [name]: "" });
   };
 
   // Handle user selection for adding lead to group
@@ -214,13 +229,15 @@ const LeadsTable = () => {
         date: new Date().toISOString(),
         groupId: selectedGroup?._id || formData.groupId,
       });
-      setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
+      setLeads(
+        [...leads, response.lead].filter((lead) => lead && lead.firstName)
+      );
       setShowAddLeadModal(false);
       resetLeadForm();
       setError(null);
       fetchLeads();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add lead');
+      setError(err.response?.data?.message || "Failed to add lead");
     }
   };
 
@@ -240,7 +257,7 @@ const LeadsTable = () => {
       setError(null);
       fetchLeads();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update lead');
+      setError(err.response?.data?.message || "Failed to update lead");
     }
   };
 
@@ -253,7 +270,9 @@ const LeadsTable = () => {
         const response = await updateGroup(editingGroup._id, groupFormData);
         setGroups(
           groups.map((group) =>
-            group._id === editingGroup._id ? { ...group, ...response.group } : group
+            group._id === editingGroup._id
+              ? { ...group, ...response.group }
+              : group
           )
         );
       } else {
@@ -265,7 +284,7 @@ const LeadsTable = () => {
       setError(null);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save group');
+      setError(err.response?.data?.message || "Failed to save group");
     }
   };
 
@@ -273,7 +292,7 @@ const LeadsTable = () => {
   const handleAddLeadToGroupSubmit = async (e) => {
     e.preventDefault();
     if (!selectedUserId) {
-      setError('Please select a user');
+      setError("Please select a user");
       return;
     }
     try {
@@ -282,20 +301,22 @@ const LeadsTable = () => {
         groupId: selectedGroup._id,
         date: new Date().toISOString(),
       });
-      setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
+      setLeads(
+        [...leads, response.lead].filter((lead) => lead && lead.firstName)
+      );
       setShowAddLeadModal(false);
-      setSelectedUserId('');
+      setSelectedUserId("");
       setError(null);
       fetchLeads();
       fetchData(); // Refresh groups to update leads count
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add lead to group');
+      setError(err.response?.data?.message || "Failed to add lead to group");
     }
   };
 
   // Handle delete lead
   const handleDeleteLead = async (id) => {
-    if (window.confirm('Are you sure you want to delete this lead?')) {
+    if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
         await deleteLead(id);
         setLeads(leads.filter((lead) => lead._id !== id));
@@ -303,14 +324,14 @@ const LeadsTable = () => {
         setError(null);
         fetchLeads();
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete lead');
+        setError(err.response?.data?.message || "Failed to delete lead");
       }
     }
   };
 
   // Handle delete group
   const handleDeleteGroup = async (id) => {
-    if (window.confirm('Are you sure you want to delete this group?')) {
+    if (window.confirm("Are you sure you want to delete this group?")) {
       try {
         await deleteGroup(id);
         setGroups(groups.filter((group) => group._id !== id));
@@ -318,7 +339,7 @@ const LeadsTable = () => {
         setError(null);
         fetchData();
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete group');
+        setError(err.response?.data?.message || "Failed to delete group");
       }
     }
   };
@@ -329,7 +350,7 @@ const LeadsTable = () => {
       await exportLeads();
       setError(null);
     } catch (err) {
-      setError('Failed to export leads');
+      setError("Failed to export leads");
     }
   };
 
@@ -337,7 +358,7 @@ const LeadsTable = () => {
   const handleImport = async (event) => {
     const file = event.target.files[0];
     if (!file) {
-      setError('No file selected');
+      setError("No file selected");
       return;
     }
     try {
@@ -345,7 +366,7 @@ const LeadsTable = () => {
       fetchLeads();
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to import leads');
+      setError(err.response?.data?.message || "Failed to import leads");
     }
   };
 
@@ -358,29 +379,29 @@ const LeadsTable = () => {
   // Reset lead form
   const resetLeadForm = () => {
     setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      country: 'USA (+1)',
-      phoneNumber: '',
-      secondPhoneNumber: '',
+      firstName: "",
+      lastName: "",
+      email: "",
+      country: "USA (+1)",
+      phoneNumber: "",
+      secondPhoneNumber: "",
       dates: {
-        birthDate: '',
-        joinDate: '',
+        birthDate: "",
+        joinDate: "",
       },
       address: {
-        line1: '',
-        line2: '',
-        line3: '',
-        pincode: '',
-        city: '',
-        state: '',
-        county: '',
-        country: 'USA',
+        line1: "",
+        line2: "",
+        line3: "",
+        pincode: "",
+        city: "",
+        state: "",
+        county: "",
+        country: "USA",
       },
-      phone: '',
+      phone: "",
       userPreferences: {
-        policy: 'active',
+        policy: "active",
         whatsappMessageReceive: false,
         browserNotifications: false,
         emailReceive: false,
@@ -393,7 +414,7 @@ const LeadsTable = () => {
 
   // Reset group form
   const resetGroupForm = () => {
-    setGroupFormData({ name: '', description: '' });
+    setGroupFormData({ name: "", description: "" });
     setEditingGroup(null);
     setGroupFormErrors({});
   };
@@ -438,12 +459,12 @@ const LeadsTable = () => {
   // Handle create group
   const handleCreateGroup = () => {
     if (selectedLeads.length === 0) {
-      alert('Please select at least one lead to create a group.');
+      alert("Please select at least one lead to create a group.");
       return;
     }
     setGroupFormData({
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       members: selectedLeads,
     });
     setShowAddGroupModal(true);
@@ -451,17 +472,19 @@ const LeadsTable = () => {
 
   // Handle change group (placeholder)
   const handleChangeGroup = () => {
-    alert('Change Group functionality triggered!');
+    alert("Change Group functionality triggered!");
   };
 
   // Handle delete selected items
   const handleDeleteSelected = () => {
-    if (window.confirm('Are you sure you want to delete the selected items?')) {
-      if (activeTab === 'personal') {
+    if (window.confirm("Are you sure you want to delete the selected items?")) {
+      if (activeTab === "personal") {
         setLeads(leads.filter((lead) => !selectedLeads.includes(lead._id)));
         setSelectedLeads([]);
       } else {
-        setGroups(groups.filter((group) => !selectedGroups.includes(group._id)));
+        setGroups(
+          groups.filter((group) => !selectedGroups.includes(group._id))
+        );
         setSelectedGroups([]);
       }
     }
@@ -473,42 +496,46 @@ const LeadsTable = () => {
       const lead = await getLeadById(leadId);
       const address = lead.addresses?.[0] || {};
       setFormData({
-        firstName: lead.firstName || '',
-        lastName: lead.lastName || '',
-        email: lead.email || '',
-        phone: lead.phone || '',
+        firstName: lead.firstName || "",
+        lastName: lead.lastName || "",
+        email: lead.email || "",
+        phone: lead.phone || "",
         dates: {
-          birthDate: lead.dates?.birthDate || '',
-          joinDate: lead.dates?.joinDate || '',
+          birthDate: lead.dates?.birthDate || "",
+          joinDate: lead.dates?.joinDate || "",
         },
         address: {
-          line1: address.line1 || '',
-          line2: address.line2 || '',
-          line3: address.line3 || '',
-          pincode: address.pincode || '',
-          city: address.city || '',
-          state: address.state || '',
-          county: address.county || '',
-          country: address.country || '',
+          line1: address.line1 || "",
+          line2: address.line2 || "",
+          line3: address.line3 || "",
+          pincode: address.pincode || "",
+          city: address.city || "",
+          state: address.state || "",
+          county: address.county || "",
+          country: address.country || "",
         },
         userPreferences: {
-          policy: lead.userPreferences?.policy || 'active',
-          whatsappMessageReceive: lead.userPreferences?.whatsappMessageReceive || false,
-          browserNotifications: lead.userPreferences?.browserNotifications || false,
+          policy: lead.userPreferences?.policy || "active",
+          whatsappMessageReceive:
+            lead.userPreferences?.whatsappMessageReceive || false,
+          browserNotifications:
+            lead.userPreferences?.browserNotifications || false,
           emailReceive: lead.userPreferences?.emailReceive || false,
         },
       });
       setEditingLeadState(lead);
       setShowEditLeadModal(true);
     } catch (err) {
-      setError('Failed to load lead data for editing');
+      setError("Failed to load lead data for editing");
     }
   };
 
   // Filter and paginate leads
   const filteredLeads = leads.filter((lead) =>
     lead && lead.firstName && lead.lastName
-      ? (lead.firstName + ' ' + lead.lastName).toLowerCase().includes(searchTerm.toLowerCase())
+      ? (lead.firstName + " " + lead.lastName)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       : false
   );
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
@@ -535,10 +562,14 @@ const LeadsTable = () => {
           <div className="flex items-center">
             <Users className="mr-2" size={20} />
             <h2 className="text-2xl font-semibold text-gray-800">
-              {activeTab === 'personal' ? 'Leads' : 'Groups'}
+              {activeTab === "personal" ? "Leads" : "Groups"}
             </h2>
             <span className="ml-2 text-gray-500">
-              ({activeTab === 'personal' ? filteredLeads.length : filteredGroups.length} Records Found)
+              (
+              {activeTab === "personal"
+                ? filteredLeads.length
+                : filteredGroups.length}{" "}
+              Records Found)
             </span>
           </div>
           <div className="relative">
@@ -553,7 +584,10 @@ const LeadsTable = () => {
                 setCurrentGroupPage(1);
               }}
             />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
+            <Search
+              className="absolute left-3 top-2.5 text-gray-400"
+              size={16}
+            />
           </div>
         </div>
 
@@ -561,21 +595,21 @@ const LeadsTable = () => {
         <div className="flex mb-6 border-b">
           <button
             className={`px-6 py-2 -mb-px ${
-              activeTab === 'personal'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-500'
+              activeTab === "personal"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500"
             } font-medium focus:outline-none`}
-            onClick={() => setActiveTab('personal')}
+            onClick={() => setActiveTab("personal")}
           >
             Personal Leads
           </button>
           <button
             className={`px-6 py-2 -mb-px ${
-              activeTab === 'groups'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-500'
+              activeTab === "groups"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500"
             } font-medium focus:outline-none ml-2`}
-            onClick={() => setActiveTab('groups')}
+            onClick={() => setActiveTab("groups")}
           >
             Groups
           </button>
@@ -585,7 +619,7 @@ const LeadsTable = () => {
         {showActionBar && (
           <div className="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-between items-center shadow-lg">
             <span>
-              {activeTab === 'personal'
+              {activeTab === "personal"
                 ? `${selectedLeads.length} Leads Selected`
                 : `${selectedGroups.length} Groups Selected`}
             </span>
@@ -612,7 +646,7 @@ const LeadsTable = () => {
           </div>
         )}
 
-        {activeTab === 'personal' && (
+        {activeTab === "personal" && (
           <>
             <LeadsControlsComponent
               fileInputRef={fileInputRef}
@@ -645,7 +679,7 @@ const LeadsTable = () => {
               setCurrentPage={setCurrentPage}
             />
             {showAddLeadModal && !selectedGroup && (
-              <AddLeadModel
+              <AddLeadModal
                 groupOptions={groupOptions}
                 handleAddSubmit={handleAddLeadSubmit}
                 handleChange={handleLeadChange}
@@ -666,7 +700,7 @@ const LeadsTable = () => {
           </>
         )}
 
-        {activeTab === 'groups' && (
+        {activeTab === "groups" && (
           <ErrorBoundary>
             <GroupsControlsComponent
               rowsPerPage={groupsPerPage}
