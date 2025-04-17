@@ -1,136 +1,22 @@
-// frontend/src/api/GroupsApi.js
-import { API_BASE_URL } from './BASEURL';
-import axios from 'axios';
-// export const fetchGroups = async () => {
-//   try {
-//     const token = localStorage.getItem("token");
-//     const url = `${API_BASE_URL}/groups`;
-//     const response = await fetch(url, {
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`,
-//       },
-//     });
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch groups: ${response.status}`);
-//     }
-//     return await response.json();
-//   } catch (err) {
-//     console.error("Fetch groups error:", err);
-//     throw err;
-//   }
-// };
+import axios from "axios";
 
-// export const addGroup = async (groupData) => {
-//   try {
-//     const token = localStorage.getItem("token");
-//     console.log(token)
-//     const url = `${API_BASE_URL}/groups/create`;
-//     const response = await fetch(url, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`,
-//       },
-//       body: JSON.stringify(groupData),
-//     });
-//     if (!response.ok) {
-//       throw new Error(`Failed to create group: ${response.status}`);
-//     }
-//     return await response.json();
-//   } catch (err) {
-//     console.error("Add group error:", err);
-//     throw err;
-//   }
-// };
+// Base URL for API
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
-// export const updateGroup = async (groupId, updateData) => {
-//   try {
-//     const token = localStorage.getItem('token');
-//     const url = `${API_BASE_URL}/groups/${groupId}`;
-//     const response = await fetch(url, {
-//       method: 'PUT',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         Authorization: `Bearer ${token}`,
-//       },
-//       body: JSON.stringify(updateData),
-//     });
-//     if (!response.ok) {
-//       throw new Error(`Failed to update group: ${response.status}`);
-//     }
-//     const contentType = response.headers.get('content-type');
-//     if (!contentType || !contentType.includes('application/json')) {
-//       const text = await response.text();
-//       console.error('Non-JSON response:', text.slice(0, 100));
-//       throw new Error('Received non-JSON response');
-//     }
-//     return await response.json();
-//   } catch (err) {
-//     console.error('Update group error:', err);
-//     throw err;
-//   }
-// };
-
-
-// src/api/GroupsApi.jsx
-
-
-export const addGroup = async (groupData) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    console.log("Sending group data:", groupData);
-    console.log("Authorization token:", token);
-    const response = await axios.post(
-      "http://localhost:8000/api/v1/groups/create",
-      groupData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Add group error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to create group");
+// Helper to get token
+const getToken = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("No authentication token found. Please log in.");
   }
+  return token;
 };
 
-export const updateGroup = async (groupId, groupData) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    const response = await axios.put(
-      `http://localhost:8000/api/v1/groups/${groupId}`,
-      groupData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Update group error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to update group");
-  }
-};
-
+// Fetch all groups
 export const fetchGroups = async () => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    const response = await axios.get("http://localhost:8000/api/v1/groups", {
+    const token = getToken();
+    const response = await axios.get(`${API_BASE_URL}/groups`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -142,55 +28,45 @@ export const fetchGroups = async () => {
   }
 };
 
-export const handleAddLeadtoGroup = async (e, groupId, userId, setShowAddLeadModal, setSelectedUserId) => {
+// Add a new group
+export const addGroup = async (groupData) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    const response = await axios.post(
-      `http://localhost:8000/api/v1/groups/${groupId}/leads`,
-      { userId },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    setShowAddLeadModal(false);
-    setSelectedUserId("");
-    return response.data;
-  } catch (error) {
-    console.error("Add lead to group error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to add lead to group");
-  }
-};
-
-export const fetchLeadsByGroup = async (groupId) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    const response = await axios.get(`http://localhost:8000/api/v1/groups/${groupId}/leads`, {
+    const token = getToken();
+    const response = await axios.post(`${API_BASE_URL}/groups/create`, groupData, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
     return response.data;
   } catch (error) {
-    console.error("Fetch leads error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch leads");
+    console.error("Add group error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to create group");
   }
 };
 
+// Update a group
+export const updateGroup = async (groupId, groupData) => {
+  try {
+    const token = getToken();
+    const response = await axios.put(`${API_BASE_URL}/groups/${groupId}`, groupData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Update group error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to update group");
+  }
+};
+
+// Delete a group
 export const deleteGroup = async (groupId) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found. Please log in.");
-    }
-    const response = await axios.delete(`http://localhost:8000/api/v1/groups/${groupId}`, {
+    const token = getToken();
+    const response = await axios.delete(`${API_BASE_URL}/groups/${groupId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -202,134 +78,71 @@ export const deleteGroup = async (groupId) => {
   }
 };
 
-// Other API functions (fetchGroups, handleAddLeadtoGroup, fetchLeadsByGroup, deleteGroup) ...
-
-// export const deleteGroup = async (groupId) => {
-//   try {
-//     const token = localStorage.getItem('token');
-//     const url = `${API_BASE_URL}/groups/${groupId}`;
-//     const response = await fetch(url, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         Authorization: `Bearer ${token}`,
-//       },
-//     });
-//     if (!response.ok) {
-//       throw new Error(`Failed to delete group: ${response.status}`);
-//     }
-//     const contentType = response.headers.get('content-type');
-//     if (!contentType || !contentType.includes('application/json')) {
-//       const text = await response.text();
-//       console.error('Non-JSON response:', text.slice(0, 100));
-//       throw new Error('Received non-JSON response');
-//     }
-//     return await response.json();
-//   } catch (err) {
-//     console.error('Delete group error:', err);
-//     throw err;
-//   }
-// };
-
-export const getAllUsers = async () => {
+// Fetch leads by group
+export const fetchLeadsByGroup = async (groupId) => {
   try {
-    const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}/user/list/all`;
-    const response = await fetch(url, {
+    const token = getToken();
+    const response = await axios.get(`${API_BASE_URL}/groups/${groupId}`, {
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch users: ${response.status}`);
-    }
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Non-JSON response:', text.slice(0, 100));
-      throw new Error('Received non-JSON response');
-    }
-    const data = await response.json();
-    console.log('Users data:', data);
-    return data;
-  } catch (err) {
-    console.error('Fetch users error:', err);
-    throw err;
+    return response.data; // Expect group with populated leads
+  } catch (error) {
+    console.error("Fetch leads error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to fetch leads");
   }
 };
-// Add this to your GroupsApi.js file
 
-// export const fetchLeadsByGroup = async (groupId) => {
-//   try {
-//     const token = localStorage.getItem('token');
-//     const url = `${API_BASE_URL}/groups/${groupId}/leads`;
-//     console.log('Fetching leads from group:', url);
-//     const response = await fetch(url, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//         Authorization: `Bearer ${token}`,
-//       },
-//     });
-//     console.log('Response:', response.status, response.headers.get('content-type'));
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch leads for group: ${response.status}`);
-//     }
-//     const contentType = response.headers.get('content-type');
-//     if (!contentType || !contentType.includes('application/json')) {
-//       const text = await response.text();
-//       console.error('Non-JSON response:', text.slice(0, 100));
-//       throw new Error('Received non-JSON response');
-//     }
-//     return await response.json();
-//   } catch (err) {
-//     console.error('Fetch leads error:', err);
-//     throw err;
-//   }
-// };
-
-// // Add this helper function to handle adding leads to a group
-// export const handleAddLeadtoGroup = async (
-//   e, 
-//   groupId, 
-//   userId, 
-//   setShowAddLeadModal, 
-//   setSelectedUserId
-// ) => {
-//   e.preventDefault();
-//   try {
-//     await addLeadToGroup(groupId, userId);
-//     setShowAddLeadModal(false);
-//     setSelectedUserId("");
-//     // You might want to refresh the group data here
-//     // await fetchData();
-//   } catch (error) {
-//     console.error("Error adding lead to group:", error);
-//   }
-// };
-export const addLeadToGroup = async (groupId, userId) => {
+// Add multiple leads to a group
+export const addMembersToGroup = async (groupId, leadIds) => {
   try {
-    const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}/groups/${groupId}/${userId}`;
-    const response = await fetch(url, {
-      method: 'PUT',
+    const token = getToken();
+    const response = await axios.put(
+      `${API_BASE_URL}/groups/${groupId}/members`,
+      { leadIds },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Add members to group error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to add leads to group");
+  }
+};
+
+// Add a single lead to a group
+export const addLeadToGroup = async (groupId, leadId) => {
+  try {
+    const token = getToken();
+    const response = await axios.put(`${API_BASE_URL}/groups/${groupId}/${leadId}`, {}, {
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) {
-      throw new Error(`Failed to add lead to group: ${response.status}`);
-    }
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Non-JSON response:', text.slice(0, 100));
-      throw new Error('Received non-JSON response');
-    }
-    return await response.json();
-  } catch (err) {
-    console.error('Add lead to group error:', err);
-    throw err;
+    return response.data;
+  } catch (error) {
+    console.error("Add lead to group error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to add lead to group");
+  }
+};
+
+// Fetch all users
+export const getAllUsers = async () => {
+  try {
+    const token = getToken();
+    const response = await axios.get(`${API_BASE_URL}/user/list/all`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Fetch users error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || "Failed to fetch users");
   }
 };

@@ -152,13 +152,7 @@ const Sidebar = () => {
               isOpen={isOpen}
               isActive={isActive("/email/designer")}
             />
-            <SidebarItem
-              to="/employees"
-              icon={<FaUsers size={18} />}
-              text="Employees"
-              isOpen={isOpen}
-              isActive={isActive("/employees")}
-            />
+            
             <SidebarItem
               to="/settings"
               icon={<FaCog size={18} />}

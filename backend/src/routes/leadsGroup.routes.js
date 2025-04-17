@@ -6,21 +6,25 @@ import {
   updateGroup,
   deleteGroup,
   addMembersToGroup,
-  addLeadToGroup 
-} from "../controllers/leadsGroup.controllers.js"; 
+  addLeadToGroup,
+} from "../controllers/leadsGroup.controllers.js";
 import { protect } from "../middleware/auth.middlware.js";
 
 const groupRouter = express.Router();
 
-// CRUD Routes
-groupRouter.get("/" ,getGroups);
-groupRouter.get("/:id", getGroupById);
-groupRouter.post("/create", protect, createGroup);
-groupRouter.put("/:id", updateGroup);
-groupRouter.delete("/:id", deleteGroup);
-groupRouter.put('/:id/:uid' , addLeadToGroup );
+// Read
+groupRouter.get("/", protect, getGroups);
+groupRouter.get("/:id", protect, getGroupById);
 
-// Member management route (match controller)
-// groupRouter.put("/:id/members", addMembersToGroup);
+// Create
+groupRouter.post("/create", protect, createGroup);
+
+// Update
+groupRouter.put("/:id/members", protect, addMembersToGroup);
+groupRouter.put("/:id/:leadId", protect, addLeadToGroup);
+groupRouter.put("/:id", protect, updateGroup);
+
+// Delete
+groupRouter.delete("/:id", protect, deleteGroup);
 
 export default groupRouter;
