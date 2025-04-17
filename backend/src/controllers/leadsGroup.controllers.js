@@ -21,10 +21,11 @@ export const getGroups = async (req, res) => {
     const groups = await Group.find().populate(
       "leads",
       "firstName lastName email"
-    ); // Populate lead details
-
-    console.log(groups);
-    res.status(200).json({ message: "Groups fetched successfully", groups });
+    );
+    res.status(200).json({
+      message: "Groups fetched successfully",
+      groups,
+    });
   } catch (error) {
     handleError(res, error);
   }
@@ -49,38 +50,38 @@ export const getGroupById = async (req, res) => {
 };
 
 // Create a new group
+// backend/src/controllers/leadsGroup.controllers.js
 export const createGroup = async (req, res) => {
   try {
-    let authUser = await decodeJWTGetUser(req.headers);
-
-    console.log(authUser);
-
     const { name, description } = req.body;
+    console.log("Request body:", req.body);
+    console.log("Authenticated user:", req.user);
 
-    // Validate required fields
     if (!name) {
       return res.status(400).json({ message: "Name is required" });
     }
 
-    // Check if group name already exists
-    const existingGroup = await Group.findOne({ name });
-    if (existingGroup) {
-      return res.status(400).json({ message: "Group name already exists" });
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "User not authenticated" });
     }
 
     const newGroup = new Group({
       name,
       description: description || "",
-      createdBy: authUser._id,
-      members: [],
+      createdBy: req.user._id,
     });
 
     const savedGroup = await newGroup.save();
-    res
-      .status(201)
-      .json({ message: "Group created successfully", group: savedGroup });
+    res.status(201).json({
+      message: "Group created successfully",
+      group: savedGroup,
+    });
   } catch (error) {
-    handleError(res, error);
+    console.error("Error in createGroup:", error);
+    res.status(500).json({
+      message: error.message || "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 };
 

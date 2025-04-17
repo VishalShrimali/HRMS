@@ -8,13 +8,14 @@ import {
   addMembersToGroup,
   addLeadToGroup 
 } from "../controllers/leadsGroup.controllers.js"; 
+import { protect } from "../middleware/auth.middlware.js";
 
 const groupRouter = express.Router();
 
 // CRUD Routes
-groupRouter.get("" ,getGroups);
+groupRouter.get("/" ,getGroups);
 groupRouter.get("/:id", getGroupById);
-groupRouter.post("/create", createGroup);
+groupRouter.post("/create", protect, createGroup);
 groupRouter.put("/:id", updateGroup);
 groupRouter.delete("/:id", deleteGroup);
 groupRouter.put('/:id/:uid' , addLeadToGroup );

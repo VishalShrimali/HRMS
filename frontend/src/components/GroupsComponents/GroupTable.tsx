@@ -31,6 +31,12 @@ const GroupTable = ({
                 />
               </th>
               <th className="p-4 text-left text-sm font-semibold">Name</th>
+              <th className="p-4 text-left text-sm font-semibold">
+                Description
+              </th>
+              <th className="p-4 text-left text-sm font-semibold">
+                Created On
+              </th>
               <th className="p-4 text-left text-sm font-semibold">Actions</th>
             </tr>
           </thead>
@@ -48,14 +54,11 @@ const GroupTable = ({
                     onChange={() => handleSelectGroup(group._id)}
                   />
                 </td>
-                <td className="p-4 text-gray-900 font-medium">
-                  <div>{group.name}</div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {group.leads.length} lead
-                    {group.leads.length !== 1 ? "s" : ""} assigned
-                  </div>
+                <td className="p-4 text-gray-900 font-medium">{group.name}</td>
+                <td className="p-4 text-gray-700">{group.description}</td>
+                <td className="p-4 text-gray-700">
+                  {new Date(group.createdAt).toLocaleDateString()}
                 </td>
-
                 <td className="p-4 flex space-x-2">
                   <button
                     onClick={() => {
@@ -72,6 +75,7 @@ const GroupTable = ({
                       setEditingGroup(group);
                       setGroupFormData({
                         name: group.name || "",
+                        description: group.description || "",
                       });
                       setShowEditModal(true);
                     }}

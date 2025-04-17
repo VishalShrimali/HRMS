@@ -1,3 +1,4 @@
+// AddGroupModel.jsx
 import React from "react";
 import { X } from "lucide-react";
 
@@ -5,9 +6,10 @@ const AddGroupModel = ({
   formData,
   formErrors,
   showAddGroupModal,
-  handleChange,
+  handleChange, // Use the passed handleChange prop
   handleAddSubmit,
   setShowAddGroupModal,
+  setFormData, // Keep this prop in case it's needed elsewhere
 }) => {
   return (
     <dialog
@@ -38,12 +40,24 @@ const AddGroupModel = ({
                   type="text"
                   name="name"
                   value={formData.name}
-                  onChange={handleChange}
+                  onChange={handleChange} // Use handleChange prop
                   className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
                 {formErrors.name && (
                   <p className="text-red-500 text-sm">{formErrors.name}</p>
                 )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange} // Use handleChange prop
+                  className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
             <div className="mt-6 flex justify-end">
