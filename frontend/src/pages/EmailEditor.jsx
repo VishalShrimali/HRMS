@@ -138,7 +138,7 @@ const CustomEmailEditor = () => {
         }
     }, [isEditorReady, templateData]);
 
-    // ✅ Set editor ready flag when editor is fully loaded
+    // ✅ Set editor ready flag
     const onEditorReady = () => {
         console.log("✅ Editor is fully ready!");
         setIsEditorReady(true);
@@ -167,12 +167,12 @@ const CustomEmailEditor = () => {
                     design
                 };
 
-                    try {
-                        const response = await fetch("http://localhost:8000/api/v1/templates", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload),
-                        });
+                try {
+                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
 
                     const result = await response.json();
                     if (response.ok) {
@@ -216,7 +216,7 @@ const CustomEmailEditor = () => {
     };
 
     return (
-        <Container className="mt-4 ">
+        <Container className="mt-4">
             <h2>Email Template Builder</h2>
             <Form.Group className="mb-3 mt-3" controlId="templateTitle">
                 <Form.Label>Template Title</Form.Label>
@@ -228,7 +228,7 @@ const CustomEmailEditor = () => {
                 />
             </Form.Group>
             <p><strong>Editing Template:</strong> {title || "Untitled"}</p>
-            <EmailEditor ref={emailEditorRef} onLoad={onEditorReady} />
+            <EmailEditor ref={emailEditorRef} onReady={onEditorReady} />
             <div className="mt-3">
                 <Button variant="primary" onClick={exportDesign} className="me-2">
                     Export Template
