@@ -27,50 +27,61 @@ const AddLeadToGroupModal = ({
     }
   }, [showAddLeadModal, fetchAllUsers]);
 
+  const handleClose = () => {
+    setShowAddLeadModal(false);
+  };
+
   return (
     <>
       {showAddLeadModal && (
         <dialog
           open
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="addLeadModalTitle"
           className="fixed w-full m-0 h-[100vh] inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-lg w-full max-w-2xl p-6">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-6 shadow-lg">
             <div className="flex justify-between items-center border-b pb-4 mb-4">
-              <h5 className="text-xl font-semibold text-gray-800">
+              <h5 id="addLeadModalTitle" className="text-xl font-semibold text-gray-800">
                 Add Lead to Group: <span className="text-blue-600">{selectedGroup?.name}</span>
               </h5>
               <button
                 className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowAddLeadModal(false)}
+                onClick={handleClose}
               >
                 <X size={20} />
               </button>
             </div>
+
             <form onSubmit={handleAddLeadToGroupSubmit}>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select User to Add as Lead
-                  </label>
-                  <select
-                    value={selectedUserId}
-                    onChange={handleUserChange}
-                    className="p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Select User --</option>
-                    {Array.isArray(users) &&
-                      users.map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.firstName} {user.lastName} ({user.email})
-                        </option>
-                      ))}
-                  </select>
-                </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select User to Add as Lead
+                </label>
+                <select
+                  value={selectedUserId}
+                  onChange={handleUserChange}
+                  className="p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select User --</option>
+                  {users.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.firstName} {user.lastName} ({user.email})
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="mt-6 flex justify-end">
+
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={!selectedUserId}
+                  className={`px-4 py-2 text-white rounded ${
+                    selectedUserId
+                      ? 'bg-blue-500 hover:bg-blue-600'
+                      : 'bg-blue-300 cursor-not-allowed'
+                  }`}
                 >
                   Add Lead
                 </button>

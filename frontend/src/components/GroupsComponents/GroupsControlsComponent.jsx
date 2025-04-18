@@ -11,12 +11,13 @@ const GroupsControlsComponent = ({
     <div className="flex justify-between items-center mb-6">
       <div className="flex"></div>
       <div className="flex space-x-4 items-center">
+        {/* Rows per page dropdown */}
         <select
           className="border border-gray-300 rounded-lg px-3 py-2 w-20 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={rowsPerPage}
           onChange={(e) => {
             setRowsPerPage(Number(e.target.value));
-            setCurrentPage(1);
+            setCurrentPage(1); // Reset to page 1 when rows per page changes
           }}
         >
           <option value={10}>10</option>
@@ -24,6 +25,8 @@ const GroupsControlsComponent = ({
           <option value={50}>50</option>
           <option value={100}>100</option>
         </select>
+        
+        {/* Button to trigger modal for adding new group */}
         <button
           className="bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center hover:bg-gray-700"
           onClick={() => setShowAddGroupModal(true)}

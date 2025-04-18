@@ -30,7 +30,7 @@ const GroupsComponent = () => {
     name: "",
     description: "",
   });
-  
+
   // New state for lead filtering
   const [isViewingLeads, setIsViewingLeads] = useState(false);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -41,7 +41,6 @@ const GroupsComponent = () => {
     setIsLoading(true);
     try {
       const data = await fetchGroups();
-      console.log(data);
       setGroups(data.groups || []);
     } catch (error) {
       console.error("Error fetching groups:", error);
@@ -71,15 +70,6 @@ const GroupsComponent = () => {
     }
   }, [fetchData, groups]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setGroupFormData((prevData) => ({ ...prevData, [name]: value }));
-  };
-
-  const handleUserChange = (e) => {
-    setSelectedUserId(e.target.value);
-  };
-  
   // Function to handle viewing leads for a specific group
   const handleViewLeads = async (groupId, groupName) => {
     setIsLoading(true);
@@ -97,7 +87,7 @@ const GroupsComponent = () => {
       setIsLoading(false);
     }
   };
-  
+
   // Function to go back to groups view
   const handleBackToGroups = () => {
     setIsViewingLeads(false);
@@ -119,18 +109,22 @@ const GroupsComponent = () => {
     }
   };
 
-  const handleOpenAddGroupModal = () => {
-    setFormData({ name: "", description: "" }); // Reset form data
-    setShowAddGroupModal(true); // Open the modal
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
   };
 
-  const handleAddSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form Data Submitted:", formData);
-    // Add logic to handle form submission
+  // Handle rows per page change
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page
   };
 
-  console.log("setFormData:", setFormData); // Debugging log
+  // Paginate groups based on current page and rows per page
+  const paginatedGroups = groups.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   return (
     <div className="container mx-auto p-4">
@@ -147,13 +141,13 @@ const GroupsComponent = () => {
           
           <GroupsControlsComponent
             rowsPerPage={rowsPerPage}
-            setRowsPerPage={setRowsPerPage}
-            setCurrentPage={setCurrentPage}
+            setRowsPerPage={handleRowsPerPageChange}
+            setCurrentPage={handlePageChange}
             setShowAddGroupModal={setShowAddGroupModal}
           />
 
           <GroupTable
-            paginatedGroups={groups}
+            paginatedGroups={paginatedGroups}
             setShowAddLeadModal={setShowAddLeadModal}
             setSelectedGroup={setSelectedGroup}
             selectedGroups={[]} // Hook up if needed
@@ -165,6 +159,24 @@ const GroupsComponent = () => {
             handleDelete={handleDeleteGroup}
             onViewLeads={handleViewLeads} // Add the new prop
           />
+
+          <div className="flex justify-between items-center mt-4">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="bg-gray-500 px-3 py-2 text-white rounded hover:bg-gray-600"
+            >
+              Previous
+            </button>
+            <span>Page {currentPage}</span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage * rowsPerPage >= groups.length}
+              className="bg-gray-500 px-3 py-2 text-white rounded hover:bg-gray-600"
+            >
+              Next
+            </button>
+          </div>
 
           {showAddGroupModal && (
             <AddGroupModel
