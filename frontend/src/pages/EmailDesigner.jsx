@@ -1,10 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { getEmails, createEmail, updateEmail, deleteEmail } from "../api";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
-
-// Ensure Bootstrap CSS is imported in index.js or App.js
-// import "bootstrap/dist/css/bootstrap.min.css";
 
 const EmailDesigner = () => {
   const [emails, setEmails] = useState([]);
@@ -20,7 +17,6 @@ const EmailDesigner = () => {
     setLoading(true);
     try {
       const data = await getEmails(page, search);
-      console.log("Fetched emails:", data);
       setEmails(data);
     } catch (error) {
       console.error("Error fetching emails:", error);
@@ -31,10 +27,6 @@ const EmailDesigner = () => {
   useEffect(() => {
     fetchEmails();
   }, [fetchEmails]);
-
-  useEffect(() => {
-    console.log("showModal state:", showModal);
-  }, [showModal]);
 
   const handleCreate = async () => {
     if (!newEmail.title) return;
@@ -54,7 +46,6 @@ const EmailDesigner = () => {
   };
 
   const handleEdit = (email) => {
-    console.log("handleEdit called with:", email);
     setEditingEmail(email);
     setNewEmail({ title: email.title || "", description: email.description || "" });
     setShowModal(true);
@@ -64,138 +55,97 @@ const EmailDesigner = () => {
     if (!window.confirm("Are you sure you want to delete this email and its template?")) return;
 
     try {
-        // Delete the email record
-        await deleteEmail(id);
-
-        // Delete the associated template
-        await fetch(`http://localhost:8000/api/v1/templates/email/${id}`, {
-            method: "DELETE",
-        });
-
-        fetchEmails(); // Refresh email list
+      await deleteEmail(id);
+      await fetch(`http://localhost:8000/api/v1/templates/email/${id}`, {
+        method: "DELETE",
+      });
+      fetchEmails();
     } catch (error) {
-        console.error("❌ Error deleting email or template:", error);
-        alert("❌ Failed to delete email or template.");
+      console.error("❌ Error deleting email or template:", error);
+      alert("❌ Failed to delete email or template.");
     }
-};
-
+  };
 
   const handleCloseModal = () => {
-    console.log("handleCloseModal called");
     setShowModal(false);
     setEditingEmail(null);
     setNewEmail({ title: "", description: "" });
   };
 
-  // Debug modal styles when it enters the DOM
-  useEffect(() => {
-    if (showModal) {
-      const modal = document.querySelector(".modal");
-      if (modal) {
-        const computedStyles = window.getComputedStyle(modal);
-        console.log("Modal computed styles:", {
-          display: computedStyles.display,
-          opacity: computedStyles.opacity,
-          visibility: computedStyles.visibility,
-          zIndex: computedStyles.zIndex,
-          position: computedStyles.position,
-          transform: computedStyles.transform,
-        });
-      } else {
-        console.log("Modal element not found in DOM");
-      }
-    }
-  }, [showModal]);
-
   return (
-    <div className="container py-3">
-      <h2 className="mb-2">📧 Email Designer</h2>
-      <div className="d-flex justify-content-between mb-2">
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <h2 className="text-2xl font-semibold mb-4">📧 Email Designer</h2>
+
+      <div className="flex justify-between items-center mb-4">
         <input
           type="text"
           placeholder="Search emails..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="form-control w-25"
+          className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
         />
-        <Button
-          variant="primary"
-          onClick={() => {
-            console.log("Add New button clicked");
-            setShowModal(true);
-          }}
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
           + Add New
-        </Button>
+        </button>
       </div>
-      <div className="table-responsive">
-        <table className="table table-bordered table-sm">
-          <thead className="table-light">
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border">
+          <thead className="bg-gray-100 text-left">
             <tr>
-              <th scope="col">#</th>
-              <th scope="col">Title</th>
-              <th scope="col" style={{ maxWidth: "400px" }}>
-                Description
-              </th>
-              <th scope="col">Created On</th>
-              <th scope="col">Actions</th>
+              <th className="px-4 py-2 border">#</th>
+              <th className="px-4 py-2 border">Title</th>
+              <th className="px-4 py-2 border">Description</th>
+              <th className="px-4 py-2 border">Created On</th>
+              <th className="px-4 py-2 border">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="5" className="text-center py-4">
                   Loading...
                 </td>
               </tr>
             ) : emails.length > 0 ? (
               emails.map((email, index) => (
-                <tr key={email._id}>
-                  <td>{index + 1}</td>
-                  <td>{email.title}</td>
-                  <td style={{ maxWidth: "400px", wordBreak: "break-word" }}>
-                    {email.description}
+                <tr key={email._id} className="border-t">
+                  <td className="px-4 py-2">{index + 1}</td>
+                  <td className="px-4 py-2">{email.title}</td>
+                  <td className="px-4 py-2 break-words max-w-md">{email.description}</td>
+                  <td className="px-4 py-2">
+                    {new Date(email.createdOn).toLocaleString()}
                   </td>
-                  <td>{new Date(email.createdOn).toLocaleString()}</td>
-                  <td>
-                    <Button
-                      variant="success"
-                      size="sm"
-                      className="me-1"
+                  <td className="px-4 py-2 space-x-2">
+                    <button
                       onClick={() =>
-                        navigate(
-                          `/email/editor?title=${encodeURIComponent(
-                            email.title
-                          )}&emailId=${encodeURIComponent(email._id)}`
-                        )
+                        navigate(`/email/editor?title=${encodeURIComponent(email.title)}&emailId=${email._id}`)
                       }
+                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
                     >
                       📝 Builder
-                    </Button>
-                    <Button
-                      variant="warning"
-                      size="sm"
-                      className="me-1"
-                      onClick={() => {
-                        console.log("Edit button clicked for:", email);
-                        handleEdit(email);
-                      }}
+                    </button>
+                    <button
+                      onClick={() => handleEdit(email)}
+                      className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 text-sm"
                     >
                       ✏️ Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
+                    </button>
+                    <button
                       onClick={() => handleDelete(email._id)}
+                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
                     >
                       🗑️ Delete
-                    </Button>
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="5" className="text-center py-4">
                   No emails found
                 </td>
               </tr>
@@ -203,94 +153,103 @@ const EmailDesigner = () => {
           </tbody>
         </table>
       </div>
-      <div className="d-flex justify-content-between mt-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={page === 1}
+
+      <div className="flex justify-between mt-4">
+        <button
           onClick={() => setPage(page - 1)}
+          disabled={page === 1}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
         >
           Previous
-        </Button>
-        <span>Page {page}</span>
-        <Button variant="secondary" size="sm" onClick={() => setPage(page + 1)}>
+        </button>
+        <span className="self-center">Page {page}</span>
+        <button
+          onClick={() => setPage(page + 1)}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        >
           Next
-        </Button>
+        </button>
       </div>
-      {/* Inline CSS to force modal visibility with high specificity */}
-      <style>
-        {`
-          body .modal {
-            display: block !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            z-index: 1050 !important;
-            position: fixed !important;
-          }
-          body .modal-backdrop {
-            z-index: 1040 !important;
-            opacity: 0.5 !important;
-            position: fixed !important;
-          }
-          body .modal-dialog {
-            transform: none !important;
-          }
-        `}
-      </style>
-      {/* Modal with Original Form Content */}
-      {console.log("Rendering Modal with showModal:", showModal)}
-      <Modal
-        show={showModal}
-        onHide={handleCloseModal}
-        backdrop="static"
-        centered
-        style={{ zIndex: 1050, display: "block", opacity: 1 }}
-        onEntered={() => console.log("Modal entered DOM")}
-        onExited={() => console.log("Modal exited DOM")}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {editingEmail ? "Edit Email" : "Add New Email"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3" controlId="formTitle">
-              <Form.Label>Title</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter email title"
-                value={newEmail.title || ""}
-                onChange={(e) =>
-                  setNewEmail({ ...newEmail, title: e.target.value })
-                }
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formDescription">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Enter email description"
-                value={newEmail.description || ""}
-                onChange={(e) =>
-                  setNewEmail({ ...newEmail, description: e.target.value })
-                }
-                required
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleCreate}>
-            {editingEmail ? "Update" : "Add"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+
+      {/* Modal */}
+      <Transition appear show={showModal} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleCloseModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-30" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title className="text-lg font-medium text-gray-900">
+                    {editingEmail ? "Edit Email" : "Add New Email"}
+                  </Dialog.Title>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={newEmail.title}
+                      onChange={(e) =>
+                        setNewEmail({ ...newEmail, title: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Description
+                    </label>
+                    <textarea
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="4"
+                      value={newEmail.description}
+                      onChange={(e) =>
+                        setNewEmail({ ...newEmail, description: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                      onClick={handleCloseModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                      onClick={handleCreate}
+                    >
+                      {editingEmail ? "Update" : "Add"}
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };

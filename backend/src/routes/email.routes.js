@@ -54,17 +54,6 @@ emailRoutes.delete("/:id", async (req, res) => {
     res.status(500).json({ message: "Error deleting email", error });
   }
 });
-emailRoutes.post('/templates', async (req, res) => {
-    try {
-        const { title, html, design } = req.body;
-        const newTemplate = new EmailTemplate({ title, html, design });
-        await newTemplate.save();
-        res.status(201).json(newTemplate);
-    } catch (error) {
-        res.status(500).json({ message: "Error saving template", error });
-    }
-})
-
 
 
 export default emailRoutes;

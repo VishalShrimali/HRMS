@@ -30,6 +30,7 @@ const dateSchema = new mongoose.Schema({
 });
 const LeadSchema = new mongoose.Schema(
     {   
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },

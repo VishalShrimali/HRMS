@@ -138,7 +138,7 @@ const CustomEmailEditor = () => {
         }
     }, [isEditorReady, templateData]);
 
-    // ✅ Set editor ready flag
+    // ✅ Set editor ready flag when editor is fully loaded
     const onEditorReady = () => {
         console.log("✅ Editor is fully ready!");
         setIsEditorReady(true);

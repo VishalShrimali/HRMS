@@ -16,7 +16,9 @@ const handleError = (res, error, statusCode = 500) => {
 // Fetch all leads
 export const getLeads = async (req, res) => {
     try {
-        const leads = await Lead.find();
+        // If user is admin, get all leads. Otherwise, get only user's leads
+        const query = req.user.role.name === "ADMIN" ? {} : { userId: req.user._id };
+        const leads = await Lead.find(query);
         res.status(200).json({ message: "Leads fetched successfully", leads });
     } catch (error) {
         handleError(res, error);
@@ -73,6 +75,7 @@ export const createLead = async (req, res) => {
         // Create fullName and initialize other fields
         const fullName = `${firstName} ${lastName}`;
         const newLead = new Lead({
+            userId: req.user._id, // Add the current user's ID
             firstName,
             lastName,
             fullName,
@@ -121,6 +124,16 @@ export const createLead = async (req, res) => {
 // Update a lead
 export const updateLead = async (req, res) => {
     try {
+        const lead = await Lead.findById(req.params.id);
+        if (!lead) {
+            return res.status(404).json({ message: "Lead not found" });
+        }
+
+        // Check if user owns the lead or is admin
+        if (lead.userId.toString() !== req.user._id.toString() && req.user.role.name !== "ADMIN") {
+            return res.status(403).json({ message: "You can only update your own leads" });
+        }
+
         const {
             firstName,
             lastName,
@@ -191,10 +204,17 @@ export const updateLead = async (req, res) => {
 // Delete a lead
 export const deleteLead = async (req, res) => {
     try {
-        const deletedLead = await Lead.findByIdAndDelete(req.params.id);
-        if (!deletedLead) {
+        const lead = await Lead.findById(req.params.id);
+        if (!lead) {
             return res.status(404).json({ message: "Lead not found" });
         }
+
+        // Check if user owns the lead or is admin
+        if (lead.userId.toString() !== req.user._id.toString() && req.user.role.name !== "ADMIN") {
+            return res.status(403).json({ message: "You can only delete your own leads" });
+        }
+
+        const deletedLead = await Lead.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: "Lead deleted successfully", deletedLead });
     } catch (error) {
         handleError(res, error);

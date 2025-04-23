@@ -15,7 +15,7 @@ export const getLeads = async () => {
 
 export const addLead = async (leadData) => {
   try {
-    const response = await api.post("/leads/addlead", leadData);
+    const response = await api.post("/leads", leadData);
     return response.data;
   } catch (error) {
     console.error("Error adding lead:", error);
