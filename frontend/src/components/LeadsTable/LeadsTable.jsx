@@ -390,15 +390,24 @@ const LeadsTable = () => {
       setError("Please select a group");
       return;
     }
-    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads }); // Add this
+    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads });
     try {
-      await addMembersToGroup(newGroupId, selectedLeads);
+      // Update each selected lead's group
+      for (const leadId of selectedLeads) {
+        const lead = leads.find(l => l._id === leadId);
+        if (lead) {
+          await updateLead(leadId, {
+            ...lead,
+            groupId: newGroupId
+          });
+        }
+      }
+      
       setShowChangeGroupModal(false);
       setSelectedLeads([]);
       setError(null);
-      fetchLeads();
-      fetchData();
-      console.log("Leads reassigned to group:", newGroupId, "activeTab:", activeTab);
+      fetchLeads(); // Refresh the leads list
+      console.log("Leads reassigned to group:", newGroupId);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to change group");
       console.error("Change group error:", err);
@@ -585,22 +594,28 @@ const LeadsTable = () => {
 
   // Validate lead form
   const validateLeadForm = () => {
+    console.log('Validating form...');
     const errors = {};
-    if (!formData.firstName) errors.firstName = "First Name is required";
-    if (!formData.lastName) errors.lastName = "Last Name is required";
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = "Valid email is required";
-    if (formData.phoneNumber && !/^\d{10}$/.test(formData.phoneNumber))
-      errors.phoneNumber = "Valid 10-digit phone number is required";
-    if (!formData.phone) errors.phone = "Phone is required";
-    if (!formData.dates?.birthDate) errors.birthDate = "Birth date is required";
-    if (!formData.dates?.joinDate) errors.joinDate = "Join date is required";
-    if (!formData.address.line1) errors.line1 = "Address Line 1 is required";
-    if (!formData.address.pincode || !/^[0-9]{5,6}$/.test(formData.address.pincode))
-      errors.pincode = "Valid pincode is required";
-    if (!formData.address.city) errors.city = "City is required";
-    if (!formData.address.state) errors.state = "State is required";
-    if (!formData.address.country) errors.country = "Country is required";
+    
+    if (!formData.firstName.trim()) {
+      errors.firstName = "First Name is required";
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Last Name is required";
+    }
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+    if (!formData.phoneNumber.trim()) {
+      errors.phoneNumber = "Phone Number is required";
+    }
+    if (!formData.country.trim()) {
+      errors.country = "Country is required";
+    }
+    
+    console.log('Form validation errors:', errors);
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -650,8 +665,16 @@ const LeadsTable = () => {
   // Handle add lead
   const handleAddLeadSubmit = async (e) => {
     e.preventDefault();
-    if (!validateLeadForm()) return;
+    console.log('Form submitted, validating...');
+    
+    if (!validateLeadForm()) {
+      console.log('Form validation failed');
+      return;
+    }
+    
     try {
+      console.log('Form data:', formData);
+      
       // Format the data before sending
       const leadData = {
         firstName: formData.firstName.trim(),
@@ -683,20 +706,31 @@ const LeadsTable = () => {
         }
       };
 
+      console.log('Formatted lead data:', leadData);
+
       // Validate required fields
       if (!leadData.firstName || !leadData.lastName || !leadData.email || !leadData.phone || !leadData.country) {
-        setError("Please fill in all required fields");
+        const errorMessage = "Please fill in all required fields";
+        console.log('Validation error:', errorMessage);
+        setError(errorMessage);
         return;
       }
 
+      console.log('Sending request to add lead...');
       const response = await addLead(leadData);
+      console.log('Lead added successfully:', response);
+
       setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
       setShowAddLeadModal(false);
       resetLeadForm();
       setError(null);
       fetchLeads();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add lead");
+      console.error('Error adding lead:', err);
+      const errorMessage = err.response?.data?.message || "Failed to add lead";
+      setError(errorMessage);
+      // Show error in UI
+      alert(errorMessage);
     }
   };
 

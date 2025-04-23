@@ -107,13 +107,13 @@ const AddLeadModel = ({
                   </label>
                   <input
                     type="text"
-                    name="phone"
-                    value={formData.phone}
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
                     onChange={handleChange}
                     className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  {formErrors.phone && (
-                    <p className="text-red-500 text-sm">{formErrors.phone}</p>
+                  {formErrors.phoneNumber && (
+                    <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>
                   )}
                 </div>
                 <div>
