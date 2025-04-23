@@ -1,57 +1,41 @@
 import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
-    line1: { type: String, required: true },
-    line2: { type: String },
-    line3: { type: String },
-    pincode: { type: String, required: true, match: /^[0-9]{5,6}$/ },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    county: { type: String },
-    country: { type: String, required: true },
+  line1: { type: String, required: true },
+  line2: { type: String },
+  line3: { type: String },
+  pincode: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  county: { type: String },
+  country: { type: String, required: true },
 });
 
 const userPreferencesSchema = new mongoose.Schema({
-    policy: {
-        type: String,
-        enum: ["active", "nonactive"],
-        default: "active",
-    },
-    whatsappMessageReceive: { type: Boolean, default: false },
-    browserNotifications: { type: Boolean, default: false },
-    emailReceive: { type: Boolean, default: false },
+  policy: { type: String, enum: ["active", "inactive"], default: "active" },
+  whatsappMessageReceive: { type: Boolean, default: false },
+  browserNotifications: { type: Boolean, default: false },
+  emailReceive: { type: Boolean, default: false },
 });
 
-const dateSchema = new mongoose.Schema({
-    joinDate: { type: Number, required: true },
-    lastLogin: { type: Date }, // Example: Add other date fields here
-    passwordChangedAt: { type: Date },
-    birthDate: { type: Date},
-});
-const LeadSchema = new mongoose.Schema(
-    {   
-        groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
-        firstName: { type: String, required: true, trim: true },
-        lastName: { type: String, required: true, trim: true },
-        fullName: { type: String, required: true, trim: true },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        },
-        phone: {
-            type: String,
-            required: true,
-            match: /^[0-9]{10,15}$/,
-        },
-        country: { type: String, required: true },
-        //password: { type: String, required: true, minlength: 6 },
-        addresses: [addressSchema],
-        userPreferences: userPreferencesSchema,
-        dates: dateSchema, // Embed the date schema here
+const leadSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    { timestamps: true }
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    country: { type: String, required: true },
+    date: { type: Date, required: true },
+    groupIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }], // Changed from groupId to groupIds
+    addresses: [addressSchema],
+    userPreferences: userPreferencesSchema,
+  },
+  { timestamps: true }
 );
 
-export const Lead = mongoose.model("Lead", LeadSchema);
+export const Lead = mongoose.model("Lead", leadSchema);

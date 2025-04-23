@@ -4,12 +4,13 @@ import {
   handleAddSubmit,
   handleAddLeadtoGroup,
   fetchLeadsByGroup,
+  deleteGroup,
 } from "../../api/GroupsApi";
 import GroupsControlsComponent from "./GroupsControlsComponent";
 import AddGroupModel from "./AddGroupModel";
 import { GroupTable } from "./GroupTable";
 import AddLeadToGroupModal from "./AddLeadToGroupModal";
-import LeadsTable from "../Leads/LeadsTable"; // Make sure this path is correct
+import LeadsTable from "../Leads/LeadsTable";
 
 const GroupsComponent = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -30,8 +31,6 @@ const GroupsComponent = () => {
     name: "",
     description: "",
   });
-
-  // New state for lead filtering
   const [isViewingLeads, setIsViewingLeads] = useState(false);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [currentGroupName, setCurrentGroupName] = useState("");
@@ -51,35 +50,36 @@ const GroupsComponent = () => {
 
   useEffect(() => {
     fetchData();
-    
-    // Check URL for direct navigation to a group's leads
+
     const checkUrlForGroupId = () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const groupId = urlParams.get('groupId');
-      
+      const groupId = urlParams.get("groupId");
+
       if (groupId && groups.length > 0) {
-        const group = groups.find(g => g._id === groupId);
+        const group = groups.find((g) => g._id === groupId);
         if (group) {
           handleViewLeads(groupId, group.name);
         }
       }
     };
-    
+
     if (groups.length > 0) {
       checkUrlForGroupId();
     }
   }, [fetchData, groups]);
 
-  // Function to handle viewing leads for a specific group
   const handleViewLeads = async (groupId, groupName) => {
     setIsLoading(true);
     try {
       const response = await fetchLeadsByGroup(groupId);
-      setFilteredLeads(response.leads || []);
+      // Compute fullName for each lead
+      const leadsWithFullName = (response.leads || []).map((lead) => ({
+        ...lead,
+        fullName: `${lead.firstName || ""} ${lead.lastName || ""}`.trim(),
+      }));
+      setFilteredLeads(leadsWithFullName);
       setCurrentGroupName(groupName);
       setIsViewingLeads(true);
-      
-      // Update URL without page refresh
       window.history.pushState({}, "", `/groups?groupId=${groupId}`);
     } catch (error) {
       console.error("Error fetching leads for group:", error);
@@ -88,19 +88,19 @@ const GroupsComponent = () => {
     }
   };
 
-  // Function to go back to groups view
   const handleBackToGroups = () => {
     setIsViewingLeads(false);
+    setFilteredLeads([]);
+    setCurrentGroupName("");
     window.history.pushState({}, "", "/groups");
   };
 
-  // Handle deleting a group
   const handleDeleteGroup = async (groupId) => {
     if (window.confirm("Are you sure you want to delete this group?")) {
       setIsLoading(true);
       try {
-        await deleteGroup(groupId); // Make sure to import this function
-        await fetchData(); // Refresh groups after deletion
+        await deleteGroup(groupId);
+        await fetchData();
       } catch (error) {
         console.error("Error deleting group:", error);
       } finally {
@@ -109,18 +109,19 @@ const GroupsComponent = () => {
     }
   };
 
-  // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
 
-  // Handle rows per page change
   const handleRowsPerPageChange = (e) => {
     setRowsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
   };
 
-  // Paginate groups based on current page and rows per page
+  const handleUserChange = (e) => {
+    setSelectedUserId(e.target.value);
+  };
+
   const paginatedGroups = groups.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
@@ -135,10 +136,9 @@ const GroupsComponent = () => {
       )}
 
       {!isViewingLeads ? (
-        // Groups View
         <>
           <h1 className="text-2xl font-bold mb-6">Groups Management</h1>
-          
+
           <GroupsControlsComponent
             rowsPerPage={rowsPerPage}
             setRowsPerPage={handleRowsPerPageChange}
@@ -150,14 +150,14 @@ const GroupsComponent = () => {
             paginatedGroups={paginatedGroups}
             setShowAddLeadModal={setShowAddLeadModal}
             setSelectedGroup={setSelectedGroup}
-            selectedGroups={[]} // Hook up if needed
+            selectedGroups={[]}
             handleSelectAll={() => {}}
             handleSelectGroup={() => {}}
             setEditingGroup={() => {}}
             setGroupFormData={() => {}}
             setShowEditModal={() => {}}
             handleDelete={handleDeleteGroup}
-            onViewLeads={handleViewLeads} // Add the new prop
+            onViewLeads={handleViewLeads}
           />
 
           <div className="flex justify-between items-center mt-4">
@@ -188,7 +188,7 @@ const GroupsComponent = () => {
               }
               handleAddSubmit={handleAddSubmit}
               setShowAddGroupModal={setShowAddGroupModal}
-              setFormData={setFormData}
+              setFormData={setGroupFormData} // Updated to use groupFormData
             />
           )}
 
@@ -205,7 +205,6 @@ const GroupsComponent = () => {
                 setShowAddLeadModal,
                 setSelectedUserId
               ).then(() => {
-                // Refresh data after adding a lead
                 fetchData();
               })
             }
@@ -213,24 +212,23 @@ const GroupsComponent = () => {
           />
         </>
       ) : (
-        // Leads View for a specific group
         <>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">
               Leads in Group: {currentGroupName}
             </h2>
-            <button 
+            <button
               onClick={handleBackToGroups}
               className="bg-gray-500 px-3 py-2 text-white rounded hover:bg-gray-600"
             >
               Back to Groups
             </button>
           </div>
-          
-          {/* Your LeadsTable component - make sure to pass any required props */}
-          <LeadsTable 
-            leads={filteredLeads} 
-            // Additional props your LeadsTable might need
+
+          <LeadsTable
+            leads={filteredLeads}
+            showGroupFilter={false} // Hide group filter when viewing group-specific leads
+            groupName={currentGroupName} // Pass group name for context
           />
         </>
       )}

@@ -14,6 +14,8 @@ import EditLeadModal from "./EditLeadModel";
 import PaginationSection from "./PaginationSection";
 import LeadsControlsComponent from "./LeadsControlsComponent";
 import LeadsTableComponent from "./LeadsTableComponent";
+// import PaginationSection from "./PaginationSection";
+import LeadsControlsComponent from "./LeadsControlsComponent";
 import {
   fetchGroups,
   addGroup,
@@ -66,7 +68,7 @@ const ChangeGroupModal = ({
     >
       <div className="bg-white rounded-lg w-full max-w-md p-6">
         <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h5 className="text-xl font-semibold text-gray-800">Change Group</h5>
+          <h5 className="text-xl font-semibold text-gray-800">Add to Group</h5>
           <button
             className="text-gray-500 hover:text-gray-700"
             onClick={() => setShowChangeGroupModal(false)}
@@ -110,7 +112,7 @@ const ChangeGroupModal = ({
               type="submit"
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              Save
+              Add
             </button>
           </div>
         </form>
@@ -262,11 +264,12 @@ const LeadsTable = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    groupId: "",
+    groupIds: [], // Updated from groupId to groupIds
     firstName: "",
     lastName: "",
     email: "",
@@ -337,6 +340,183 @@ const LeadsTable = () => {
     fetchData();
   }, [fetchLeads, fetchData]);
 
+  // Validate group form
+  const validateGroupForm = () => {
+    const errors = {};
+    if (!groupFormData.name) errors.name = "Group name is required";
+    setGroupFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle group form changes
+  const handleGroupChange = (e) => {
+    const { name, value } = e.target;
+    setGroupFormData({
+      ...groupFormData,
+      [name]: value,
+    });
+    setGroupFormErrors({ ...groupFormErrors, [name]: "" });
+  };
+
+  // Handle create group
+  const handleCreateGroup = () => {
+    if (selectedLeads.length === 0) {
+      alert("Please select at least one lead to create a group.");
+      return;
+    }
+    // Deduplicate selectedLeads and validate ObjectId strings
+    const uniqueLeadIds = [...new Set(selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)))];
+    console.log("handleCreateGroup called with uniqueLeadIds:", uniqueLeadIds);
+    if (uniqueLeadIds.length !== selectedLeads.length) {
+      console.warn("Duplicate or invalid lead IDs filtered out:", selectedLeads.filter((id) => !uniqueLeadIds.includes(id)));
+    }
+    setGroupFormData({
+      name: "",
+      description: "",
+      members: uniqueLeadIds,
+    });
+    setShowAddGroupModal(true);
+    console.log("Opening AddGroupModel with unique leads:", uniqueLeadIds, "activeTab:", activeTab);
+  };
+
+  // Handle add/edit group
+  const handleGroupSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateGroupForm()) return;
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      console.log("handleGroupSubmit called with groupFormData:", groupFormData);
+      let response;
+      if (editingGroup) {
+        response = await updateGroup(editingGroup._id, groupFormData);
+        console.log("updateGroup response:", response);
+        setGroups(
+          groups.map((group) =>
+            group._id === editingGroup._id ? { ...group, ...response.group } : group
+          )
+        );
+      } else {
+        // Deduplicate and validate lead IDs
+        const validLeadIds = [...new Set(groupFormData.members.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)))];
+        console.log("Valid lead IDs for addGroup:", validLeadIds);
+        if (validLeadIds.length !== groupFormData.members.length) {
+          console.warn(
+            "Duplicate or invalid lead IDs filtered out:",
+            groupFormData.members.filter((id) => !validLeadIds.includes(id))
+          );
+        }
+        response = await addGroup({
+          ...groupFormData,
+          leads: validLeadIds,
+        });
+        console.log("addGroup response:", response);
+        setGroups([...groups, response.group]);
+      }
+
+      setShowAddGroupModal(false);
+      resetGroupForm();
+      setSelectedLeads([]); // Clear selected leads to reset checkboxes
+      setSearchTerm(""); // Optional: Reset search for refreshed appearance
+      setCurrentPage(1); // Optional: Reset pagination
+      setError(null);
+      await fetchData();
+      await fetchLeads();
+      console.log("Group saved, activeTab:", activeTab);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save group");
+      console.error("Group save error:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle add selected leads to group
+  const handleAddLeadsToGroupSubmit = async () => {
+    if (!groupToAddLeads || selectedLeads.length === 0) {
+      setError("No group or leads selected");
+      return;
+    }
+    console.log("handleAddLeadsToGroupSubmit called with:", { groupId: groupToAddLeads._id, selectedLeads });
+    try {
+      // Deduplicate and validate ObjectId strings
+      const validLeadIds = [...new Set(selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)))];
+      if (validLeadIds.length === 0) {
+        setError("No valid lead IDs selected");
+        return;
+      }
+      if (validLeadIds.length !== selectedLeads.length) {
+        console.warn("Invalid or duplicate lead IDs filtered out:", selectedLeads.filter((id) => !validLeadIds.includes(id)));
+      }
+      await addMembersToGroup(groupToAddLeads._id, validLeadIds);
+      setShowAddLeadsModal(false);
+      setGroupToAddLeads(null);
+      setSelectedLeads([]);
+      setError(null);
+      await fetchLeads();
+      await fetchData();
+      console.log("Leads added to group:", groupToAddLeads._id);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add leads to group");
+      console.error("Add leads error:", err);
+    }
+  };
+
+  // Handle add leads to group (previously change group)
+  const handleChangeGroupSubmit = async (newGroupId) => {
+    if (!newGroupId) {
+      setError("Please select a group");
+      return;
+    }
+    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads });
+    try {
+      // Deduplicate and validate ObjectId strings
+      const validLeadIds = [...new Set(selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)))];
+      if (validLeadIds.length === 0) {
+        setError("No valid lead IDs selected");
+        return;
+      }
+      if (validLeadIds.length !== selectedLeads.length) {
+        console.warn("Invalid or duplicate lead IDs filtered out:", selectedLeads.filter((id) => !validLeadIds.includes(id)));
+      }
+      await addMembersToGroup(newGroupId, validLeadIds);
+      setShowChangeGroupModal(false);
+      setSelectedLeads([]);
+      setError(null);
+      await fetchLeads();
+      await fetchData();
+      console.log("Leads added to group:", newGroupId, "activeTab:", activeTab);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add leads to group");
+      console.error("Change group error:", err);
+    }
+  };
+
+  // Handle lead selection
+  const handleSelectLead = (id) => {
+    console.log("handleSelectLead called with id:", id);
+    setSelectedLeads((prev) => {
+      const newSelection = prev.includes(id)
+        ? prev.filter((leadId) => leadId !== id)
+        : [...prev, id];
+      console.log("Updated selectedLeads:", newSelection);
+      return newSelection;
+    });
+  };
+
+  // Handle select all leads
+  const handleSelectAllLeads = () => {
+    console.log("handleSelectAllLeads called, paginatedLeads:", paginatedLeads.map((lead) => lead._id));
+    if (selectedLeads.length === paginatedLeads.length) {
+      setSelectedLeads([]);
+      console.log("Cleared selectedLeads");
+    } else {
+      const newSelection = [...new Set(paginatedLeads.map((lead) => lead._id))];
+      setSelectedLeads(newSelection);
+      console.log("Selected all leads:", newSelection);
+    }
+  };
+
   // Handle view leads for a group
   const handleViewLeads = (groupId, groupName, leads) => {
     console.log("handleViewLeads called with:", { groupId, groupName, leads });
@@ -352,87 +532,6 @@ const LeadsTable = () => {
     setSelectedLeads([]);
     setSelectedGroupId(null);
   };
-
-// In LeadsTable.jsx
-
-// Handle add selected leads to group
-const handleAddLeadsToGroupSubmit = async () => {
-  if (!groupToAddLeads || selectedLeads.length === 0) {
-    setError("No group or leads selected");
-    return;
-  }
-  console.log("handleAddLeadsToGroupSubmit called with:", { groupId: groupToAddLeads._id, selectedLeads }); // Add logging
-  try {
-    // Filter valid ObjectId strings (24-character hex strings)
-    const validLeadIds = selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
-    if (validLeadIds.length === 0) {
-      setError("No valid lead IDs selected");
-      return;
-    }
-    if (validLeadIds.length !== selectedLeads.length) {
-      console.warn("Invalid lead IDs filtered out:", selectedLeads.filter((id) => !validLeadIds.includes(id)));
-    }
-    await addMembersToGroup(groupToAddLeads._id, validLeadIds);
-    setShowAddLeadsModal(false);
-    setGroupToAddLeads(null);
-    setSelectedLeads([]);
-    setError(null);
-    await fetchLeads();
-    await fetchData();
-    console.log("Leads added to group:", groupToAddLeads._id);
-  } catch (err) {
-    setError(err.response?.data?.message || "Failed to add leads to group");
-    console.error("Add leads error:", err);
-  }
-};
-
-// Handle change group for selected leads
-// const handleChangeGroupSubmit = async (newGroupId) => {
-//   if (!newGroupId) {
-//     setError("Please select a group");
-//     return;
-//   }
-//   console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads }); // Add logging
-//   try {
-//     // Filter valid ObjectId strings
-//     const validLeadIds = selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
-//     if (validLeadIds.length === 0) {
-//       setError("No valid lead IDs selected");
-//       return;
-//     }
-//     if (validLeadIds.length !== selectedLeads.length) {
-//       console.warn("Invalid lead IDs filtered out:", selectedLeads.filter((id) => !validLeadIds.includes(id)));
-//     }
-//     await addMembersToGroup(newGroupId, validLeadIds);
-//     setShowChangeGroupModal(false);
-//     setSelectedLeads([]);
-//     setError(null);
-//     fetchLeads();
-//     fetchData();
-//     console.log("Leads reassigned to group:", newGroupId, "activeTab:", activeTab);
-//   } catch (err) {
-//     setError(err.response?.data?.message || "Failed to change group");
-//     console.error("Change group error:", err);
-//   }
-// };
-
-// Handle lead selection
-// const handleSelectLead = (id) => {
-//   console.log("handleSelectLead called with id:", id); // Add logging
-//   setSelectedLeads((prev) =>
-//     prev.includes(id) ? prev.filter((leadId) => leadId !== id) : [...prev, id]
-//   );
-// };
-
-// Handle select all leads
-// const handleSelectAllLeads = () => {
-//   console.log("handleSelectAllLeads called, paginatedLeads:", paginatedLeads.map((lead) => lead._id)); // Add logging
-//   if (selectedLeads.length === paginatedLeads.length) {
-//     setSelectedLeads([]);
-//   } else {
-//     setSelectedLeads(paginatedLeads.map((lead) => lead._id));
-//   }
-// };
 
   // Handle export leads
   const handleExport = async () => {
@@ -486,14 +585,6 @@ const handleAddLeadsToGroupSubmit = async () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Validate group form
-  const validateGroupForm = () => {
-    const errors = {};
-    if (!groupFormData.name) errors.name = "Group name is required";
-    setGroupFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   // Handle lead form changes
   const handleLeadChange = (e) => {
     const { name, value } = e.target;
@@ -518,16 +609,6 @@ const handleAddLeadsToGroupSubmit = async () => {
     setFormErrors({ ...formErrors, [name]: "" });
   };
 
-  // Handle group form changes
-  const handleGroupChange = (e) => {
-    const { name, value } = e.target;
-    setGroupFormData({
-      ...groupFormData,
-      [name]: value,
-    });
-    setGroupFormErrors({ ...groupFormErrors, [name]: "" });
-  };
-
   // Handle add lead
   const handleAddLeadSubmit = async (e) => {
     e.preventDefault();
@@ -536,7 +617,7 @@ const handleAddLeadsToGroupSubmit = async () => {
       const response = await addLead({
         ...formData,
         date: new Date().toISOString(),
-        groupId: formData.groupId,
+        groupIds: formData.groupIds, // Updated to groupIds
       });
       setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
       setShowAddLeadModal(false);
@@ -567,86 +648,6 @@ const handleAddLeadsToGroupSubmit = async () => {
       setError(err.response?.data?.message || "Failed to update lead");
     }
   };
-
-  // Handle add/edit group
- // In LeadsTable.jsx
-
-// Handle add/edit group
-const handleGroupSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateGroupForm()) return;
-  try {
-    console.log("handleGroupSubmit called with groupFormData:", groupFormData); // Add logging
-    let response;
-    if (editingGroup) {
-      response = await updateGroup(editingGroup._id, groupFormData);
-      console.log("updateGroup response:", response); // Add logging
-      setGroups(
-        groups.map((group) =>
-          group._id === editingGroup._id ? { ...group, ...response.group } : group
-        )
-      );
-    } else {
-      response = await addGroup({
-        ...groupFormData,
-        leads: groupFormData.members,
-      });
-      console.log("addGroup response:", response); // Add logging
-      setGroups([...groups, response.group]);
-    }
-
-    // Add members to group if members are provided
-    if (groupFormData.members && groupFormData.members.length > 0) {
-      // Filter valid ObjectId strings (24-character hex strings)
-      const validLeadIds = groupFormData.members.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
-      console.log("Valid lead IDs for addMembersToGroup:", validLeadIds); // Add logging
-      if (validLeadIds.length === 0) {
-        setError("No valid lead IDs provided for the group");
-        return;
-      }
-      if (validLeadIds.length !== groupFormData.members.length) {
-        console.warn(
-          "Invalid lead IDs filtered out:",
-          groupFormData.members.filter((id) => !validLeadIds.includes(id))
-        );
-      }
-      await addMembersToGroup(response.group._id, validLeadIds);
-      console.log("Leads added to group:", response.group._id); // Add logging
-    }
-
-    setShowAddGroupModal(false);
-    resetGroupForm();
-    setError(null);
-    fetchData();
-    fetchLeads();
-    console.log("Group saved, activeTab:", activeTab);
-  } catch (err) {
-    setError(err.response?.data?.message || "Failed to save group");
-    console.error("Group save error:", err);
-  }
-};
-
-  // Handle change group for selected leads
- // In LeadsTable.jsx, update handleChangeGroupSubmit
-const handleChangeGroupSubmit = async (newGroupId) => {
-  if (!newGroupId) {
-    setError("Please select a group");
-    return;
-  }
-  console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads }); // Add this
-  try {
-    await addMembersToGroup(newGroupId, selectedLeads);
-    setShowChangeGroupModal(false);
-    setSelectedLeads([]);
-    setError(null);
-    fetchLeads();
-    fetchData();
-    console.log("Leads reassigned to group:", newGroupId, "activeTab:", activeTab);
-  } catch (err) {
-    setError(err.response?.data?.message || "Failed to change group");
-    console.error("Change group error:", err);
-  }
-};
 
   // Handle delete lead
   const handleDeleteLead = async (id) => {
@@ -715,6 +716,7 @@ const handleChangeGroupSubmit = async (newGroupId) => {
   // Reset lead form
   const resetLeadForm = () => {
     setFormData({
+      groupIds: [], // Updated to groupIds
       firstName: "",
       lastName: "",
       email: "",
@@ -751,22 +753,6 @@ const handleChangeGroupSubmit = async (newGroupId) => {
     setGroupFormErrors({});
   };
 
-  // Handle lead selection
-  const handleSelectLead = (id) => {
-    setSelectedLeads((prev) =>
-      prev.includes(id) ? prev.filter((leadId) => leadId !== id) : [...prev, id]
-    );
-  };
-
-  // Handle select all leads
-  const handleSelectAllLeads = () => {
-    if (selectedLeads.length === paginatedLeads.length) {
-      setSelectedLeads([]);
-    } else {
-      setSelectedLeads(paginatedLeads.map((lead) => lead._id));
-    }
-  };
-
   // Handle group selection
   const handleSelectGroup = (id) => {
     setSelectedGroups((prev) =>
@@ -783,25 +769,10 @@ const handleChangeGroupSubmit = async (newGroupId) => {
     }
   };
 
-  // Handle create group
-  const handleCreateGroup = () => {
-    if (selectedLeads.length === 0) {
-      alert("Please select at least one lead to create a group.");
-      return;
-    }
-    setGroupFormData({
-      name: "",
-      description: "",
-      members: selectedLeads,
-    });
-    setShowAddGroupModal(true);
-    console.log("Opening AddGroupModel with selected leads:", selectedLeads, "activeTab:", activeTab);
-  };
-
-  // Handle change group
+  // Handle add to group (previously change group)
   const handleChangeGroup = () => {
     if (selectedLeads.length === 0) {
-      alert("Please select at least one lead to change group.");
+      alert("Please select at least one lead to add to a group.");
       return;
     }
     setShowChangeGroupModal(true);
@@ -834,6 +805,7 @@ const handleChangeGroupSubmit = async (newGroupId) => {
       const lead = await getLeadById(leadId);
       const address = lead.addresses?.[0] || {};
       setFormData({
+        groupIds: lead.groupIds || [], // Updated to groupIds
         firstName: lead.firstName || "",
         lastName: lead.lastName || "",
         email: lead.email || "",
@@ -877,7 +849,7 @@ const handleChangeGroupSubmit = async (newGroupId) => {
         : false;
 
     const matchesGroup = selectedGroupId
-      ? lead.groupId && lead.groupId.toString() === selectedGroupId
+      ? lead.groupIds && lead.groupIds.map(String).includes(selectedGroupId)
       : true;
 
     return matchesSearch && matchesGroup;
@@ -984,7 +956,7 @@ const handleChangeGroupSubmit = async (newGroupId) => {
                       className="px-4 py-2 bg-yellow-500 rounded hover:bg-yellow-600"
                       onClick={handleChangeGroup}
                     >
-                      Change Group
+                      Add to Group
                     </button>
                     {groupToAddLeads && (
                       <button
