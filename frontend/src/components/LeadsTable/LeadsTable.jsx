@@ -160,7 +160,7 @@ const ViewLeadsModal = ({
             <tbody>
               {leads.map((lead) => (
                 <tr key={lead._id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 text-sm text-gray-900">{lead.fullName}</td>
+                  <td className="p-3 text-sm text-gray-900">{`${lead.firstName} ${lead.lastName}`}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.email}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.phone}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.country}</td>
@@ -262,6 +262,7 @@ const LeadsTable = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -392,21 +393,14 @@ const LeadsTable = () => {
     }
     console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads });
     try {
-      // Update each selected lead's group
-      for (const leadId of selectedLeads) {
-        const lead = leads.find(l => l._id === leadId);
-        if (lead) {
-          await updateLead(leadId, {
-            ...lead,
-            groupId: newGroupId
-          });
-        }
-      }
+      // Add members to the new group
+      await addMembersToGroup(newGroupId, selectedLeads);
       
       setShowChangeGroupModal(false);
       setSelectedLeads([]);
       setError(null);
-      fetchLeads(); // Refresh the leads list
+      await fetchLeads(); // Refresh the leads list
+      await fetchData(); // Refresh groups data
       console.log("Leads reassigned to group:", newGroupId);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to change group");
@@ -592,27 +586,53 @@ const LeadsTable = () => {
     }
   };
 
-  // Validate lead form
+  // Update validateLeadForm to use formSubmitted
   const validateLeadForm = () => {
     console.log('Validating form...');
     const errors = {};
     
-    if (!formData.firstName.trim()) {
+    // Basic Info Validation
+    if (!formData.firstName?.trim()) {
       errors.firstName = "First Name is required";
     }
-    if (!formData.lastName.trim()) {
+    if (!formData.lastName?.trim()) {
       errors.lastName = "Last Name is required";
     }
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       errors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Please enter a valid email";
     }
-    if (!formData.phoneNumber.trim()) {
+    if (!formData.phoneNumber && !formData.phone) {
       errors.phoneNumber = "Phone Number is required";
     }
-    if (!formData.country.trim()) {
+    if (!formData.country?.trim()) {
       errors.country = "Country is required";
+    }
+
+    // Address Validation
+    if (!formData.address?.line1?.trim()) {
+      errors.line1 = "Address Line 1 is required";
+    }
+    if (!formData.address?.pincode?.toString()?.trim()) {
+      errors.pincode = "Pincode is required";
+    }
+    if (!formData.address?.city?.trim()) {
+      errors.city = "City is required";
+    }
+    if (!formData.address?.state?.trim()) {
+      errors.state = "State is required";
+    }
+    if (!formData.address?.country?.trim()) {
+      errors.country = "Country is required";
+    }
+
+    // Dates Validation
+    if (!formData.dates?.birthDate) {
+      errors.birthDate = "Birth Date is required";
+    }
+    if (!formData.dates?.joinDate) {
+      errors.joinDate = "Join Date is required";
     }
     
     console.log('Form validation errors:', errors);
@@ -665,22 +685,15 @@ const LeadsTable = () => {
   // Handle add lead
   const handleAddLeadSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted, validating...');
-    
-    if (!validateLeadForm()) {
-      console.log('Form validation failed');
-      return;
-    }
+    setFormSubmitted(true); // Set form as submitted
+    if (!validateLeadForm()) return;
     
     try {
-      console.log('Form data:', formData);
-      
-      // Format the data before sending
       const leadData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
-        phone: formData.phoneNumber.trim(), // Use phoneNumber as the phone field
+        phone: formData.phoneNumber || formData.phone,
         country: formData.country.trim(),
         groupId: formData.groupId || null,
         date: new Date().toISOString(),
@@ -706,16 +719,6 @@ const LeadsTable = () => {
         }
       };
 
-      console.log('Formatted lead data:', leadData);
-
-      // Validate required fields
-      if (!leadData.firstName || !leadData.lastName || !leadData.email || !leadData.phone || !leadData.country) {
-        const errorMessage = "Please fill in all required fields";
-        console.log('Validation error:', errorMessage);
-        setError(errorMessage);
-        return;
-      }
-
       console.log('Sending request to add lead...');
       const response = await addLead(leadData);
       console.log('Lead added successfully:', response);
@@ -729,14 +732,22 @@ const LeadsTable = () => {
       console.error('Error adding lead:', err);
       const errorMessage = err.response?.data?.message || "Failed to add lead";
       setError(errorMessage);
-      // Show error in UI
-      alert(errorMessage);
+      // Set form errors based on the error message
+      if (errorMessage === "All required fields must be provided") {
+        validateLeadForm(); // This will set the form errors
+      } else if (errorMessage === "Email already exists") {
+        setFormErrors({
+          ...formErrors,
+          email: "Email already exists"
+        });
+      }
     }
   };
 
-  // Handle edit lead
+  // Update handleEditLeadSubmit
   const handleEditLeadSubmit = async (e) => {
     e.preventDefault();
+    setFormSubmitted(true); // Set form as submitted
     if (!validateLeadForm()) return;
     try {
       const response = await updateLead(editingLead._id, formData);
@@ -885,6 +896,7 @@ const LeadsTable = () => {
     });
     setEditingLeadState(null);
     setFormErrors({});
+    setFormSubmitted(false); // Reset form submitted state
   };
 
   // Reset group form
@@ -1049,14 +1061,14 @@ const LeadsTable = () => {
                   handleAddSubmit={handleAddLeadSubmit}
                   handleChange={handleLeadChange}
                   formData={formData}
-                  formErrors={formErrors}
+                  formErrors={formSubmitted ? formErrors : {}}
                   setShowAddModal={setShowAddLeadModal}
                 />
               )}
               {showEditLeadModal && (
                 <EditLeadModal
                   formData={formData}
-                  formErrors={formErrors}
+                  formErrors={formSubmitted ? formErrors : {}} // Only show errors if form was submitted
                   handleChange={handleLeadChange}
                   handleEditSubmit={handleEditLeadSubmit}
                   setShowEditModal={setShowEditLeadModal}

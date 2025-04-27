@@ -18,7 +18,7 @@ const protect = async (req, res, next) => {
             console.error("Token verification failed:", err.message); // Log the error for debugging
             return res.status(401).json({ message: "Invalid or expired token" });
         }
-        req.user = await User.findById(decoded.id).select("-password"); // Attach user to req
+        req.user = await User.findById(decoded.id).populate("role").select("-password"); // Attach user to req
         next();
     } catch (error) {
         return res.status(401).json({ message: "Invalid token" });
