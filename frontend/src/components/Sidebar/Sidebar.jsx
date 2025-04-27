@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
+import axios from "axios";
 import {
   FaBars,
   FaSignOutAlt,
@@ -44,31 +45,44 @@ const Sidebar = () => {
     const fetchPermissions = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8000/api/v1/roles/user/permissions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setPermissions(data.permissions);
+        if (!token) {
+          console.log("No token found, redirecting to login");
+          navigate("/auth/login");
+          return;
+        }
+
+        const response = await axios.get(
+          "http://localhost:8000/api/v1/roles/user/permissions",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.data && response.data.permissions) {
+          setPermissions(response.data.permissions);
         } else {
-          console.error("Failed to fetch permissions");
+          console.warn("No permissions found in response:", response.data);
+          setPermissions([]);
         }
       } catch (error) {
-        console.error("Error fetching permissions:", error);
+        console.error("Error fetching permissions:", error.response?.data || error.message);
+        if (error.response?.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("token");
+          navigate("/auth/login");
+        }
+        setPermissions([]);
       }
     };
 
     fetchPermissions();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-    if (confirmLogout) {
-      localStorage.removeItem("token");
-      navigate("/auth/login");
-    }
+    localStorage.removeItem("token");
+    navigate("/auth/login");
   };
 
   const isActive = (path) => {
