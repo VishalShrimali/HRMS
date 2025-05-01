@@ -58,7 +58,19 @@ const Login = ({ setIsAuthenticated }) => {
     setIsLoading(true);
     try {
       const response = await axios.post('http://localhost:8000/api/v1/user/login', formData);
+      
+      // Check if user needs role assignment
+      if (response.data.needsRole) {
+        setFormErrors(prev => ({
+          ...prev,
+          general: response.data.message
+        }));
+        return;
+      }
+
+      // Store token and user data in localStorage
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userData', JSON.stringify(response.data.user));
       setIsAuthenticated(true);
       navigate('/');
     } catch (err) {

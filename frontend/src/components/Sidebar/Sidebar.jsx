@@ -15,6 +15,7 @@ import {
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
   const [permissions, setPermissions] = useState([]);
+  const [userInfo, setUserInfo] = useState({ name: "", role: "" });
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,42 +43,18 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.log("No token found, redirecting to login");
-          navigate("/auth/login");
-          return;
-        }
-
-        const response = await axios.get(
-          "http://localhost:8000/api/v1/roles/user/permissions",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-
-        if (response.data && response.data.permissions) {
-          setPermissions(response.data.permissions);
-        } else {
-          console.warn("No permissions found in response:", response.data);
-          setPermissions([]);
-        }
-      } catch (error) {
-        console.error("Error fetching permissions:", error.response?.data || error.message);
-        if (error.response?.status === 401) {
-          // Token expired or invalid
-          localStorage.removeItem("token");
-          navigate("/auth/login");
-        }
-        setPermissions([]);
-      }
-    };
-
-    fetchPermissions();
+    // Get user info from localStorage
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { fullName, roleName } = JSON.parse(userData);
+      setUserInfo({
+        name: fullName,
+        role: roleName || "User"
+      });
+    } else {
+      // If no user data in localStorage, redirect to login
+      navigate("/auth/login");
+    }
   }, [navigate]);
 
   const handleLogout = () => {
@@ -194,11 +171,16 @@ const Sidebar = () => {
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                <span className="text-xs font-medium">VS</span>
+                <span className="text-xs font-medium">
+                  {userInfo.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </span>
               </div>
               <div>
-                <p className="text-sm font-medium">ADMIN</p>
-                <p className="text-xs text-gray-400">Administrator</p>
+                <p className="text-sm font-medium">{userInfo.name}</p>
+                <p className="text-xs text-gray-400">{userInfo.role}</p>
               </div>
             </div>
           </div>
