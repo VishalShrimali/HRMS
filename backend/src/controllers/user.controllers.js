@@ -181,7 +181,8 @@ export const loginUser = async (req, res) => {
             user: { 
                 fullName: user.fullName, 
                 role: user.role,
-                roleName: user.role.name 
+                roleName: user.role.name,
+                permissions: user.role.permissions
             } 
         });
     } catch (error) {

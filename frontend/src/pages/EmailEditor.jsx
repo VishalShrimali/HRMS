@@ -99,7 +99,12 @@ const CustomEmailEditor = () => {
 
             const fetchEmailTitle = async () => {
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/emails/${emailIdFromURL}`);
+                    const token = localStorage.getItem("token");
+                    const response = await fetch(`http://localhost:8000/api/v1/emails/${emailIdFromURL}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (!response.ok) throw new Error("Email not found");
                     const emailData = await response.json();
                     setTitle(emailData.title || "Untitled");
@@ -111,7 +116,12 @@ const CustomEmailEditor = () => {
 
             const fetchTemplate = async () => {
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailIdFromURL}`);
+                    const token = localStorage.getItem("token");
+                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailIdFromURL}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (!response.ok) throw new Error("Template not found");
                     const templateData2 = await response.json();
                     console.log("✅ Fetched Template Design:", templateData2.design);
@@ -168,9 +178,13 @@ const CustomEmailEditor = () => {
                 };
 
                 try {
+                    const token = localStorage.getItem("token");
                     const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, {
                         method: "PUT",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { 
+                            "Content-Type": "application/json",
+                            'Authorization': `Bearer ${token}`
+                        },
                         body: JSON.stringify(payload),
                     });
 
@@ -194,9 +208,13 @@ const CustomEmailEditor = () => {
         }
 
         try {
+            const token = localStorage.getItem("token");
             const response = await fetch("http://localhost:8000/api/v1/templates/send", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     to: recipientEmail,
                     emailId

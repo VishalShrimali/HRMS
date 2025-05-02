@@ -34,7 +34,7 @@ const Navbar = ({ toggleSidebar, setIsAuthenticated }) => {
     localStorage.removeItem("adminName");
     window.dispatchEvent(new Event("storage")); 
     setIsAuthenticated(false);
-    navigate("/user/login");
+    navigate("/auth/login");
   };
 
   return (

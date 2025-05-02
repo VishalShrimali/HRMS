@@ -46,11 +46,12 @@ const Sidebar = () => {
     // Get user info from localStorage
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const { fullName, roleName } = JSON.parse(userData);
+      const { fullName, roleName, permissions } = JSON.parse(userData);
       setUserInfo({
         name: fullName,
         role: roleName || "User"
       });
+      setPermissions(permissions || []);
     } else {
       // If no user data in localStorage, redirect to login
       navigate("/auth/login");

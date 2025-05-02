@@ -17,16 +17,13 @@ import EmailDesigner from "./pages/EmailDesigner";
 import CustomEmailEditor from "./pages/EmailEditor";
 let token = localStorage.getItem("token");
 const Protected = ({ isAuthenticated, children }) => {
-  return isAuthenticated ? children : <Navigate to="/user/login" />;
+  return isAuthenticated ? children : <Navigate to="/auth/login" />;
 };
 
 function App() {
   console.log(token);
   const [isAuthenticated, setIsAuthenticated] = useState(
-    
     !!localStorage.getItem("token")
-
-    
   );
 
   return (
@@ -65,7 +62,8 @@ function App() {
           />
           <Route path="forgot-passward" element={<ForgotPassword />} />
         </Route>
-        <Route path="reset-password" element={<ResetPassword />} /> {/* Moved here */}
+        <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     </Router>
   );
