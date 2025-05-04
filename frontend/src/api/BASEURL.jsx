@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_BASE_URL = "/api/v1";
+export const API_BASE_URL = "https://hrms-n8v4.onrender.com/api/v1";
 
 export const API = () => {
   const token = localStorage.getItem("token");
