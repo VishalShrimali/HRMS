@@ -16,10 +16,24 @@ const handleError = (res, error, statusCode = 500) => {
 // Fetch all leads
 export const getLeads = async (req, res) => {
     try {
+        // Ensure user is authenticated
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+        }
+
         // If user is admin, get all leads. Otherwise, get only user's leads
         const query = req.user.role.name === "ADMIN" ? {} : { userId: req.user._id };
-        const leads = await Lead.find(query);
-        res.status(200).json({ message: "Leads fetched successfully", leads });
+        
+        // Add timestamps to ensure fresh data
+        const leads = await Lead.find(query)
+            .sort({ updatedAt: -1 }) // Sort by most recently updated
+            .lean(); // Convert to plain JavaScript objects
+
+        res.status(200).json({ 
+            message: "Leads fetched successfully", 
+            leads,
+            timestamp: new Date().toISOString() // Add timestamp to response
+        });
     } catch (error) {
         handleError(res, error);
     }

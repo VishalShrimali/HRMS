@@ -298,25 +298,60 @@ const LeadsTable = () => {
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLeads([]); // Clear leads when no token
+        return;
+      }
+
       const data = await getLeads();
-      const leadsArray = Array.isArray(data.leads)
-        ? data.leads
-        : Array.isArray(data)
-        ? data
-        : [];
+      // Ensure we're working with the correct data structure
+      const leadsArray = Array.isArray(data.leads) ? data.leads : [];
       const sanitizedLeads = leadsArray.filter(
         (lead) => lead && typeof lead === "object" && lead.firstName && lead.lastName
       );
+      
+      // Clear existing leads before setting new ones
+      setLeads([]);
       setLeads(sanitizedLeads);
       console.log("Fetched leads:", sanitizedLeads);
       setError(null);
     } catch (err) {
+      console.error("Error fetching leads:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
       setLeads([]);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Add useEffect to fetch leads on component mount and when token changes
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Clear existing leads before fetching new ones
+      setLeads([]);
+      fetchLeads();
+    } else {
+      setLeads([]); // Clear leads when no token
+    }
+  }, [fetchLeads]);
+
+  // Add a listener for token changes
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "token") {
+        if (e.newValue) {
+          fetchLeads();
+        } else {
+          setLeads([]);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [fetchLeads]);
 
   // Fetch groups
   const fetchData = useCallback(async () => {
