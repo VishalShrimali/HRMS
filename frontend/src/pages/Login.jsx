@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/BASEURL';
 
 const Login = ({ setIsAuthenticated }) => {
   const [formData, setFormData] = useState({
@@ -57,7 +58,7 @@ const Login = ({ setIsAuthenticated }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/user/login', formData);
+      const response = await axios.post(`${API_BASE_URL}/user/login`, formData);
       
       // Check if user needs role assignment
       if (response.data.needsRole) {

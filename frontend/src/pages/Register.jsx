@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from '../api/BASEURL';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -155,7 +156,7 @@ const Register = () => {
     setIsLoading(true);
     try {
       const { confirmPassword, ...registrationData } = formData;
-      const response = await axios.post("http://localhost:8000/api/v1/user/register", registrationData);
+      const response = await axios.post(`${API_BASE_URL}/user/register`, registrationData);
       
       // Check for successful response status (201)
       if (response.status === 201) {

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import EmailEditor from "react-email-editor";
 import { Container, Button, Form } from "react-bootstrap";
+import { API_BASE_URL } from '../api/BASEURL';
 
 const CustomEmailEditor = () => {
     const emailEditorRef = useRef(null);
@@ -100,7 +101,7 @@ const CustomEmailEditor = () => {
             const fetchEmailTitle = async () => {
                 try {
                     const token = localStorage.getItem("token");
-                    const response = await fetch(`http://localhost:8000/api/v1/emails/${emailIdFromURL}`, {
+                    const response = await fetch(`${API_BASE_URL}/emails/${emailIdFromURL}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
