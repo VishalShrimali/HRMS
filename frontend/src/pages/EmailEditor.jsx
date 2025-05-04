@@ -118,7 +118,7 @@ const CustomEmailEditor = () => {
             const fetchTemplate = async () => {
                 try {
                     const token = localStorage.getItem("token");
-                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailIdFromURL}`, {
+                    const response = await fetch(`${API_BASE_URL}/templates/email/${emailIdFromURL}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -180,7 +180,7 @@ const CustomEmailEditor = () => {
 
                 try {
                     const token = localStorage.getItem("token");
-                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, {
+                    const response = await fetch(`${API_BASE_URL}/templates/email/${emailId}`, {
                         method: "PUT",
                         headers: { 
                             "Content-Type": "application/json",
@@ -210,7 +210,7 @@ const CustomEmailEditor = () => {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/api/v1/templates/send", {
+            const response = await fetch(`${API_BASE_URL}/templates/send`, {
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",

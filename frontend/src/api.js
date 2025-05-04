@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:8000/api/v1"; // Adjust if needed
+import { API_BASE_URL } from './api/BASEURL';
 
 // Helper function to get token
 const getToken = () => {

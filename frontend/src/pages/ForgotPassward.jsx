@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from '../api/BASEURL';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -20,16 +21,18 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/v1/user/forgot-password",
-        { email }
-      );
-      setMessage(
-        response.data.message || "Password  link sent to your email"
-      );
+      const response = await fetch(`${API_BASE_URL}/user/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      setMessage(data.message || "Password link sent to your email");
       setError("");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send  link");
+      setError(err.response?.data?.message || "Failed to send link");
       setMessage("");
     } finally {
       setLoading(false);
