@@ -38,13 +38,13 @@ const AddLeadModel = ({
                     Select Group Lead
                   </label>
                   <select
-                    name="groupId"
+                    name="groupIds"
                     id="groupLead"
                     className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={formData.groupId}
+                    value={formData.groupIds}
                     onChange={handleChange}
                   >
-                    <option value="">-- Select a lead --</option>
+                    <option value="">None</option>
                     {groupOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -317,7 +317,7 @@ const AddLeadModel = ({
                   type="submit"
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
-                  Save
+                  Add Lead
                 </button>
               </div>
             </form>

@@ -3,7 +3,7 @@ import { Group } from "../models/group.models.js";
 import { Lead } from "../models/leads.models.js";
 import { decodeJWTGetUser } from "../middleware/auth.middlware.js";
 import asyncHandler from "express-async-handler";
-import mongoose from "mongoose"; // Add this import
+import mongoose from "mongoose";
 
 // Handle errors consistently
 const handleError = (res, error, statusCode = 500) => {
@@ -14,6 +14,31 @@ const handleError = (res, error, statusCode = 500) => {
       .json({ message: error.message || "Internal Server Error" });
   }
 };
+export const getLeadsByGroup = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { fields } = req.query;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400);
+    throw new Error("Invalid group ID");
+  }
+
+  const group = await Group.findById(id).populate({
+    path: "leads",
+    select: fields || "firstName lastName email phone country addresses userPreferences dates.joinDate",
+  });
+
+  if (!group) {
+    res.status(404);
+    throw new Error("Group not found");
+  }
+
+  console.log("getLeadsByGroup success:", { groupId: id, leadCount: group.leads.length });
+  res.status(200).json({
+    message: "Leads fetched successfully",
+    leads: group.leads,
+  });
+});
 
 // Add multiple leads to a group
 export const addMembersToGroup = asyncHandler(async (req, res) => {
@@ -31,14 +56,14 @@ export const addMembersToGroup = asyncHandler(async (req, res) => {
     throw new Error("leadIds must be a non-empty array");
   }
 
-  // Filter valid ObjectId strings
-  const validLeadIds = leadIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+  // Filter valid ObjectId strings and remove duplicates
+  const validLeadIds = [...new Set(leadIds.filter((id) => mongoose.Types.ObjectId.isValid(id)))];
   if (validLeadIds.length === 0) {
     res.status(400);
     throw new Error("No valid lead IDs provided");
   }
   if (validLeadIds.length !== leadIds.length) {
-    console.warn("Invalid lead IDs filtered out:", leadIds.filter((id) => !validLeadIds.includes(id)));
+    console.warn("Invalid or duplicate lead IDs filtered out:", leadIds.filter((id) => !validLeadIds.includes(id)));
   }
 
   // Find group
@@ -55,13 +80,16 @@ export const addMembersToGroup = asyncHandler(async (req, res) => {
     throw new Error("One or more lead IDs are invalid or not found");
   }
 
-  // Update group and leads
-  group.leads = [...new Set([...group.leads, ...validLeadIds.map((id) => new mongoose.Types.ObjectId(id))])];
+  // Update group leads array (avoid duplicates)
+  group.leads = [...new Set([...group.leads.map(String), ...validLeadIds])].map(
+    (id) => new mongoose.Types.ObjectId(id)
+  );
   await group.save();
 
+  // Add group ID to each lead's groupIds array
   await Lead.updateMany(
     { _id: { $in: validLeadIds } },
-    { groupId: group._id }
+    { $addToSet: { groupIds: group._id } } // Use $addToSet to avoid duplicates
   );
 
   // Populate updated group
@@ -112,9 +140,12 @@ export const createGroup = asyncHandler(async (req, res) => {
     throw new Error("Group name is required");
   }
 
-  const validLeadIds = leads?.filter((id) => mongoose.Types.ObjectId.isValid(id)) || [];
+  // Filter valid lead IDs and remove duplicates
+  const validLeadIds = leads
+    ? [...new Set(leads.filter((id) => mongoose.Types.ObjectId.isValid(id)))]
+    : [];
   if (validLeadIds.length !== (leads?.length || 0)) {
-    console.warn("Invalid lead IDs filtered out:", leads?.filter((id) => !validLeadIds.includes(id)) || []);
+    console.warn("Invalid or duplicate lead IDs filtered out:", leads?.filter((id) => !validLeadIds.includes(id)) || []);
   }
 
   const group = new Group({
@@ -127,9 +158,10 @@ export const createGroup = asyncHandler(async (req, res) => {
   await group.save();
 
   if (validLeadIds.length > 0) {
+    // Add group ID to each lead's groupIds array
     await Lead.updateMany(
       { _id: { $in: validLeadIds } },
-      { groupId: group._id }
+      { $addToSet: { groupIds: group._id } } // Use $addToSet to avoid duplicates
     );
   }
 
@@ -138,6 +170,7 @@ export const createGroup = asyncHandler(async (req, res) => {
     select: "firstName lastName email phone country addresses userPreferences",
   });
 
+  console.log("createGroup success:", { groupId: group._id, leadCount: validLeadIds.length });
   res.status(201).json({
     message: "Group created successfully",
     group: populatedGroup,
@@ -176,9 +209,10 @@ export const deleteGroup = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Group not found");
   }
+  // Remove group ID from leads' groupIds array
   await Lead.updateMany(
-    { groupId: req.params.id },
-    { $unset: { groupId: "" } }
+    { groupIds: req.params.id },
+    { $pull: { groupIds: req.params.id } }
   );
   res.status(200).json({
     message: "Group deleted successfully",
@@ -202,16 +236,17 @@ export const addLeadToGroup = asyncHandler(async (req, res) => {
     throw new Error("Lead not found");
   }
 
-  if (group.leads.includes(leadId)) {
-    res.status(400);
-    throw new Error("Lead is already in this group");
+  // Add lead to group if not already present
+  if (!group.leads.includes(leadId)) {
+    group.leads.push(leadId);
+    await group.save();
   }
 
-  group.leads.push(leadId);
-  await group.save();
-
-  lead.groupId = group._id;
-  await lead.save();
+  // Add group ID to lead's groupIds array
+  await Lead.updateOne(
+    { _id: leadId },
+    { $addToSet: { groupIds: group._id } }
+  );
 
   const updatedGroup = await Group.findById(id).populate({
     path: "leads",

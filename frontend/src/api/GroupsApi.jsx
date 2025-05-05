@@ -13,19 +13,48 @@ const getToken = () => {
 };
 
 // Fetch all groups
+
+
 export const fetchGroups = async () => {
+  const response = await axios.get("/api/v1/groups");
+  return response.data;
+};
+
+export const fetchLeadsByGroup = async (groupId) => {
+  const response = await axios.get(`/api/v1/groups/${groupId}/leads`, {
+    params: {
+      fields: "firstName,lastName,email,phone,country,addresses,userPreferences,dates.joinDate", // Explicitly select fields
+    },
+  });
+  return response.data;
+};
+
+export const handleAddSubmit = async (groupData) => {
+  const response = await axios.post("/api/v1/groups/create", groupData);
+  return response.data;
+};
+
+export const handleAddLeadtoGroup = async (
+  event,
+  groupId,
+  leadId,
+  setShowAddLeadModal,
+  setSelectedUserId
+) => {
+  event.preventDefault();
   try {
-    const token = getToken();
-    const response = await axios.get(`${API_BASE_URL}/groups`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
+    await axios.put(`/api/v1/groups/${groupId}/members`, { leadIds: [leadId] });
+    setShowAddLeadModal(false);
+    setSelectedUserId("");
   } catch (error) {
-    console.error("Fetch groups error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch groups");
+    console.error("Error adding lead to group:", error);
+    throw error;
   }
+};
+
+export const deleteGroup = async (groupId) => {
+  const response = await axios.delete(`/api/v1/groups/${groupId}`);
+  return response.data;
 };
 
 // Add a new group
@@ -62,37 +91,37 @@ export const updateGroup = async (groupId, groupData) => {
   }
 };
 
-// Delete a group
-export const deleteGroup = async (groupId) => {
-  try {
-    const token = getToken();
-    const response = await axios.delete(`${API_BASE_URL}/groups/${groupId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Delete group error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to delete group");
-  }
-};
+// // Delete a group
+// export const deleteGroup = async (groupId) => {
+//   try {
+//     const token = getToken();
+//     const response = await axios.delete(`${API_BASE_URL}/groups/${groupId}`, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Delete group error:", error.response?.data || error.message);
+//     throw new Error(error.response?.data?.message || error.message || "Failed to delete group");
+//   }
+// };
 
-// Fetch leads by group
-export const fetchLeadsByGroup = async (groupId) => {
-  try {
-    const token = getToken();
-    const response = await axios.get(`${API_BASE_URL}/groups/${groupId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data; // Expect group with populated leads
-  } catch (error) {
-    console.error("Fetch leads error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch leads");
-  }
-};
+// // Fetch leads by group
+// export const fetchLeadsByGroup = async (groupId) => {
+//   try {
+//     const token = getToken();
+//     const response = await axios.get(`${API_BASE_URL}/groups/${groupId}`, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+//     return response.data; // Expect group with populated leads
+//   } catch (error) {
+//     console.error("Fetch leads error:", error.response?.data || error.message);
+//     throw new Error(error.response?.data?.message || error.message || "Failed to fetch leads");
+//   }
+// };
 
 // Add multiple leads to a group
 export const addMembersToGroup = async (groupId, leadIds) => {

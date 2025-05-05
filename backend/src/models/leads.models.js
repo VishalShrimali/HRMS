@@ -1,25 +1,21 @@
 import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
-    line1: { type: String, required: true },
-    line2: { type: String },
-    line3: { type: String },
-    pincode: { type: String, required: true, match: /^[0-9]{5,6}$/ },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    county: { type: String },
-    country: { type: String, required: true },
+  line1: { type: String, required: true },
+  line2: { type: String },
+  line3: { type: String },
+  pincode: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  county: { type: String },
+  country: { type: String, required: true },
 });
 
 const userPreferencesSchema = new mongoose.Schema({
-    policy: {
-        type: String,
-        enum: ["active", "nonactive"],
-        default: "active",
-    },
-    whatsappMessageReceive: { type: Boolean, default: false },
-    browserNotifications: { type: Boolean, default: false },
-    emailReceive: { type: Boolean, default: false },
+  policy: { type: String, enum: ["active", "inactive"], default: "active" },
+  whatsappMessageReceive: { type: Boolean, default: false },
+  browserNotifications: { type: Boolean, default: false },
+  emailReceive: { type: Boolean, default: false },
 });
 
 const dateSchema = new mongoose.Schema({
@@ -30,7 +26,6 @@ const dateSchema = new mongoose.Schema({
 });
 const LeadSchema = new mongoose.Schema(
     {   
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },

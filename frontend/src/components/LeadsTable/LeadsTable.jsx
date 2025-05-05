@@ -66,7 +66,7 @@ const ChangeGroupModal = ({
     >
       <div className="bg-white rounded-lg w-full max-w-md p-6">
         <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h5 className="text-xl font-semibold text-gray-800">Change Group</h5>
+          <h5 className="text-xl font-semibold text-gray-800">Add to Group</h5>
           <button
             className="text-gray-500 hover:text-gray-700"
             onClick={() => setShowChangeGroupModal(false)}
@@ -110,7 +110,7 @@ const ChangeGroupModal = ({
               type="submit"
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              Save
+              Add
             </button>
           </div>
         </form>
@@ -262,11 +262,12 @@ const LeadsTable = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    groupId: "",
+    groupIds: [], // Updated from groupId to groupIds
     firstName: "",
     lastName: "",
     email: "",
@@ -337,11 +338,43 @@ const LeadsTable = () => {
     fetchData();
   }, [fetchLeads, fetchData]);
 
-  // Handle view leads for a group
-  const handleViewLeads = (groupId, groupName, leads) => {
-    console.log("handleViewLeads called with:", { groupId, groupName, leads });
-    setViewLeadsGroup({ name: groupName, leads });
-    setShowViewLeadsModal(true);
+  // Validate group form
+  const validateGroupForm = () => {
+    const errors = {};
+    if (!groupFormData.name) errors.name = "Group name is required";
+    setGroupFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle group form changes
+  const handleGroupChange = (e) => {
+    const { name, value } = e.target;
+    setGroupFormData({
+      ...groupFormData,
+      [name]: value,
+    });
+    setGroupFormErrors({ ...groupFormErrors, [name]: "" });
+  };
+
+  // Handle create group
+  const handleCreateGroup = () => {
+    if (selectedLeads.length === 0) {
+      alert("Please select at least one lead to create a group.");
+      return;
+    }
+    // Deduplicate selectedLeads and validate ObjectId strings
+    const uniqueLeadIds = [...new Set(selectedLeads.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)))];
+    console.log("handleCreateGroup called with uniqueLeadIds:", uniqueLeadIds);
+    if (uniqueLeadIds.length !== selectedLeads.length) {
+      console.warn("Duplicate or invalid lead IDs filtered out:", selectedLeads.filter((id) => !uniqueLeadIds.includes(id)));
+    }
+    setGroupFormData({
+      name: "",
+      description: "",
+      members: uniqueLeadIds,
+    });
+    setShowAddGroupModal(true);
+    console.log("Opening AddGroupModel with unique leads:", uniqueLeadIds, "activeTab:", activeTab);
   };
 
   // Handle add leads to group redirect
@@ -390,28 +423,310 @@ const LeadsTable = () => {
       setError("Please select a group");
       return;
     }
-    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads });
+    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads }); // Add this
     try {
-      // Update each selected lead's group
-      for (const leadId of selectedLeads) {
-        const lead = leads.find(l => l._id === leadId);
-        if (lead) {
-          await updateLead(leadId, {
-            ...lead,
-            groupId: newGroupId
-          });
-        }
-      }
-      
+      await addMembersToGroup(newGroupId, selectedLeads);
       setShowChangeGroupModal(false);
       setSelectedLeads([]);
       setError(null);
-      fetchLeads(); // Refresh the leads list
-      console.log("Leads reassigned to group:", newGroupId);
+      fetchLeads();
+      fetchData();
+      console.log("Leads reassigned to group:", newGroupId, "activeTab:", activeTab);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to change group");
       console.error("Change group error:", err);
     }
+  };
+
+  // Handle export leads
+  const handleExport = async () => {
+    try {
+      await exportLeads();
+      setError(null);
+      console.log("Leads exported successfully");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to export leads");
+      console.error("Export error:", err);
+    }
+  };
+
+  // Handle import leads
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      setError("No file selected");
+      return;
+    }
+    try {
+      await importLeads(file);
+      fetchLeads();
+      setError(null);
+      console.log("Leads imported successfully");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to import leads");
+      console.error("Import error:", err);
+    }
+  };
+
+  // Validate lead form
+  const validateLeadForm = () => {
+    console.log('Validating form...');
+    const errors = {};
+    
+    if (!formData.firstName.trim()) {
+      errors.firstName = "First Name is required";
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Last Name is required";
+    }
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+    if (!formData.phoneNumber.trim()) {
+      errors.phoneNumber = "Phone Number is required";
+    }
+    if (!formData.country.trim()) {
+      errors.country = "Country is required";
+    }
+    
+    console.log('Form validation errors:', errors);
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle lead form changes
+  const handleLeadChange = (e) => {
+    const { name, value } = e.target;
+    if (name.startsWith("address.")) {
+      const field = name.split(".")[1];
+      setFormData({
+        ...formData,
+        address: { ...formData.address, [field]: value },
+      });
+    } else if (name.startsWith("dates.")) {
+      const field = name.split(".")[1];
+      setFormData({
+        ...formData,
+        dates: { ...formData.dates, [field]: value },
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+    setFormErrors({ ...formErrors, [name]: "" });
+  };
+
+  // Handle add lead
+  const handleAddLeadSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateLeadForm()) return;
+    
+    try {
+      const leadData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phoneNumber.trim(),
+        country: formData.country.trim(),
+        groupIds: formData.groupIds || [],
+        date: new Date().toISOString(),
+      };
+      
+      const response = await addLead(leadData);
+      if (response.lead) {
+        alert('Lead added successfully!');
+        setLeads(prevLeads => [...prevLeads, response.lead]);
+        setShowAddLeadModal(false);
+        resetLeadForm();
+        await fetchLeads();
+      }
+    } catch (err) {
+      console.error('Error adding lead:', err);
+      setError(err.response?.data?.message || "Failed to add lead");
+    }
+  };
+
+  // Handle edit lead
+  const handleEditLeadSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateLeadForm()) return;
+    try {
+      const response = await updateLead(editingLead._id, formData);
+      setLeads(
+        leads
+          .map((lead) => (lead._id === editingLead._id ? response.lead : lead))
+          .filter((lead) => lead && lead.firstName)
+      );
+      setShowEditLeadModal(false);
+      resetLeadForm();
+      setError(null);
+      fetchLeads();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update lead");
+    }
+  };
+
+  // Handle add/edit group
+  const handleGroupSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateGroupForm()) return;
+    try {
+      console.log("handleGroupSubmit called with groupFormData:", groupFormData); // Add logging
+      let response;
+      if (editingGroup) {
+        response = await updateGroup(editingGroup._id, groupFormData);
+        console.log("updateGroup response:", response); // Add logging
+        setGroups(
+          groups.map((group) =>
+            group._id === editingGroup._id ? { ...group, ...response.group } : group
+          )
+        );
+      } else {
+        response = await addGroup({
+          ...groupFormData,
+          leads: groupFormData.members,
+        });
+        console.log("addGroup response:", response); // Add logging
+        setGroups([...groups, response.group]);
+      }
+
+      // Add members to group if members are provided
+      if (groupFormData.members && groupFormData.members.length > 0) {
+        // Filter valid ObjectId strings (24-character hex strings)
+        const validLeadIds = groupFormData.members.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
+        console.log("Valid lead IDs for addMembersToGroup:", validLeadIds); // Add logging
+        if (validLeadIds.length === 0) {
+          setError("No valid lead IDs provided for the group");
+          return;
+        }
+        if (validLeadIds.length !== groupFormData.members.length) {
+          console.warn(
+            "Invalid lead IDs filtered out:",
+            groupFormData.members.filter((id) => !validLeadIds.includes(id))
+          );
+        }
+        await addMembersToGroup(response.group._id, validLeadIds);
+        console.log("Leads added to group:", response.group._id); // Add logging
+      }
+
+      setShowAddGroupModal(false);
+      resetGroupForm();
+      setError(null);
+      fetchData();
+      fetchLeads();
+      console.log("Group saved, activeTab:", activeTab);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save group");
+      console.error("Group save error:", err);
+    }
+  };
+
+  // Handle delete lead
+  const handleDeleteLead = async (id) => {
+    if (window.confirm("Are you sure you want to delete this lead?")) {
+      try {
+        await deleteLead(id);
+        setLeads(leads.filter((lead) => lead._id !== id));
+        setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
+        setError(null);
+        fetchLeads();
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to delete lead");
+      }
+    }
+  };
+
+  // Handle delete group
+  const handleDeleteGroup = async (id) => {
+    if (window.confirm("Are you sure you want to delete this group?")) {
+      try {
+        await deleteGroup(id);
+        setGroups(groups.filter((group) => group._id !== id));
+        setSelectedGroups(selectedGroups.filter((groupId) => groupId !== id));
+        setError(null);
+        fetchData();
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to delete group");
+      }
+    }
+  };
+
+  // Handle delete selected items
+  const handleDeleteSelected = async () => {
+    if (window.confirm("Are you sure you want to delete the selected items?")) {
+      try {
+        if (activeTab === "personal") {
+          for (const leadId of selectedLeads) {
+            await deleteLead(leadId);
+          }
+          setLeads(leads.filter((lead) => !selectedLeads.includes(lead._id)));
+          setSelectedLeads([]);
+        } else {
+          for (const groupId of selectedGroups) {
+            await deleteGroup(groupId);
+          }
+          setGroups(groups.filter((group) => !selectedGroups.includes(group._id)));
+          setSelectedGroups([]);
+        }
+        setError(null);
+        fetchLeads();
+        fetchData();
+        console.log("Selected items deleted, activeTab:", activeTab);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to delete selected items");
+        console.error("Delete error:", err);
+      }
+    }
+  };
+
+  // Open add lead modal
+  const handleOpenAddLeadModal = () => {
+    resetLeadForm();
+    setShowAddLeadModal(true);
+  };
+
+  // Reset lead form
+  const resetLeadForm = () => {
+    setFormData({
+      groupIds: [], // Updated to groupIds
+      firstName: "",
+      lastName: "",
+      email: "",
+      country: "USA (+1)",
+      phoneNumber: "",
+      secondPhoneNumber: "",
+      dates: { birthDate: "", joinDate: "" },
+      address: {
+        line1: "",
+        line2: "",
+        line3: "",
+        pincode: "",
+        city: "",
+        state: "",
+        county: "",
+        country: "USA",
+      },
+      phone: "",
+      userPreferences: {
+        policy: "active",
+        whatsappMessageReceive: false,
+        browserNotifications: false,
+        emailReceive: false,
+      },
+    });
+    setEditingLeadState(null);
+    setFormErrors({});
+  };
+
+  // Reset group form
+  const resetGroupForm = () => {
+    setGroupFormData({ name: "", description: "", members: [] });
+    setEditingGroup(null);
+    setGroupFormErrors({});
   };
 
   // Handle lead selection
@@ -444,21 +759,6 @@ const LeadsTable = () => {
     } else {
       setSelectedGroups(paginatedGroups.map((group) => group._id));
     }
-  };
-
-  // Handle create group
-  const handleCreateGroup = () => {
-    if (selectedLeads.length === 0) {
-      alert("Please select at least one lead to create a group.");
-      return;
-    }
-    setGroupFormData({
-      name: "",
-      description: "",
-      members: selectedLeads,
-    });
-    setShowAddGroupModal(true);
-    console.log("Opening AddGroupModel with selected leads:", selectedLeads, "activeTab:", activeTab);
   };
 
   // Handle change group
@@ -562,338 +862,6 @@ const LeadsTable = () => {
     currentGroupPage * groupsPerPage
   );
 
-  // Handle export leads
-  const handleExport = async () => {
-    try {
-      await exportLeads();
-      setError(null);
-      console.log("Leads exported successfully");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to export leads");
-      console.error("Export error:", err);
-    }
-  };
-
-  // Handle import leads
-  const handleImport = async (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-      setError("No file selected");
-      return;
-    }
-    try {
-      await importLeads(file);
-      fetchLeads();
-      setError(null);
-      console.log("Leads imported successfully");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to import leads");
-      console.error("Import error:", err);
-    }
-  };
-
-  // Validate lead form
-  const validateLeadForm = () => {
-    console.log('Validating form...');
-    const errors = {};
-    
-    if (!formData.firstName.trim()) {
-      errors.firstName = "First Name is required";
-    }
-    if (!formData.lastName.trim()) {
-      errors.lastName = "Last Name is required";
-    }
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Please enter a valid email";
-    }
-    if (!formData.phoneNumber.trim()) {
-      errors.phoneNumber = "Phone Number is required";
-    }
-    if (!formData.country.trim()) {
-      errors.country = "Country is required";
-    }
-    
-    console.log('Form validation errors:', errors);
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Validate group form
-  const validateGroupForm = () => {
-    const errors = {};
-    if (!groupFormData.name) errors.name = "Group name is required";
-    setGroupFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Handle lead form changes
-  const handleLeadChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith("address.")) {
-      const field = name.split(".")[1];
-      setFormData({
-        ...formData,
-        address: { ...formData.address, [field]: value },
-      });
-    } else if (name.startsWith("dates.")) {
-      const field = name.split(".")[1];
-      setFormData({
-        ...formData,
-        dates: { ...formData.dates, [field]: value },
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-    setFormErrors({ ...formErrors, [name]: "" });
-  };
-
-  // Handle group form changes
-  const handleGroupChange = (e) => {
-    const { name, value } = e.target;
-    setGroupFormData({
-      ...groupFormData,
-      [name]: value,
-    });
-    setGroupFormErrors({ ...groupFormErrors, [name]: "" });
-  };
-
-  // Handle add lead
-  const handleAddLeadSubmit = async (e) => {
-    e.preventDefault();
-    console.log('Form submitted, validating...');
-    
-    if (!validateLeadForm()) {
-      console.log('Form validation failed');
-      return;
-    }
-    
-    try {
-      console.log('Form data:', formData);
-      
-      // Format the data before sending
-      const leadData = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phoneNumber.trim(), // Use phoneNumber as the phone field
-        country: formData.country.trim(),
-        groupId: formData.groupId || null,
-        date: new Date().toISOString(),
-        addresses: [{
-          line1: formData.address.line1.trim(),
-          line2: formData.address.line2.trim(),
-          line3: formData.address.line3.trim(),
-          pincode: formData.address.pincode.trim(),
-          city: formData.address.city.trim(),
-          state: formData.address.state.trim(),
-          county: formData.address.county.trim(),
-          country: formData.address.country.trim()
-        }],
-        dates: {
-          birthDate: formData.dates.birthDate,
-          joinDate: formData.dates.joinDate
-        },
-        userPreferences: {
-          policy: formData.userPreferences.policy,
-          whatsappMessageReceive: formData.userPreferences.whatsappMessageReceive,
-          browserNotifications: formData.userPreferences.browserNotifications,
-          emailReceive: formData.userPreferences.emailReceive
-        }
-      };
-
-      console.log('Formatted lead data:', leadData);
-
-      // Validate required fields
-      if (!leadData.firstName || !leadData.lastName || !leadData.email || !leadData.phone || !leadData.country) {
-        const errorMessage = "Please fill in all required fields";
-        console.log('Validation error:', errorMessage);
-        setError(errorMessage);
-        return;
-      }
-
-      console.log('Sending request to add lead...');
-      const response = await addLead(leadData);
-      console.log('Lead added successfully:', response);
-
-      setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
-      setShowAddLeadModal(false);
-      resetLeadForm();
-      setError(null);
-      fetchLeads();
-    } catch (err) {
-      console.error('Error adding lead:', err);
-      const errorMessage = err.response?.data?.message || "Failed to add lead";
-      setError(errorMessage);
-      // Show error in UI
-      alert(errorMessage);
-    }
-  };
-
-  // Handle edit lead
-  const handleEditLeadSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateLeadForm()) return;
-    try {
-      const response = await updateLead(editingLead._id, formData);
-      setLeads(
-        leads
-          .map((lead) => (lead._id === editingLead._id ? response.lead : lead))
-          .filter((lead) => lead && lead.firstName)
-      );
-      setShowEditLeadModal(false);
-      resetLeadForm();
-      setError(null);
-      fetchLeads();
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to update lead");
-    }
-  };
-
-  // Handle add/edit group
-  const handleGroupSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateGroupForm()) return;
-    try {
-      console.log("handleGroupSubmit called with groupFormData:", groupFormData);
-      let response;
-      if (editingGroup) {
-        response = await updateGroup(editingGroup._id, groupFormData);
-        console.log("updateGroup response:", response);
-        setGroups(
-          groups.map((group) =>
-            group._id === editingGroup._id ? { ...group, ...response.group } : group
-          )
-        );
-      } else {
-        // Only create the group with the leads, don't call addMembersToGroup again
-        response = await addGroup({
-          ...groupFormData,
-          leads: groupFormData.members,
-        });
-        console.log("addGroup response:", response);
-        setGroups([...groups, response.group]);
-      }
-
-      setShowAddGroupModal(false);
-      resetGroupForm();
-      setError(null);
-      fetchData();
-      fetchLeads();
-      console.log("Group saved, activeTab:", activeTab);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to save group");
-      console.error("Group save error:", err);
-    }
-  };
-
-  // Handle delete lead
-  const handleDeleteLead = async (id) => {
-    if (window.confirm("Are you sure you want to delete this lead?")) {
-      try {
-        await deleteLead(id);
-        setLeads(leads.filter((lead) => lead._id !== id));
-        setSelectedLeads(selectedLeads.filter((leadId) => leadId !== id));
-        setError(null);
-        fetchLeads();
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete lead");
-      }
-    }
-  };
-
-  // Handle delete group
-  const handleDeleteGroup = async (id) => {
-    if (window.confirm("Are you sure you want to delete this group?")) {
-      try {
-        await deleteGroup(id);
-        setGroups(groups.filter((group) => group._id !== id));
-        setSelectedGroups(selectedGroups.filter((groupId) => groupId !== id));
-        setError(null);
-        fetchData();
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete group");
-      }
-    }
-  };
-
-  // Handle delete selected items
-  const handleDeleteSelected = async () => {
-    if (window.confirm("Are you sure you want to delete the selected items?")) {
-      try {
-        if (activeTab === "personal") {
-          for (const leadId of selectedLeads) {
-            await deleteLead(leadId);
-          }
-          setLeads(leads.filter((lead) => !selectedLeads.includes(lead._id)));
-          setSelectedLeads([]);
-        } else {
-          for (const groupId of selectedGroups) {
-            await deleteGroup(groupId);
-          }
-          setGroups(groups.filter((group) => !selectedGroups.includes(group._id)));
-          setSelectedGroups([]);
-        }
-        setError(null);
-        fetchLeads();
-        fetchData();
-        console.log("Selected items deleted, activeTab:", activeTab);
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete selected items");
-        console.error("Delete error:", err);
-      }
-    }
-  };
-
-  // Open add lead modal
-  const handleOpenAddLeadModal = () => {
-    resetLeadForm();
-    setShowAddLeadModal(true);
-  };
-
-  // Reset lead form
-  const resetLeadForm = () => {
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      country: "USA (+1)",
-      phoneNumber: "",
-      secondPhoneNumber: "",
-      dates: { birthDate: "", joinDate: "" },
-      address: {
-        line1: "",
-        line2: "",
-        line3: "",
-        pincode: "",
-        city: "",
-        state: "",
-        county: "",
-        country: "USA",
-      },
-      phone: "",
-      userPreferences: {
-        policy: "active",
-        whatsappMessageReceive: false,
-        browserNotifications: false,
-        emailReceive: false,
-      },
-    });
-    setEditingLeadState(null);
-    setFormErrors({});
-  };
-
-  // Reset group form
-  const resetGroupForm = () => {
-    setGroupFormData({ name: "", description: "", members: [] });
-    setEditingGroup(null);
-    setGroupFormErrors({});
-  };
-
   return (
     <ErrorBoundary>
       <div className="flex h-screen">
@@ -979,7 +947,7 @@ const LeadsTable = () => {
                       className="px-4 py-2 bg-yellow-500 rounded hover:bg-yellow-600"
                       onClick={handleChangeGroup}
                     >
-                      Change Group
+                      Add to Group
                     </button>
                     {groupToAddLeads && (
                       <button
