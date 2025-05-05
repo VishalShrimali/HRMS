@@ -34,7 +34,14 @@ export const addLead = async (leadData) => {
       throw new Error("No authentication token found");
     }
 
-    const response = await api.post("/leads", leadData, {
+    // Convert groupIds to groupId if it's an array
+    const formattedData = {
+      ...leadData,
+      groupId: Array.isArray(leadData.groupIds) && leadData.groupIds.length > 0 
+        ? leadData.groupIds[0] 
+        : leadData.groupIds || null
+    };
+    const response = await api.post("/leads", formattedData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
