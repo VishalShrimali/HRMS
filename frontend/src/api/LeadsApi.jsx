@@ -29,7 +29,16 @@ export const getLeads = async () => {
 
 export const addLead = async (leadData) => {
   try {
-    const response = await api.post("/leads", leadData);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.post("/leads", leadData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error adding lead:", error);
