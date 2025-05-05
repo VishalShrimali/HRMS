@@ -5,8 +5,22 @@ const api = API();
 
 export const getLeads = async () => {
   try {
-    const response = await api.get("/leads");
-    return response.data;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.get("/leads", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    // Ensure we're getting the correct data structure
+    if (response.data && response.data.leads) {
+      return response.data;
+    }
+    return { leads: response.data || [] };
   } catch (error) {
     console.error("Error fetching leads:", error);
     throw error;
@@ -15,6 +29,11 @@ export const getLeads = async () => {
 
 export const addLead = async (leadData) => {
   try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
     // Convert groupIds to groupId if it's an array
     const formattedData = {
       ...leadData,
@@ -22,7 +41,11 @@ export const addLead = async (leadData) => {
         ? leadData.groupIds[0] 
         : leadData.groupIds || null
     };
-    const response = await api.post("/leads", formattedData);
+    const response = await api.post("/leads", formattedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error adding lead:", error);

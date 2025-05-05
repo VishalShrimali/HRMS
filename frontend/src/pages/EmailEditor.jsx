@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import EmailEditor from "react-email-editor";
 import { Container, Button, Form } from "react-bootstrap";
+import { API_BASE_URL } from '../api/BASEURL';
 
 const CustomEmailEditor = () => {
     const emailEditorRef = useRef(null);
@@ -99,7 +100,12 @@ const CustomEmailEditor = () => {
 
             const fetchEmailTitle = async () => {
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/emails/${emailIdFromURL}`);
+                    const token = localStorage.getItem("token");
+                    const response = await fetch(`${API_BASE_URL}/emails/${emailIdFromURL}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (!response.ok) throw new Error("Email not found");
                     const emailData = await response.json();
                     setTitle(emailData.title || "Untitled");
@@ -111,7 +117,12 @@ const CustomEmailEditor = () => {
 
             const fetchTemplate = async () => {
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailIdFromURL}`);
+                    const token = localStorage.getItem("token");
+                    const response = await fetch(`${API_BASE_URL}/templates/email/${emailIdFromURL}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (!response.ok) throw new Error("Template not found");
                     const templateData2 = await response.json();
                     console.log("✅ Fetched Template Design:", templateData2.design);
@@ -168,9 +179,13 @@ const CustomEmailEditor = () => {
                 };
 
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/templates/email/${emailId}`, {
+                    const token = localStorage.getItem("token");
+                    const response = await fetch(`${API_BASE_URL}/templates/email/${emailId}`, {
                         method: "PUT",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { 
+                            "Content-Type": "application/json",
+                            'Authorization': `Bearer ${token}`
+                        },
                         body: JSON.stringify(payload),
                     });
 
@@ -194,9 +209,13 @@ const CustomEmailEditor = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:8000/api/v1/templates/send", {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE_URL}/templates/send`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     to: recipientEmail,
                     emailId

@@ -61,10 +61,12 @@ const AddLeadModel = ({
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.firstName && (
-                    <p className="text-red-500 text-sm">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.firstName}
                     </p>
                   )}
@@ -78,10 +80,12 @@ const AddLeadModel = ({
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.lastName && (
-                    <p className="text-red-500 text-sm">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.lastName}
                     </p>
                   )}
@@ -95,10 +99,12 @@ const AddLeadModel = ({
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.email && (
-                    <p className="text-red-500 text-sm">{formErrors.email}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
                   )}
                 </div>
                 <div>
@@ -110,10 +116,12 @@ const AddLeadModel = ({
                     name="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.phoneNumber && (
-                    <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.phoneNumber}</p>
                   )}
                 </div>
                 <div>
@@ -125,10 +133,12 @@ const AddLeadModel = ({
                     name="dates.birthDate"
                     value={formData.dates?.birthDate || ''}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.birthDate ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.birthDate && (
-                    <p className="text-red-500 text-sm">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.birthDate}
                     </p>
                   )}
@@ -142,10 +152,12 @@ const AddLeadModel = ({
                     name="dates.joinDate"
                     value={formData.dates?.joinDate || ""}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.joinDate ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.joinDate && (
-                    <p className="text-red-500 text-sm">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.joinDate}
                     </p>
                   )}
@@ -159,10 +171,12 @@ const AddLeadModel = ({
                     name="address.line1"
                     value={formData.address.line1}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.line1 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.line1 && (
-                    <p className="text-red-500 text-sm">{formErrors.line1}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.line1}</p>
                   )}
                 </div>
                 <div>
@@ -198,10 +212,12 @@ const AddLeadModel = ({
                     name="address.pincode"
                     value={formData.address.pincode}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.pincode ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.pincode && (
-                    <p className="text-red-500 text-sm">{formErrors.pincode}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
                   )}
                 </div>
                 <div>
@@ -213,10 +229,12 @@ const AddLeadModel = ({
                     name="address.city"
                     value={formData.address.city}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.city ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.city && (
-                    <p className="text-red-500 text-sm">{formErrors.city}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
                   )}
                 </div>
                 <div>
@@ -228,10 +246,12 @@ const AddLeadModel = ({
                     name="address.state"
                     value={formData.address.state}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.state ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.state && (
-                    <p className="text-red-500 text-sm">{formErrors.state}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
                   )}
                 </div>
                 <div>
@@ -255,10 +275,12 @@ const AddLeadModel = ({
                     name="address.country"
                     value={formData.address.country}
                     onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.country ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   {formErrors.country && (
-                    <p className="text-red-500 text-sm">{formErrors.country}</p>
+                    <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
                   )}
                 </div>
                 <div>
@@ -312,7 +334,7 @@ const AddLeadModel = ({
                   />
                 </div>
               </div>
-              <div className="mt-6 flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <button
                   type="submit"
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, Fragment } from "react";
 import { getEmails, createEmail, updateEmail, deleteEmail } from "../api";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from '../api/BASEURL';
 
 const EmailDesigner = () => {
   const [emails, setEmails] = useState([]);
@@ -56,7 +57,7 @@ const EmailDesigner = () => {
 
     try {
       await deleteEmail(id);
-      await fetch(`http://localhost:8000/api/v1/templates/email/${id}`, {
+      await fetch(`${API_BASE_URL}/templates/email/${id}`, {
         method: "DELETE",
       });
       fetchEmails();

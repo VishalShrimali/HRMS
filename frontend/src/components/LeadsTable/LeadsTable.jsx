@@ -160,7 +160,7 @@ const ViewLeadsModal = ({
             <tbody>
               {leads.map((lead) => (
                 <tr key={lead._id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 text-sm text-gray-900">{lead.fullName}</td>
+                  <td className="p-3 text-sm text-gray-900">{`${lead.firstName} ${lead.lastName}`}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.email}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.phone}</td>
                   <td className="p-3 text-sm text-gray-900">{lead.country}</td>
@@ -262,7 +262,7 @@ const LeadsTable = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -298,25 +298,60 @@ const LeadsTable = () => {
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLeads([]); // Clear leads when no token
+        return;
+      }
+
       const data = await getLeads();
-      const leadsArray = Array.isArray(data.leads)
-        ? data.leads
-        : Array.isArray(data)
-        ? data
-        : [];
+      // Ensure we're working with the correct data structure
+      const leadsArray = Array.isArray(data.leads) ? data.leads : [];
       const sanitizedLeads = leadsArray.filter(
         (lead) => lead && typeof lead === "object" && lead.firstName && lead.lastName
       );
+      
+      // Clear existing leads before setting new ones
+      setLeads([]);
       setLeads(sanitizedLeads);
       console.log("Fetched leads:", sanitizedLeads);
       setError(null);
     } catch (err) {
+      console.error("Error fetching leads:", err);
       setError(err.response?.data?.message || "Failed to fetch leads");
       setLeads([]);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Add useEffect to fetch leads on component mount and when token changes
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Clear existing leads before fetching new ones
+      setLeads([]);
+      fetchLeads();
+    } else {
+      setLeads([]); // Clear leads when no token
+    }
+  }, [fetchLeads]);
+
+  // Add a listener for token changes
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "token") {
+        if (e.newValue) {
+          fetchLeads();
+        } else {
+          setLeads([]);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [fetchLeads]);
 
   // Fetch groups
   const fetchData = useCallback(async () => {
@@ -419,22 +454,17 @@ const LeadsTable = () => {
 
   // Handle change group for selected leads
   const handleChangeGroupSubmit = async (newGroupId) => {
-    if (!newGroupId) {
-      setError("Please select a group");
-      return;
-    }
-    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads }); // Add this
+    console.log("handleChangeGroupSubmit called with:", { newGroupId, selectedLeads });
     try {
       await addMembersToGroup(newGroupId, selectedLeads);
       setShowChangeGroupModal(false);
       setSelectedLeads([]);
       setError(null);
-      fetchLeads();
-      fetchData();
-      console.log("Leads reassigned to group:", newGroupId, "activeTab:", activeTab);
+      await fetchLeads();
+      await fetchData();
+      console.log("Leads reassigned to group:", newGroupId);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to change group");
-      console.error("Change group error:", err);
     }
   };
 
@@ -468,61 +498,124 @@ const LeadsTable = () => {
     }
   };
 
-  // Validate lead form
+  // Update validateLeadForm to include phone number validation
   const validateLeadForm = () => {
-    console.log('Validating form...');
     const errors = {};
     
-    if (!formData.firstName.trim()) {
+    // Basic Info Validation
+    if (!formData.firstName?.trim()) {
       errors.firstName = "First Name is required";
     }
-    if (!formData.lastName.trim()) {
+    if (!formData.lastName?.trim()) {
       errors.lastName = "Last Name is required";
     }
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       errors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Please enter a valid email";
     }
-    if (!formData.phoneNumber.trim()) {
+    
+    // Phone validation
+    const phone = formData.phoneNumber || formData.phone;
+    if (!phone) {
       errors.phoneNumber = "Phone Number is required";
+    } else if (!/^\d{10}$/.test(phone)) {
+      errors.phoneNumber = "Phone number must be exactly 10 digits";
     }
-    if (!formData.country.trim()) {
+
+    // Address Validation
+    if (!formData.address?.line1?.trim()) {
+      errors.line1 = "Address Line 1 is required";
+    }
+    if (!formData.address?.pincode?.toString()?.trim()) {
+      errors.pincode = "Pincode is required";
+    }
+    if (!formData.address?.city?.trim()) {
+      errors.city = "City is required";
+    }
+    if (!formData.address?.state?.trim()) {
+      errors.state = "State is required";
+    }
+    if (!formData.address?.country?.trim()) {
       errors.country = "Country is required";
     }
+
+    // Dates Validation
+    if (!formData.dates?.birthDate) {
+      errors.birthDate = "Birth Date is required";
+    }
+    if (!formData.dates?.joinDate) {
+      errors.joinDate = "Join Date is required";
+    }
     
-    console.log('Form validation errors:', errors);
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   // Handle lead form changes
   const handleLeadChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith("address.")) {
-      const field = name.split(".")[1];
-      setFormData({
-        ...formData,
-        address: { ...formData.address, [field]: value },
-      });
-    } else if (name.startsWith("dates.")) {
-      const field = name.split(".")[1];
-      setFormData({
-        ...formData,
-        dates: { ...formData.dates, [field]: value },
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === "checkbox" ? checked : value;
+
+    // Update form data
+    setFormData((prev) => {
+      const newFormData = { ...prev };
+      if (name.includes(".")) {
+        const [section, field] = name.split(".");
+        newFormData[section] = { ...newFormData[section], [field]: fieldValue };
+      } else {
+        newFormData[name] = fieldValue;
+      }
+      return newFormData;
+    });
+
+    // Real-time validation
+    let error = "";
+    const fieldName = name.split(".").pop(); // Get the last part of the field name for nested fields
+    
+    switch (fieldName) {
+      case "line1":
+        if (!fieldValue) error = "Address Line 1 is required";
+        break;
+      case "pincode":
+        if (!fieldValue) error = "Pincode is required";
+        break;
+      case "city":
+        if (!fieldValue) error = "City is required";
+        break;
+      case "state":
+        if (!fieldValue) error = "State is required";
+        break;
+      case "phoneNumber":
+      case "phone":
+        if (!fieldValue) {
+          error = "Phone number is required";
+        } else if (!/^\d{10}$/.test(fieldValue)) {
+          error = "Phone number must be 10 digits";
+        }
+        break;
+      case "email":
+        if (!fieldValue) {
+          error = "Email is required";
+        } else if (!/\S+@\S+\.\S+/.test(fieldValue)) {
+          error = "Invalid email format";
+        }
+        break;
+      default:
+        break;
     }
-    setFormErrors({ ...formErrors, [name]: "" });
+
+    // Update form errors
+    setFormErrors(prev => ({
+      ...prev,
+      [fieldName]: error
+    }));
   };
 
   // Handle add lead
   const handleAddLeadSubmit = async (e) => {
     e.preventDefault();
+    setFormSubmitted(true);
     if (!validateLeadForm()) return;
     
     try {
@@ -530,42 +623,129 @@ const LeadsTable = () => {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
-        phone: formData.phoneNumber.trim(),
+        phone: formData.phoneNumber || formData.phone,
         country: formData.country.trim(),
-        groupIds: formData.groupIds || [],
+        groupId: formData.groupId || null,
         date: new Date().toISOString(),
+        addresses: [{
+          line1: formData.address.line1.trim(),
+          line2: formData.address.line2.trim(),
+          line3: formData.address.line3.trim(),
+          pincode: formData.address.pincode.trim(),
+          city: formData.address.city.trim(),
+          state: formData.address.state.trim(),
+          county: formData.address.county.trim(),
+          country: formData.address.country.trim()
+        }],
+        dates: {
+          birthDate: formData.dates.birthDate,
+          joinDate: formData.dates.joinDate
+        },
+        userPreferences: {
+          policy: formData.userPreferences.policy,
+          whatsappMessageReceive: formData.userPreferences.whatsappMessageReceive,
+          browserNotifications: formData.userPreferences.browserNotifications,
+          emailReceive: formData.userPreferences.emailReceive
+        }
       };
-      
+
       const response = await addLead(leadData);
-      if (response.lead) {
-        alert('Lead added successfully!');
-        setLeads(prevLeads => [...prevLeads, response.lead]);
-        setShowAddLeadModal(false);
-        resetLeadForm();
-        await fetchLeads();
-      }
+
+      setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
+      setShowAddLeadModal(false);
+      resetLeadForm();
+      setError(null);
+      fetchLeads();
     } catch (err) {
       console.error('Error adding lead:', err);
-      setError(err.response?.data?.message || "Failed to add lead");
+      const errorMessage = err.response?.data?.message || "Failed to add lead";
+      
+      // Handle phone validation error
+      if (errorMessage.includes("phone")) {
+        setFormErrors(prev => ({
+          ...prev,
+          phoneNumber: "Phone number must be exactly 10 digits"
+        }));
+      } else if (errorMessage === "Email already exists") {
+        setFormErrors(prev => ({
+          ...prev,
+          email: "Email already exists"
+        }));
+      } else {
+        // For other validation errors, update the form errors
+        setFormErrors(prev => ({
+          ...prev,
+          general: errorMessage
+        }));
+      }
     }
   };
 
   // Handle edit lead
   const handleEditLeadSubmit = async (e) => {
     e.preventDefault();
+    setFormSubmitted(true);
     if (!validateLeadForm()) return;
     try {
-      const response = await updateLead(editingLead._id, formData);
-      setLeads(
-        leads
-          .map((lead) => (lead._id === editingLead._id ? response.lead : lead))
-          .filter((lead) => lead && lead.firstName)
-      );
+      const response = await updateLead(editingLead._id, {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        country: formData.country.trim(),
+        addresses: [{
+          line1: formData.address.line1.trim(),
+          line2: formData.address.line2.trim(),
+          line3: formData.address.line3.trim(),
+          pincode: formData.address.pincode.trim(),
+          city: formData.address.city.trim(),
+          state: formData.address.state.trim(),
+          county: formData.address.county.trim(),
+          country: formData.address.country.trim()
+        }],
+        dates: {
+          birthDate: formData.dates.birthDate ? new Date(formData.dates.birthDate).getTime() : "",
+          joinDate: formData.dates.joinDate ? new Date(formData.dates.joinDate).getTime() : Date.now(),
+          lastLogin: editingLead.dates?.lastLogin || "",
+          passwordChangedAt: editingLead.dates?.passwordChangedAt || ""
+        },
+        userPreferences: {
+          policy: formData.userPreferences.policy,
+          whatsappMessageReceive: formData.userPreferences.whatsappMessageReceive,
+          browserNotifications: formData.userPreferences.browserNotifications,
+          emailReceive: formData.userPreferences.emailReceive
+        }
+      });
+
+      // Update the leads state with the new data
+      const updatedLeads = leads.map(lead => {
+        if (lead._id === editingLead._id) {
+          return {
+            ...lead,
+            ...response.lead,
+            dates: {
+              ...lead.dates,
+              ...response.lead.dates
+            },
+            addresses: response.lead.addresses || lead.addresses,
+            userPreferences: {
+              ...lead.userPreferences,
+              ...response.lead.userPreferences
+            }
+          };
+        }
+        return lead;
+      });
+
+      setLeads(updatedLeads);
       setShowEditLeadModal(false);
       resetLeadForm();
       setError(null);
-      fetchLeads();
+      
+      // Refresh the leads list to ensure we have the latest data
+      await fetchLeads();
     } catch (err) {
+      console.error('Error updating lead:', err);
       setError(err.response?.data?.message || "Failed to update lead");
     }
   };
@@ -575,47 +755,35 @@ const LeadsTable = () => {
     e.preventDefault();
     if (!validateGroupForm()) return;
     try {
-      console.log("handleGroupSubmit called with groupFormData:", groupFormData); // Add logging
+      console.log("handleGroupSubmit called with groupFormData:", groupFormData);
       let response;
       if (editingGroup) {
         response = await updateGroup(editingGroup._id, groupFormData);
-        console.log("updateGroup response:", response); // Add logging
+        console.log("updateGroup response:", response);
         setGroups(
           groups.map((group) =>
             group._id === editingGroup._id ? { ...group, ...response.group } : group
           )
         );
       } else {
+        // Only create the group with the leads, don't call addMembersToGroup again
         response = await addGroup({
           ...groupFormData,
           leads: groupFormData.members,
         });
-        console.log("addGroup response:", response); // Add logging
+        console.log("addGroup response:", response);
         setGroups([...groups, response.group]);
-      }
-
-      // Add members to group if members are provided
-      if (groupFormData.members && groupFormData.members.length > 0) {
-        // Filter valid ObjectId strings (24-character hex strings)
-        const validLeadIds = groupFormData.members.filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
-        console.log("Valid lead IDs for addMembersToGroup:", validLeadIds); // Add logging
-        if (validLeadIds.length === 0) {
-          setError("No valid lead IDs provided for the group");
-          return;
-        }
-        if (validLeadIds.length !== groupFormData.members.length) {
-          console.warn(
-            "Invalid lead IDs filtered out:",
-            groupFormData.members.filter((id) => !validLeadIds.includes(id))
-          );
-        }
-        await addMembersToGroup(response.group._id, validLeadIds);
-        console.log("Leads added to group:", response.group._id); // Add logging
       }
 
       setShowAddGroupModal(false);
       resetGroupForm();
       setError(null);
+      
+      // Clear selected leads and reset view after group creation
+      setSelectedLeads([]);
+      setActiveTab("personal");
+      
+      // Refresh data
       fetchData();
       fetchLeads();
       console.log("Group saved, activeTab:", activeTab);
@@ -692,7 +860,6 @@ const LeadsTable = () => {
   // Reset lead form
   const resetLeadForm = () => {
     setFormData({
-      groupIds: [], // Updated to groupIds
       firstName: "",
       lastName: "",
       email: "",
@@ -720,6 +887,7 @@ const LeadsTable = () => {
     });
     setEditingLeadState(null);
     setFormErrors({});
+    setFormSubmitted(false); // Reset form submitted state
   };
 
   // Reset group form
@@ -792,10 +960,24 @@ const LeadsTable = () => {
   }, [selectedLeads, selectedGroups]);
 
   // Set editing lead
-  const setEditingLead = async (leadId) => {
+  const setEditingLead = async (lead) => {
     try {
-      const lead = await getLeadById(leadId);
       const address = lead.addresses?.[0] || {};
+
+      // Format dates for display
+      const formatDate = (date) => {
+        if (!date) return "";
+        try {
+          // If date is a timestamp, convert to Date object
+          const dateObj = typeof date === 'number' ? new Date(date) : new Date(date);
+          // Format as YYYY-MM-DD for date input
+          return dateObj.toISOString().split('T')[0];
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return "";
+        }
+      };
+
       setFormData({
         firstName: lead.firstName || "",
         lastName: lead.lastName || "",
@@ -803,8 +985,8 @@ const LeadsTable = () => {
         phone: lead.phone || "",
         country: lead.country || "USA (+1)",
         dates: {
-          birthDate: lead.dates?.birthDate || "",
-          joinDate: lead.dates?.joinDate || "",
+          birthDate: formatDate(lead.dates?.birthDate),
+          joinDate: formatDate(lead.dates?.joinDate),
         },
         address: {
           line1: address.line1 || "",
@@ -825,7 +1007,9 @@ const LeadsTable = () => {
       });
       setEditingLeadState(lead);
       setShowEditLeadModal(true);
+      setError(null);
     } catch (err) {
+      console.error('Error setting editing lead:', err);
       setError("Failed to load lead data for editing");
     }
   };
@@ -1017,14 +1201,14 @@ const LeadsTable = () => {
                   handleAddSubmit={handleAddLeadSubmit}
                   handleChange={handleLeadChange}
                   formData={formData}
-                  formErrors={formErrors}
+                  formErrors={formSubmitted ? formErrors : {}}
                   setShowAddModal={setShowAddLeadModal}
                 />
               )}
               {showEditLeadModal && (
                 <EditLeadModal
                   formData={formData}
-                  formErrors={formErrors}
+                  formErrors={formSubmitted ? formErrors : {}} // Only show errors if form was submitted
                   handleChange={handleLeadChange}
                   handleEditSubmit={handleEditLeadSubmit}
                   setShowEditModal={setShowEditLeadModal}

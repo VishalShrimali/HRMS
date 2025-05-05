@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
+import axios from "axios";
 import {
   FaBars,
   FaSignOutAlt,
@@ -14,6 +15,7 @@ import {
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 768);
   const [permissions, setPermissions] = useState([]);
+  const [userInfo, setUserInfo] = useState({ name: "", role: "" });
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,34 +43,24 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8000/api/v1/roles/user/permissions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setPermissions(data.permissions);
-        } else {
-          console.error("Failed to fetch permissions");
-        }
-      } catch (error) {
-        console.error("Error fetching permissions:", error);
-      }
-    };
-
-    fetchPermissions();
-  }, []);
-
-  const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-    if (confirmLogout) {
-      localStorage.removeItem("token");
+    // Get user info from localStorage
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { fullName, roleName, permissions } = JSON.parse(userData);
+      setUserInfo({
+        name: fullName,
+        role: roleName || "User"
+      });
+      setPermissions(permissions || []);
+    } else {
+      // If no user data in localStorage, redirect to login
       navigate("/auth/login");
     }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/auth/login");
   };
 
   const isActive = (path) => {
@@ -180,11 +172,16 @@ const Sidebar = () => {
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                <span className="text-xs font-medium">VS</span>
+                <span className="text-xs font-medium">
+                  {userInfo.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </span>
               </div>
               <div>
-                <p className="text-sm font-medium">ADMIN</p>
-                <p className="text-xs text-gray-400">Administrator</p>
+                <p className="text-sm font-medium">{userInfo.name}</p>
+                <p className="text-xs text-gray-400">{userInfo.role}</p>
               </div>
             </div>
           </div>

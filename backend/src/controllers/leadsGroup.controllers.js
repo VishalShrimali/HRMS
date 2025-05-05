@@ -107,10 +107,17 @@ export const addMembersToGroup = asyncHandler(async (req, res) => {
 
 // Get all groups
 export const getGroups = asyncHandler(async (req, res) => {
-  const groups = await Group.find().populate({
+  // Check if user is admin
+  const isAdmin = req.user.role?.name === "ADMIN";
+  
+  // Build query based on user role
+  const query = isAdmin ? {} : { createdBy: req.user._id };
+
+  const groups = await Group.find(query).populate({
     path: "leads",
     select: "firstName lastName email phone country addresses userPreferences",
   });
+  
   res.status(200).json({
     message: "Groups fetched successfully",
     groups,
@@ -123,10 +130,21 @@ export const getGroupById = asyncHandler(async (req, res) => {
     path: "leads",
     select: "firstName lastName email phone country addresses userPreferences",
   });
+  
   if (!group) {
     res.status(404);
     throw new Error("Group not found");
   }
+
+  // Check if user is admin or the creator of the group
+  const isAdmin = req.user.role?.name === "ADMIN";
+  const isCreator = group.createdBy.toString() === req.user._id.toString();
+  
+  if (!isAdmin && !isCreator) {
+    res.status(403);
+    throw new Error("You don't have permission to access this group");
+  }
+
   res.status(200).json(group);
 });
 

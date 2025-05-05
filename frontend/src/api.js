@@ -1,12 +1,24 @@
 import axios from "axios";
+import { API_BASE_URL } from './api/BASEURL';
 
-const API_BASE_URL = "http://localhost:8000/api/v1"; // Adjust if needed
+// Helper function to get token
+const getToken = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+  return token;
+};
 
 // Fetch all emails
 export const getEmails = async (page = 1, search = "") => {
     try {
+        const token = getToken();
         const response = await axios.get(`${API_BASE_URL}/emails`, {
-            params: { page, search }
+            params: { page, search },
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         });
         return response.data;
     } catch (error) {
@@ -15,7 +27,32 @@ export const getEmails = async (page = 1, search = "") => {
     }
 };
 
-// Create, Update, and Delete functions remain the same
-export const createEmail = async (emailData) => axios.post(`${API_BASE_URL}/emails`, emailData);
-export const updateEmail = async (id, emailData) => axios.put(`${API_BASE_URL}/emails/${id}`, emailData);
-export const deleteEmail = async (id) => axios.delete(`${API_BASE_URL}/emails/${id}`);
+// Create new email
+export const createEmail = async (emailData) => {
+    const token = getToken();
+    return axios.post(`${API_BASE_URL}/emails`, emailData, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+// Update email
+export const updateEmail = async (id, emailData) => {
+    const token = getToken();
+    return axios.put(`${API_BASE_URL}/emails/${id}`, emailData, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+// Delete email
+export const deleteEmail = async (id) => {
+    const token = getToken();
+    return axios.delete(`${API_BASE_URL}/emails/${id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};

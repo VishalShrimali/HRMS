@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from '../../api/BASEURL';
 
 const RolesManager = () => {
   const [roles, setRoles] = useState([]);
@@ -21,7 +22,7 @@ const RolesManager = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/v1/roles");
+      const response = await axios.get(`${API_BASE_URL}/roles`);
       console.log(response);
       setRoles(response.data);
     } catch (error) {
@@ -33,7 +34,7 @@ const RolesManager = () => {
     try {
       setSelectedRole(roleName);
       const response = await axios.get(
-        `http://localhost:8000/api/v1/roles/permissions/${roleName}`
+        `${API_BASE_URL}/roles/permissions/${roleName}`
       );
       setPermissions(response.data.permissions);
     } catch (error) {
@@ -43,7 +44,7 @@ const RolesManager = () => {
 
   const handleAddRole = async () => {
     try {
-      await axios.post("http://localhost:8000/api/v1/roles/add", newRole);
+      await axios.post(`${API_BASE_URL}/roles/add`, newRole);
       setNewRole({ name: "", permissions: [] });
       fetchRoles();
     } catch (error) {
@@ -54,7 +55,7 @@ const RolesManager = () => {
   const handleAddPermissions = async () => {
     try {
       await axios.put(
-        `http://localhost:8000/api/v1/roles/permissions/add/${selectedRole}`,
+        `${API_BASE_URL}/roles/permissions/add/${selectedRole}`,
         {
           permissions: newPermissions.split(","),
         }
@@ -69,7 +70,7 @@ const RolesManager = () => {
   const handleRemovePermissions = async (permission) => {
     try {
       await axios.delete(
-        `http://localhost:8000/api/v1/roles/permissions/remove/${selectedRole}/${permission}`
+        `${API_BASE_URL}/roles/permissions/remove/${selectedRole}/${permission}`
       );
       handleRoleSelect(selectedRole);
     } catch (error) {
@@ -84,7 +85,7 @@ const RolesManager = () => {
       search;
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:8000/api/v1/user/list`,
+        `${API_BASE_URL}/user/list`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -105,7 +106,7 @@ const RolesManager = () => {
   // Fetch roles for dropdown
   const fetchRolesDropdown = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/v1/roles");
+      const response = await axios.get(`${API_BASE_URL}/roles`);
       setRolesDropdown(response.data);
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -117,7 +118,7 @@ const RolesManager = () => {
     try {
       const roleId = selectedRoleForUser[userId];
       await axios.post(
-        "http://localhost:8000/api/v1/user/role",
+        `${API_BASE_URL}/user/role`,
         { userId, roleId },
         {
           headers: {

@@ -1,14 +1,16 @@
 import axios from "axios";
 
-export const API_BASE_URL = "http://localhost:8000/api/v1";
+// Get the API URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
-export const API = () => {
-  const token = localStorage.getItem("token");
+// Create axios instance with base URL
+const API = () => {
   return axios.create({
     baseURL: API_BASE_URL,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
   });
 };
+
+export { API, API_BASE_URL };

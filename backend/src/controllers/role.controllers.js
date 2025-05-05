@@ -103,6 +103,15 @@ export const getUserRoleAndPermissions = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check if user has a role assigned
+    if (!user.role) {
+      return res.status(200).json({ 
+        role: "NO_ROLE", 
+        permissions: [],
+        message: "User has no role assigned"
+      });
+    }
+
     const role = user.role.name;
     const permissions = user.role.permissions;
 

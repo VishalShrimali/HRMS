@@ -16,10 +16,24 @@ const handleError = (res, error, statusCode = 500) => {
 // Fetch all leads
 export const getLeads = async (req, res) => {
     try {
+        // Ensure user is authenticated
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+        }
+
         // If user is admin, get all leads. Otherwise, get only user's leads
         const query = req.user.role.name === "ADMIN" ? {} : { userId: req.user._id };
-        const leads = await Lead.find(query);
-        res.status(200).json({ message: "Leads fetched successfully", leads });
+        
+        // Add timestamps to ensure fresh data
+        const leads = await Lead.find(query)
+            .sort({ updatedAt: -1 }) // Sort by most recently updated
+            .lean(); // Convert to plain JavaScript objects
+
+        res.status(200).json({ 
+            message: "Leads fetched successfully", 
+            leads,
+            timestamp: new Date().toISOString() // Add timestamp to response
+        });
     } catch (error) {
         handleError(res, error);
     }
@@ -100,18 +114,24 @@ export const createLead = async (req, res) => {
 
         const savedLead = await newLead.save();
 
-        if (groupId !== "") {
-            // Find the group by groupId and add the new lead's _id to the leads array
+        // Only try to add to group if groupId is provided and not empty
+        if (groupId && groupId.trim() !== "") {
             const group = await Group.findById(groupId);
             if (!group) {
-                return res.status(400).json({ message: "Group not found" });
+                // If group not found, still return success but with a warning
+                return res.status(201).json({ 
+                    message: "Lead created successfully but group not found", 
+                    savedLead 
+                });
             }
 
             // Add the lead's _id to the group's leads array
             group.leads.push(savedLead._id);
-
-            // Save the updated group
             await group.save();
+            
+            // Update the lead with the groupId
+            savedLead.groupId = group._id;
+            await savedLead.save();
         }
 
         res.status(201).json({ message: "Lead created successfully", savedLead });
@@ -214,10 +234,20 @@ export const deleteLead = async (req, res) => {
             return res.status(403).json({ message: "You can only delete your own leads" });
         }
 
+        // Remove lead from any groups it belongs to
+        if (lead.groupId) {
+            const group = await Group.findById(lead.groupId);
+            if (group) {
+                group.leads = group.leads.filter(id => id.toString() !== lead._id.toString());
+                await group.save();
+            }
+        }
+
         const deletedLead = await Lead.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: "Lead deleted successfully", deletedLead });
     } catch (error) {
-        handleError(res, error);
+        console.error("Error deleting lead:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 

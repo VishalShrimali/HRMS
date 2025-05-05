@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendResetLink } from "../utils/email.utils.js";
 import { encrypt } from "../../helper/helper.js";
+import mongoose from "mongoose";
 
 dotenv.config(); // Load environment variables
 
@@ -25,22 +26,48 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: "Email already in use" });
         }
 
+        // Check if this is the first user
+        const userCount = await User.countDocuments();
+        const isFirstUser = userCount === 0;
+
         let fullName = `${firstName} ${lastName}`;
         const joinDate = Date.now(); // Assign current timestamp as join date
-        const hashedPassword =  bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
-        const user = await User.create({
+        const hashedPassword = bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
+
+        // Create user data
+        const userData = {
             firstName,
             lastName,
             fullName,
             email,
             phone,
-            password: hashedPassword, // Store the plain password directly
+            password: hashedPassword,
             country,
             dates: { joinDate }
-        });
+        };
+
+        // If this is the first user, make them an admin
+        if (isFirstUser) {
+            const Role = mongoose.model("Role");
+            let adminRole = await Role.findOne({ name: "ADMIN" });
+
+            if (!adminRole) {
+                adminRole = await Role.create({
+                    name: "ADMIN",
+                    permissions: ["*****"]
+                });
+            }
+            userData.role = adminRole._id;
+        }
+
+        const user = await User.create(userData);
 
         console.log("User registered successfully:", user); // Debugging log
-        res.status(201).json({ message: "User registered successfully", user });
+        res.status(201).json({ 
+            message: "User registered successfully", 
+            user,
+            isAdmin: isFirstUser
+        });
     } catch (error) {
         console.error("Error during registration:", error.message); // Debugging log
         res.status(400).json({ message: error.message });
@@ -120,7 +147,7 @@ export const loginUser = async (req, res) => {
         console.log("Login attempt with email:", email); // Debugging log
 
         // Check if email exists
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('role');
         if (!user) {
             console.log("Email not found:", email); // Debugging log
             return res.status(401).json({ message: "Email not found. Please register first." });
@@ -138,12 +165,25 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ message: "Incorrect password. Please try again." });
         }
 
+        // Check if user has a role assigned
+        if (!user.role) {
+            return res.status(403).json({ 
+                message: "Your account is pending approval. Please wait for an administrator to assign your role.", 
+                needsRole: true 
+            });
+        }
+
         // Generate token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
         res.status(200).json({ 
             message: "Login successful", 
             token, 
-            user: { fullName: user.fullName, role: user.role } 
+            user: { 
+                fullName: user.fullName, 
+                role: user.role,
+                roleName: user.role.name,
+                permissions: user.role.permissions
+            } 
         });
     } catch (error) {
         console.error("Error during login:", error.message); // Debugging log

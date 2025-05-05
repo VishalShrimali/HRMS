@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/BASEURL';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -31,7 +32,7 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post('http://localhost:8000/api/v1/user/reset-password', { 
+      const response = await axios.post(`${API_BASE_URL}/user/reset-password`, { 
         password, 
         token 
       });
@@ -40,7 +41,7 @@ const ResetPassword = () => {
       setError('');
       
       // Redirect to login page after successful reset
-      setTimeout(() => navigate('/user/login'), 2000);
+      setTimeout(() => navigate('/auth/login'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reset password');
       setMessage('');

@@ -34,7 +34,7 @@ const EditLeadModal = ({
           <InputField label="Phone" name="phone" value={formData.phone} onChange={handleChange} error={formErrors.phone} />
 
           {/* Dates */}
-          <InputField label="Birth Date" name="birthDate" type="date" value={formData.birthDate || ""} onChange={handleChange} error={formErrors.birthDate} />
+          <InputField label="Birth Date" name="dates.birthDate" type="date" value={formData.dates?.birthDate || ""} onChange={handleChange} error={formErrors.birthDate} />
           <InputField label="Join Date" name="dates.joinDate" type="date" value={formData.dates?.joinDate || ""} onChange={handleChange} error={formErrors.joinDate} />
 
           {/* Address */}
