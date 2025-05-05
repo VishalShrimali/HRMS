@@ -34,6 +34,8 @@ export const addLead = async (leadData) => {
       throw new Error("No authentication token found");
     }
 
+    console.log("Token being used:", token); // Debug log
+
     // Convert groupIds to groupId if it's an array
     const formattedData = {
       ...leadData,
@@ -41,14 +43,23 @@ export const addLead = async (leadData) => {
         ? leadData.groupIds[0] 
         : leadData.groupIds || null
     };
+
+    console.log("Request data:", formattedData); // Debug log
+
     const response = await api.post("/leads", formattedData, {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
     });
     return response.data;
   } catch (error) {
-    console.error("Error adding lead:", error);
+    console.error("Detailed error adding lead:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
     throw error;
   }
 };
