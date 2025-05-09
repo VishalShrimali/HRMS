@@ -3,14 +3,19 @@ import Papa from "papaparse"; // Install this library using `npm install papapar
 
 const api = API();
 
-export const getLeads = async () => {
+export const getLeads = async (userId) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("No authentication token found");
     }
 
-    const response = await api.get("/leads", {
+    let url = "/leads";
+    if (userId) {
+      url += `?userId=${userId}`;
+    }
+
+    const response = await api.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

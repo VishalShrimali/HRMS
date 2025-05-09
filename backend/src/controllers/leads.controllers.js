@@ -21,8 +21,21 @@ export const getLeads = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized: User not authenticated" });
         }
 
-        // If user is admin, get all leads. Otherwise, get only user's leads
-        const query = req.user.role.name === "ADMIN" ? {} : { userId: req.user._id };
+        let query = {};
+        const { userId: queryUserId } = req.query; // Get userId from query parameters
+
+        if (req.user.role.name === "ADMIN") {
+            if (queryUserId && mongoose.isValidObjectId(queryUserId)) {
+                query = { userId: queryUserId }; // Admin wants a specific user's leads
+            } else if (queryUserId) {
+                // Invalid userId in query by admin
+                return res.status(400).json({ message: "Invalid userId format for filtering" });
+            }
+            // If no queryUserId, admin gets all leads (query remains {})
+        } else {
+            // Non-admin users can only get their own leads
+            query = { userId: req.user._id };
+        }
         
         // Add timestamps to ensure fresh data
         const leads = await Lead.find(query)

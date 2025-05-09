@@ -53,11 +53,9 @@ userRouter.get('/list', (req, res, next) => {
 }, (req, res) => {
     getUsersWithPagination(req, res);
 });
-userRouter.get('/list/all', (req, res, next) => {
+userRouter.get('/list/all', protect, (req, res, next) => {
     authorizeRole(["ADMIN", "Super Admin"], req, res, next);
-}, (req, res) => {
-    getAllUsersWithFirstNameLastNameId(req, res);
-});
+}, getAllUsersWithFirstNameLastNameId);
 
 // // Admin and HR Admin Routes
 // userRouter.get('/', protect, (req, res, next) => authorizeRole(["HR Admin", "Super Admin"], req, res, next), getAllUsers);
