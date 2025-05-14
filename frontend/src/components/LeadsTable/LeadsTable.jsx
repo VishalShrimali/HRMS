@@ -412,14 +412,20 @@ const LeadsTable = () => {
   }, [fetchLeads]);
 
   // Fetch groups
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (userId) => {
     try {
-      const data = await fetchGroups();
-      setGroups(data.groups || []);
+      // Pass userId as query param if selected and user is admin
+      let url = "/groups";
+      if (userId) {
+        url += `?userId=${userId}`;
+      }
+      const token = localStorage.getItem("token");
+      const response = await fetchGroups(url, token); // You may need to update fetchGroups to accept url/token
+      setGroups(response.groups || []);
       setGroupOptions(
-        (data.groups || []).map((g) => ({ label: g.name, value: g._id }))
+        (response.groups || []).map((g) => ({ label: g.name, value: g._id }))
       );
-      console.log("Fetched groups:", data.groups);
+      console.log("Fetched groups:", response.groups);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch groups");
       setGroups([]);
@@ -428,8 +434,8 @@ const LeadsTable = () => {
 
   useEffect(() => {
     fetchLeads();
-    fetchData();
-  }, [fetchLeads, fetchData]);
+    fetchData(selectedUserId); // Pass selectedUserId
+  }, [fetchLeads, fetchData, selectedUserId]);
 
   // Handle view leads for a group
   const handleViewLeads = (groupId, groupName, leads) => {
@@ -696,7 +702,24 @@ const LeadsTable = () => {
   // Handle export leads
   const handleExport = async () => {
     try {
-      await exportLeads();
+      const token = localStorage.getItem("token");
+      const response = await axios.get('/leads/export', {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'leads_export.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
       setError(null);
       console.log("Leads exported successfully");
     } catch (err) {
@@ -748,30 +771,30 @@ const LeadsTable = () => {
       errors.phoneNumber = "Phone number must be exactly 10 digits";
     }
 
-    // Address Validation
-    if (!formData.address?.line1?.trim()) {
-      errors.line1 = "Address Line 1 is required";
-    }
-    if (!formData.address?.pincode?.toString()?.trim()) {
-      errors.pincode = "Pincode is required";
-    }
-    if (!formData.address?.city?.trim()) {
-      errors.city = "City is required";
-    }
-    if (!formData.address?.state?.trim()) {
-      errors.state = "State is required";
-    }
-    if (!formData.address?.country?.trim()) {
-      errors.country = "Country is required";
-    }
+    // // Address Validation
+    // if (!formData.address?.line1?.trim()) {
+    //   errors.line1 = "Address Line 1 is required";
+    // }
+    // if (!formData.address?.pincode?.toString()?.trim()) {
+    //   errors.pincode = "Pincode is required";
+    // }
+    // if (!formData.address?.city?.trim()) {
+    //   errors.city = "City is required";
+    // }
+    // if (!formData.address?.state?.trim()) {
+    //   errors.state = "State is required";
+    // }
+    // if (!formData.address?.country?.trim()) {
+    //   errors.country = "Country is required";
+    // }
 
-    // Dates Validation
-    if (!formData.dates?.birthDate) {
-      errors.birthDate = "Birth Date is required";
-    }
-    if (!formData.dates?.joinDate) {
-      errors.joinDate = "Join Date is required";
-    }
+    // // Dates Validation
+    // if (!formData.dates?.birthDate) {
+    //   errors.birthDate = "Birth Date is required";
+    // }
+    // if (!formData.dates?.joinDate) {
+    //   errors.joinDate = "Join Date is required";
+    // }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1157,6 +1180,10 @@ const LeadsTable = () => {
     setFormSubmitted(false); // Reset form submitted state
   };
 
+  // Determine if the user is an admin
+  const userData = JSON.parse(localStorage.getItem("userData") || '{}');
+  const isAdmin = userData.roleName === "ADMIN" || userData.roleName === "Super Admin";
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen">
@@ -1292,40 +1319,42 @@ const LeadsTable = () => {
                 setCurrentPage={setCurrentPage}
                 setShowAddModal={handleOpenAddLeadModal}
               />
-              <div className="mb-4">
-                <label
-                  htmlFor="userFilter"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Filter by User
-                </label>
-                {usersLoading ? (
-                  <div>Loading users...</div>
-                ) : usersError ? (
-                  <div className="text-red-500">{usersError}</div>
-                ) : users.length === 0 ? (
-                  <div>No users available</div>
-                ) : (
-                  <select
-                    id="userFilter"
-                    value={selectedUserId}
-                    onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {isAdmin && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="userFilter"
+                    className="block text-sm font-medium text-gray-700"
                   >
-                    <option value="">All Users</option>
-                    {users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.firstName} {user.lastName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+                    Filter by User
+                  </label>
+                  {usersLoading ? (
+                    <div>Loading users...</div>
+                  ) : usersError ? (
+                    <div className="text-red-500">{usersError}</div>
+                  ) : users.length === 0 ? (
+                    <div>No users available</div>
+                  ) : (
+                    <select
+                      id="userFilter"
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Users</option>
+                      {users.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.firstName} {user.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               {loading ? (
                 <div className="text-center py-10 text-gray-600">
                   Loading...
                 </div>
-              ) : error ? (
+              ) : error && isAdmin ? (
                 <div className="text-center py-10 text-red-500">{error}</div>
               ) : filteredLeads.length === 0 ? (
                 <div className="text-center py-10 text-gray-600">

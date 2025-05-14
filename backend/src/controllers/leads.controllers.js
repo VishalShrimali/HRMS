@@ -89,8 +89,8 @@ export const createLead = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!firstName || !lastName || !email || !phone || !country) {
-            return res.status(400).json({ message: "All required fields must be provided" });
+        if (!firstName || !lastName || !email || !phone) {
+            return res.status(400).json({ message: "First name, last name, email, and phone are required fields" });
         }
 
         // Check if email already exists
@@ -370,9 +370,12 @@ export const exportLeads = async (req, res) => {
         const json2csvParser = new Parser();
         const csv = json2csvParser.parse(formattedLeads);
 
-        res.header("Content-Type", "text/csv");
-        res.attachment("leads.csv");
-        return res.send(csv);
+        // Set proper headers for CSV download
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
+        
+        // Send the CSV data
+        return res.status(200).send(csv);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to export leads" });

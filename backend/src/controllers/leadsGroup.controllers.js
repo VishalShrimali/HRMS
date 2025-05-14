@@ -79,17 +79,19 @@ export const addMembersToGroup = asyncHandler(async (req, res) => {
 
 // Get all groups
 export const getGroups = asyncHandler(async (req, res) => {
-  // Check if user is admin
   const isAdmin = req.user.role?.name === "ADMIN";
-  
-  // Build query based on user role
-  const query = isAdmin ? {} : { createdBy: req.user._id };
+  let query = isAdmin ? {} : { createdBy: req.user._id };
+
+  // Add support for ?userId=... query param (admin only)
+  if (isAdmin && req.query.userId) {
+    query = { createdBy: req.query.userId };
+  }
 
   const groups = await Group.find(query).populate({
     path: "leads",
     select: "firstName lastName email phone country addresses userPreferences",
   });
-  
+
   res.status(200).json({
     message: "Groups fetched successfully",
     groups,

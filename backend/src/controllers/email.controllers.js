@@ -1,16 +1,30 @@
 import Email from "../models/email.models.js";
 import Template from "../models/template.models.js";
+import mongoose from "mongoose";
 
 // Get all emails with role-based access
 export const getEmails = async (req, res) => {
   try {
-    // Check if user is admin
-    const isAdmin = req.user.role?.name === "ADMIN";
-    
-    // Build query based on user role
-    const query = isAdmin ? {} : { createdBy: req.user._id };
+    let query = {};
+    console.log('Requested userId:', req.query.userId);
+    console.log('Logged-in user _id:', req.user._id);
+    console.log('Logged-in user role:', req.user.role?.name);
+
+    // If userId is provided in the query, always filter by that user
+    if (req.query.userId) {
+      query.createdBy = new mongoose.Types.ObjectId(req.query.userId);
+    } else {
+      // If not admin, only show their own emails
+      if (req.user.role?.name !== "ADMIN") {
+        query.createdBy = req.user._id;
+      }
+      // If admin and no userId, show all emails (query remains {})
+    }
+
+    console.log("Email filter query:", query);
 
     const emails = await Email.find(query).sort({ createdOn: -1 });
+    console.log("Fetched emails count:", emails.length);
     res.status(200).json(emails);
   } catch (error) {
     console.error("Error fetching emails:", error);
@@ -119,4 +133,4 @@ export const deleteEmail = async (req, res) => {
     console.error("Error deleting email:", error);
     res.status(500).json({ message: "Error deleting email" });
   }
-}; 
+};

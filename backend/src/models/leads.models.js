@@ -46,11 +46,10 @@ const LeadSchema = new mongoose.Schema(
             required: true,
             match: /^[0-9]{10,15}$/,
         },
-        country: { type: String, required: true },
-        //password: { type: String, required: true, minlength: 6 },
+        country: { type: String },
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
-        dates: dateSchema, // Embed the date schema here
+        dates: dateSchema,
     },
     { timestamps: true }
 );

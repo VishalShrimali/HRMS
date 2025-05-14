@@ -3,6 +3,7 @@ import { getEmails, createEmail, updateEmail, deleteEmail } from "../api";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from '../api/BASEURL';
+import { getAllUsers } from "../api/GroupsApi";
 
 const EmailDesigner = () => {
   const [emails, setEmails] = useState([]);
@@ -12,22 +13,37 @@ const EmailDesigner = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingEmail, setEditingEmail] = useState(null);
   const [newEmail, setNewEmail] = useState({ title: "", description: "" });
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("userData"));
+    setIsAdmin(user?.role?.name === "ADMIN");
+    if (user?.role?.name === "ADMIN") {
+      getAllUsers().then(data => {
+        console.log("Fetched users:", data);
+        setUsers(data.users || data || []);
+      });
+    }
+  }, []);
 
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getEmails(page, search);
+      // Pass selectedUserId if admin
+      const data = await getEmails(page, search, selectedUserId);
       setEmails(data);
     } catch (error) {
       console.error("Error fetching emails:", error);
     }
     setLoading(false);
-  }, [page, search]);
+  }, [page, search, selectedUserId]);
 
   useEffect(() => {
     fetchEmails();
-  }, [fetchEmails]);
+  }, [fetchEmails, selectedUserId]);
 
   const handleCreate = async () => {
     if (!newEmail.title) return;
@@ -76,6 +92,29 @@ const EmailDesigner = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <h2 className="text-2xl font-semibold mb-4">📧 Email Designer</h2>
+
+      {isAdmin && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filter by User</label>
+          {Array.isArray(users) ? (
+            <select
+              value={selectedUserId}
+              onChange={e => setSelectedUserId(e.target.value)}
+              className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+            >
+              <option value="">All Users</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.firstName + " " + user.lastName}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-red-500">No users found or users data is invalid. Check backend response.</div>
+          )}
+          {console.log('Dropdown users:', users)}
+        </div>
+      )}
 
       <div className="flex justify-between items-center mb-4">
         <input

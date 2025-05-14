@@ -11,19 +11,13 @@ const getToken = () => {
 };
 
 // Fetch all groups
-export const fetchGroups = async () => {
-  try {
-    const token = getToken();
-    const response = await axios.get(`${API_BASE_URL}/groups`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Fetch groups error:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch groups");
-  }
+export const fetchGroups = async (url = "/groups", token) => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch groups");
+  return await response.json();
 };
 
 // Add a new group

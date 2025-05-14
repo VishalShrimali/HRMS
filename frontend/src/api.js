@@ -11,20 +11,20 @@ const getToken = () => {
 };
 
 // Fetch all emails
-export const getEmails = async (page = 1, search = "") => {
-    try {
-        const token = getToken();
-        const response = await axios.get(`${API_BASE_URL}/emails`, {
-            params: { page, search },
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching emails:", error);
-        return [];
-    }
+export const getEmails = async (page = 1, search = "", userId = "") => {
+  try {
+    const token = getToken();
+    const params = { page, search };
+    if (userId) params.userId = userId;
+    const response = await axios.get(`${API_BASE_URL}/emails`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching emails:", error);
+    return [];
+  }
 };
 
 // Create new email
@@ -55,4 +55,14 @@ export const deleteEmail = async (id) => {
             Authorization: `Bearer ${token}`
         }
     });
+};
+
+// Add this to your api.js or a users API file
+export const getUsers = async () => {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_BASE_URL}/user`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch users");
+  return await response.json();
 };
