@@ -1,7 +1,8 @@
 // Installed dependencies:
 // ===============================================================
-import React from "react";
-import { X } from "lucide-react";
+import React, { useState } from "react";
+
+import { X, ChevronDown, ChevronUp } from "lucide-react";
 
 // Project Files
 // ===============================================================
@@ -14,6 +15,25 @@ const AddLeadModel = ({
   handleAddSubmit,
   setShowAddModal,
 }) => {
+  const [expandedSections, setExpandedSections] = useState({
+    address: false,
+    dates: false,
+    optional: false
+  });
+
+  // Wrap the submit handler to add a debug log
+  const handleSubmitWithLog = (e) => {
+    console.log('Add Lead button clicked');
+    handleAddSubmit(e);
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   return (
     <>
       <dialog
@@ -31,316 +51,294 @@ const AddLeadModel = ({
             </button>
           </div>
           <div className="overflow-y-auto max-h-[80vh]">
-            <form onSubmit={handleAddSubmit}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Select Group Lead
-                  </label>
-                  <select
-                    name="groupIds"
-                    id="groupLead"
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={formData.groupIds}
-                    onChange={handleChange}
+            <form onSubmit={handleSubmitWithLog}>
+              <div className="space-y-6">
+                {/* Top Row: Lead Type and Group Lead */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end mb-6">
+                  {/* Lead Type Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Lead Type
+                    </label>
+                    <select
+                      name="leadType"
+                      value={formData.leadType || 'new'}
+                      onChange={handleChange}
+                      className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="new">New Lead</option>
+                      <option value="existing">Existing Lead</option>
+                    </select>
+                  </div>
+                  {/* Group Lead Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Select Group Lead
+                    </label>
+                    <select
+                      name="groupIds"
+                      id="groupLead"
+                      className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={formData.groupIds}
+                      onChange={handleChange}
+                    >
+                      <option value="">None</option>
+                      {groupOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <hr className="my-4 border-gray-200" />
+
+                {/* Required Fields */}
+                <div className="space-y-4">
+                  <h6 className="text-sm font-semibold text-blue-700 tracking-wide mb-2">Required Information</h6>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {formErrors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          formErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {formErrors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Phone
+                      </label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          formErrors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {formErrors.phone && (
+                        <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <hr className="my-4 border-gray-200" />
+
+                {/* Optional Fields (Collapsible) */}
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('optional')}
+                    className="flex items-center justify-between w-full text-left mb-2"
                   >
-                    <option value="">None</option>
-                    {groupOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.firstName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.firstName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.firstName}
-                    </p>
+                    <span className="text-sm font-semibold text-blue-700 tracking-wide">Optional Information</span>
+                    {expandedSections.optional ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
+                  {expandedSections.optional && (
+                    <>
+                      {/* Email Field */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.email ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {formErrors.email && (
+                          <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                        )}
+                      </div>
+
+                      {/* Address Section */}
+                      <div className="border rounded-lg p-4 bg-gray-50">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('address')}
+                          className="flex items-center justify-between w-full text-left"
+                        >
+                          <span className="text-sm font-medium text-gray-700">Address Information</span>
+                          {expandedSections.address ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </button>
+                        {expandedSections.address && (
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Address Line 1
+                              </label>
+                              <input
+                                type="text"
+                                name="address.line1"
+                                value={formData.address?.line1 || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Address Line 2
+                              </label>
+                              <input
+                                type="text"
+                                name="address.line2"
+                                value={formData.address?.line2 || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                City
+                              </label>
+                              <input
+                                type="text"
+                                name="address.city"
+                                value={formData.address?.city || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                State
+                              </label>
+                              <input
+                                type="text"
+                                name="address.state"
+                                value={formData.address?.state || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Country
+                              </label>
+                              <input
+                                type="text"
+                                name="address.country"
+                                value={formData.address?.country || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Pincode
+                              </label>
+                              <input
+                                type="text"
+                                name="address.pincode"
+                                value={formData.address?.pincode || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dates Section */}
+                      <div className="border rounded-lg p-4 bg-gray-50">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection('dates')}
+                          className="flex items-center justify-between w-full text-left"
+                        >
+                          <span className="text-sm font-medium text-gray-700">Dates</span>
+                          {expandedSections.dates ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </button>
+                        {expandedSections.dates && (
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Birth Date
+                              </label>
+                              <input
+                                type="date"
+                                name="dates.birthDate"
+                                value={formData.dates?.birthDate || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Join Date
+                              </label>
+                              <input
+                                type="date"
+                                name="dates.joinDate"
+                                value={formData.dates?.joinDate || ''}
+                                onChange={handleChange}
+                                className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.lastName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.lastName}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.email && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.phoneNumber && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.phoneNumber}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Birth Date
-                  </label>
-                  <input
-                    type="date"
-                    name="dates.birthDate"
-                    value={formData.dates?.birthDate || ''}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.birthDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.birthDate && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.birthDate}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Join Date
-                  </label>
-                  <input
-                    type="date"
-                    name="dates.joinDate"
-                    value={formData.dates?.joinDate || ""}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.joinDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.joinDate && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.joinDate}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address Line 1
-                  </label>
-                  <input
-                    type="text"
-                    name="address.line1"
-                    value={formData.address.line1}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.line1 ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.line1 && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.line1}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address Line 2
-                  </label>
-                  <input
-                    type="text"
-                    name="address.line2"
-                    value={formData.address.line2}
-                    onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Address Line 3
-                  </label>
-                  <input
-                    type="text"
-                    name="address.line3"
-                    value={formData.address.line3}
-                    onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Pincode
-                  </label>
-                  <input
-                    type="text"
-                    name="address.pincode"
-                    value={formData.address.pincode}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.pincode ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.pincode && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="address.city"
-                    value={formData.address.city}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.city ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.city && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="address.state"
-                    value={formData.address.state}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.state ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.state && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    County
-                  </label>
-                  <input
-                    type="text"
-                    name="address.county"
-                    value={formData.address.county}
-                    onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    name="address.country"
-                    value={formData.address.country}
-                    onChange={handleChange}
-                    className={`mt-1 p-2 w-full border rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.country ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {formErrors.country && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Policy
-                  </label>
-                  <select
-                    name="userPreferences.policy"
-                    value={formData.userPreferences?.policy}
-                    onChange={handleChange}
-                    className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+                {/* Error Message Display */}
+                {formErrors.general && (
+                  <div className="text-red-500 text-sm mb-2">{formErrors.general}</div>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-end space-x-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <option value="active">Active</option>
-                    <option value="nonactive">Nonactive</option>
-                  </select>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Add Lead
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    WhatsApp Message Receive
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="userPreferences.whatsappMessageReceive"
-                    checked={formData.userPreferences?.whatsappMessageReceive}
-                    onChange={handleChange}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Browser Notifications
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="userPreferences.browserNotifications"
-                    checked={formData.userPreferences?.browserNotifications}
-                    onChange={handleChange}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email Receive
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="userPreferences.emailReceive"
-                    checked={formData.userPreferences?.emailReceive}
-                    onChange={handleChange}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Add Lead
-                </button>
               </div>
             </form>
           </div>

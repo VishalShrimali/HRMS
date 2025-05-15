@@ -62,6 +62,7 @@ export const getLeadById = async (req, res) => {
 // Create a new lead
 export const createLead = async (req, res) => {
     try {
+        console.log('Request body:', req.body); // Add logging
         const {
             groupId,
             firstName,
@@ -76,18 +77,18 @@ export const createLead = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!firstName || !lastName || !email || !phone || !country) {
-            return res.status(400).json({ message: "All required fields must be provided" });
-        }
-
-        // Check if email already exists
-        const existingLead = await Lead.findOne({ email });
-        if (existingLead) {
-            return res.status(400).json({ message: "Email already exists" });
+        console.log('Validating fields:', { firstName, lastName, phone }); // Add logging
+        if (!firstName || !lastName || !phone) {
+            console.log('Missing required fields:', { 
+                hasFirstName: !!firstName, 
+                hasLastName: !!lastName, 
+                hasPhone: !!phone 
+            }); // Add logging
+            return res.status(400).json({ message: "First name, last name, and phone are required" });
         }
 
         // Create fullName and initialize other fields
-        const fullName = `${firstName} ${lastName}`;
+        const fullName = `${firstName} ${lastName}`.trim();
         const newLead = new Lead({
             userId: req.user._id, // Add the current user's ID
             firstName,
@@ -97,7 +98,16 @@ export const createLead = async (req, res) => {
             phone,
             secondPhoneNumber,
             country,
-            addresses,
+            addresses: addresses ? [{
+                line1: addresses[0]?.line1 || "",
+                line2: addresses[0]?.line2 || "",
+                line3: addresses[0]?.line3 || "",
+                pincode: addresses[0]?.pincode || "",
+                city: addresses[0]?.city || "",
+                state: addresses[0]?.state || "",
+                county: addresses[0]?.county || "",
+                country: addresses[0]?.country || ""
+            }] : [],
             dates: {
                 joinDate: dates?.joinDate ? new Date(dates?.joinDate).getTime() : Date.now(),
                 birthDate: dates?.birthDate ? new Date(dates?.birthDate).getTime() : "",

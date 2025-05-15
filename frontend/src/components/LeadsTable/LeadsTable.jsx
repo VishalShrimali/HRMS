@@ -263,6 +263,7 @@ const LeadsTable = () => {
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [leadTypeFilter, setLeadTypeFilter] = useState('new'); // 'new' or 'existing'
 
   const fileInputRef = useRef(null);
 
@@ -502,50 +503,24 @@ const LeadsTable = () => {
   const validateLeadForm = () => {
     const errors = {};
     
-    // Basic Info Validation
+    // Only validate mandatory fields
     if (!formData.firstName?.trim()) {
       errors.firstName = "First Name is required";
     }
     if (!formData.lastName?.trim()) {
       errors.lastName = "Last Name is required";
     }
-    if (!formData.email?.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Please enter a valid email";
-    }
     
-    // Phone validation
-    const phone = formData.phoneNumber || formData.phone;
-    if (!phone) {
-      errors.phoneNumber = "Phone Number is required";
-    } else if (!/^\d{10}$/.test(phone)) {
-      errors.phoneNumber = "Phone number must be exactly 10 digits";
+    // Phone validation - use phone field consistently
+    if (!formData.phone) {
+      errors.phone = "Phone Number is required";
+    } else if (!/^\+?[0-9]{10,15}$/.test(formData.phone)) {
+      errors.phone = "Phone number must be 10-15 digits";
     }
 
-    // Address Validation
-    if (!formData.address?.line1?.trim()) {
-      errors.line1 = "Address Line 1 is required";
-    }
-    if (!formData.address?.pincode?.toString()?.trim()) {
-      errors.pincode = "Pincode is required";
-    }
-    if (!formData.address?.city?.trim()) {
-      errors.city = "City is required";
-    }
-    if (!formData.address?.state?.trim()) {
-      errors.state = "State is required";
-    }
-    if (!formData.address?.country?.trim()) {
-      errors.country = "Country is required";
-    }
-
-    // Dates Validation
-    if (!formData.dates?.birthDate) {
-      errors.birthDate = "Birth Date is required";
-    }
-    if (!formData.dates?.joinDate) {
-      errors.joinDate = "Join Date is required";
+    // Email validation is now optional
+    if (formData.email?.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email or leave it empty";
     }
     
     setFormErrors(errors);
@@ -569,36 +544,28 @@ const LeadsTable = () => {
       return newFormData;
     });
 
-    // Real-time validation
+    // Real-time validation only for mandatory fields
     let error = "";
     const fieldName = name.split(".").pop(); // Get the last part of the field name for nested fields
     
     switch (fieldName) {
-      case "line1":
-        if (!fieldValue) error = "Address Line 1 is required";
+      case "firstName":
+        if (!fieldValue) error = "First Name is required";
         break;
-      case "pincode":
-        if (!fieldValue) error = "Pincode is required";
-        break;
-      case "city":
-        if (!fieldValue) error = "City is required";
-        break;
-      case "state":
-        if (!fieldValue) error = "State is required";
+      case "lastName":
+        if (!fieldValue) error = "Last Name is required";
         break;
       case "phoneNumber":
       case "phone":
         if (!fieldValue) {
           error = "Phone number is required";
-        } else if (!/^\d{10}$/.test(fieldValue)) {
-          error = "Phone number must be 10 digits";
+        } else if (!/^\+?[0-9]{10,15}$/.test(fieldValue)) {
+          error = "Phone number must be 10-15 digits";
         }
         break;
       case "email":
-        if (!fieldValue) {
-          error = "Email is required";
-        } else if (!/\S+@\S+\.\S+/.test(fieldValue)) {
-          error = "Invalid email format";
+        if (fieldValue && !/\S+@\S+\.\S+/.test(fieldValue)) {
+          error = "Please enter a valid email or leave it empty";
         }
         break;
       default:
@@ -619,38 +586,43 @@ const LeadsTable = () => {
     if (!validateLeadForm()) return;
     
     try {
+      // Format phone number to match backend validation
+      const phoneNumber = formData.phoneNumber || formData.phone;
+      const formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove all non-digit characters
+      
       const leadData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phoneNumber || formData.phone,
-        country: formData.country.trim(),
+        phone: formattedPhone, // Use formatted phone number
+        email: formData.email?.trim() || "",
+        country: formData.country?.trim() || "",
         groupId: formData.groupId || null,
-        date: new Date().toISOString(),
-        addresses: [{
-          line1: formData.address.line1.trim(),
-          line2: formData.address.line2.trim(),
-          line3: formData.address.line3.trim(),
-          pincode: formData.address.pincode.trim(),
-          city: formData.address.city.trim(),
-          state: formData.address.state.trim(),
-          county: formData.address.county.trim(),
-          country: formData.address.country.trim()
-        }],
+        addresses: formData.address ? [{
+          line1: formData.address.line1?.trim() || "",
+          line2: formData.address.line2?.trim() || "",
+          line3: formData.address.line3?.trim() || "",
+          pincode: formData.address.pincode?.trim() || "",
+          city: formData.address.city?.trim() || "",
+          state: formData.address.state?.trim() || "",
+          county: formData.address.county?.trim() || "",
+          country: formData.address.country?.trim() || ""
+        }] : [],
         dates: {
-          birthDate: formData.dates.birthDate,
-          joinDate: formData.dates.joinDate
+          birthDate: formData.dates?.birthDate || "",
+          joinDate: formData.dates?.joinDate || new Date().toISOString(),
+          lastLogin: "",
+          passwordChangedAt: ""
         },
         userPreferences: {
-          policy: formData.userPreferences.policy,
-          whatsappMessageReceive: formData.userPreferences.whatsappMessageReceive,
-          browserNotifications: formData.userPreferences.browserNotifications,
-          emailReceive: formData.userPreferences.emailReceive
+          policy: formData.userPreferences?.policy || "active",
+          whatsappMessageReceive: formData.userPreferences?.whatsappMessageReceive || false,
+          browserNotifications: formData.userPreferences?.browserNotifications || false,
+          emailReceive: formData.userPreferences?.emailReceive || false
         }
       };
 
+      console.log('Sending lead data:', leadData); // Add logging
       const response = await addLead(leadData);
-
       setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
       setShowAddLeadModal(false);
       resetLeadForm();
@@ -664,7 +636,7 @@ const LeadsTable = () => {
       if (errorMessage.includes("phone")) {
         setFormErrors(prev => ({
           ...prev,
-          phoneNumber: "Phone number must be exactly 10 digits"
+          phoneNumber: "Phone number must be 10-15 digits"
         }));
       } else if (errorMessage === "Email already exists") {
         setFormErrors(prev => ({
@@ -1027,7 +999,9 @@ const LeadsTable = () => {
       ? lead.groupId && lead.groupId.toString() === selectedGroupId
       : true;
 
-    return matchesSearch && matchesGroup;
+    const matchesLeadType = leadTypeFilter === 'all' ? true : (lead.leadType || 'new') === leadTypeFilter;
+
+    return matchesSearch && matchesGroup && matchesLeadType;
   });
 
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
@@ -1109,6 +1083,51 @@ const LeadsTable = () => {
               Groups
             </button>
           </div>
+
+          {/* Table Controls Row */}
+          {activeTab === "personal" && (
+            <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
+              {/* Lead Type Toggle */}
+              <div className="flex items-center bg-gray-100 rounded-full border border-gray-200 px-1 py-1 mr-2">
+                <button
+                  className={`px-4 py-1 rounded-full font-medium transition-colors duration-150 focus:outline-none text-sm ${leadTypeFilter === 'new' ? 'bg-blue-500 text-white shadow-sm' : 'bg-transparent text-blue-600 hover:bg-blue-50'}`}
+                  onClick={() => setLeadTypeFilter('new')}
+                  style={{ minWidth: '100px' }}
+                >
+                  New Lead
+                </button>
+                <button
+                  className={`px-4 py-1 rounded-full font-medium transition-colors duration-150 focus:outline-none text-sm ${leadTypeFilter === 'existing' ? 'bg-blue-500 text-white shadow-sm' : 'bg-transparent text-blue-600 hover:bg-blue-50'}`}
+                  onClick={() => setLeadTypeFilter('existing')}
+                  style={{ minWidth: '100px' }}
+                >
+                  Existing Lead
+                </button>
+              </div>
+              {/* Table Controls (Import/Export/Add New) */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  className="flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                  onClick={handleImport}
+                  ref={fileInputRef}
+                >
+                  <span className="mr-2">&#8682;</span> Import
+                </button>
+                <button
+                  className="flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                  onClick={handleExport}
+                >
+                  <span className="mr-2">&#8681;</span> Export
+                </button>
+                <button
+                  className="ml-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                  onClick={handleOpenAddLeadModal}
+                >
+                  + Add New
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Action Bar */}
           {showActionBar && (

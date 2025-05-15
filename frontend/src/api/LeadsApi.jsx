@@ -55,7 +55,16 @@ export const addLead = async (leadData) => {
 
 export const deleteLead = async (leadId) => {
   try {
-    await api.delete(`/leads/${leadId}`);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    await api.delete(`/leads/${leadId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Error deleting lead:", error);
     throw error;

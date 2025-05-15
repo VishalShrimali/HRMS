@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
-  line1: { type: String, required: true },
-  line2: { type: String },
-  line3: { type: String },
-  pincode: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  county: { type: String },
-  country: { type: String, required: true },
+  line1: { type: String, trim: true },
+  line2: { type: String, trim: true },
+  line3: { type: String, trim: true },
+  pincode: { type: String, trim: true },
+  city: { type: String, trim: true },
+  state: { type: String, trim: true },
+  county: { type: String, trim: true },
+  country: { type: String, trim: true }
 });
 
 const userPreferencesSchema = new mongoose.Schema({
@@ -19,33 +19,29 @@ const userPreferencesSchema = new mongoose.Schema({
 });
 
 const dateSchema = new mongoose.Schema({
-    joinDate: { type: Number, required: true },
-    lastLogin: { type: Date }, // Example: Add other date fields here
+    joinDate: { type: Number },
+    lastLogin: { type: Date },
     passwordChangedAt: { type: Date },
-    birthDate: { type: Date},
+    birthDate: { type: Date },
 });
+
 const LeadSchema = new mongoose.Schema(
     {   
         groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
-        fullName: { type: String, required: true, trim: true },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        },
+        fullName: { type: String, trim: true },
+        email: { type: String, trim: true },
         phone: {
             type: String,
             required: true,
-            match: /^[0-9]{10,15}$/,
+            trim: true,
+            match: /^\+?[0-9]{10,15}$/,
         },
-        country: { type: String, required: true },
-        //password: { type: String, required: true, minlength: 6 },
+        country: { type: String },
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
-        dates: dateSchema, // Embed the date schema here
+        dates: dateSchema,
     },
     { timestamps: true }
 );
