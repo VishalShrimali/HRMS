@@ -32,8 +32,15 @@ const EmailDesigner = () => {
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('Fetching emails with params:', { page, search, selectedUserId });
       // Pass selectedUserId if admin
       const data = await getEmails(page, search, selectedUserId);
+      console.log('Received emails data:', data.map(email => ({
+        id: email._id,
+        title: email.title,
+        createdBy: email.createdBy,
+        selectedUserId: selectedUserId
+      })));
       setEmails(data);
     } catch (error) {
       console.error("Error fetching emails:", error);
@@ -42,6 +49,7 @@ const EmailDesigner = () => {
   }, [page, search, selectedUserId]);
 
   useEffect(() => {
+    console.log('Selected user changed:', selectedUserId);
     fetchEmails();
   }, [fetchEmails, selectedUserId]);
 
@@ -150,45 +158,52 @@ const EmailDesigner = () => {
                   Loading...
                 </td>
               </tr>
-            ) : emails.length > 0 ? (
-              emails.map((email, index) => (
-                <tr key={email._id} className="border-t">
-                  <td className="px-4 py-2">{index + 1}</td>
-                  <td className="px-4 py-2">{email.title}</td>
-                  <td className="px-4 py-2 break-words max-w-md">{email.description}</td>
-                  <td className="px-4 py-2">
-                    {new Date(email.createdOn).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2 space-x-2">
-                    <button
-                      onClick={() =>
-                        navigate(`/email/editor?title=${encodeURIComponent(email.title)}&emailId=${email._id}`)
-                      }
-                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
-                    >
-                      📝 Builder
-                    </button>
-                    <button
-                      onClick={() => handleEdit(email)}
-                      className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 text-sm"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(email._id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
             ) : (
-              <tr>
-                <td colSpan="5" className="text-center py-4">
-                  No emails found
-                </td>
-              </tr>
+              (() => {
+                const filteredEmails = selectedUserId
+                  ? emails.filter(email => email.createdBy?.toString() === selectedUserId)
+                  : emails;
+                return filteredEmails.length > 0 ? (
+                  filteredEmails.map((email, index) => (
+                    <tr key={email._id} className="border-t">
+                      <td className="px-4 py-2">{index + 1}</td>
+                      <td className="px-4 py-2">{email.title}</td>
+                      <td className="px-4 py-2 break-words max-w-md">{email.description}</td>
+                      <td className="px-4 py-2">
+                        {new Date(email.createdOn).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2 space-x-2">
+                        <button
+                          onClick={() =>
+                            navigate(`/email/editor?title=${encodeURIComponent(email.title)}&emailId=${email._id}`)
+                          }
+                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                        >
+                          📝 Builder
+                        </button>
+                        <button
+                          onClick={() => handleEdit(email)}
+                          className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 text-sm"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(email._id)}
+                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4">
+                      No emails found
+                    </td>
+                  </tr>
+                );
+              })()
             )}
           </tbody>
         </table>

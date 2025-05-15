@@ -15,14 +15,19 @@ export const getEmails = async (page = 1, search = "", userId = "") => {
   try {
     const token = getToken();
     const params = { page, search };
-    if (userId) params.userId = userId;
+    if (userId) {
+      console.log('Adding userId to request params:', userId);
+      params.userId = userId;
+    }
+    console.log('Making API request with params:', params);
     const response = await axios.get(`${API_BASE_URL}/emails`, {
       params,
       headers: { Authorization: `Bearer ${token}` }
     });
+    console.log('API response:', response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching emails:", error);
+    console.error("Error fetching emails:", error.response?.data || error.message);
     return [];
   }
 };

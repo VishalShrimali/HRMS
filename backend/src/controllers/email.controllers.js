@@ -6,13 +6,25 @@ import mongoose from "mongoose";
 export const getEmails = async (req, res) => {
   try {
     let query = {};
+    console.log('Request query:', req.query);
     console.log('Requested userId:', req.query.userId);
     console.log('Logged-in user _id:', req.user._id);
     console.log('Logged-in user role:', req.user.role?.name);
 
     // If userId is provided in the query, always filter by that user
     if (req.query.userId) {
-      query.createdBy = new mongoose.Types.ObjectId(req.query.userId);
+      try {
+        const userId = new mongoose.Types.ObjectId(req.query.userId);
+        query.createdBy = userId;
+        console.log('Query before execution:', {
+          query: JSON.stringify(query),
+          userId: userId.toString(),
+          userIdType: typeof userId
+        });
+      } catch (error) {
+        console.error('Error converting userId to ObjectId:', error);
+        return res.status(400).json({ message: "Invalid userId format" });
+      }
     } else {
       // If not admin, only show their own emails
       if (req.user.role?.name !== "ADMIN") {
@@ -21,10 +33,22 @@ export const getEmails = async (req, res) => {
       // If admin and no userId, show all emails (query remains {})
     }
 
-    console.log("Email filter query:", query);
+    // First, let's check what emails exist in the database
+    const allEmails = await Email.find({}).select('createdBy title').lean();
+    console.log('All emails in database:', allEmails.map(email => ({
+      id: email._id.toString(),
+      title: email.title,
+      createdBy: email.createdBy.toString()
+    })));
 
+    // Now execute the filtered query
     const emails = await Email.find(query).sort({ createdOn: -1 });
-    console.log("Fetched emails count:", emails.length);
+    console.log('Filtered emails:', emails.map(email => ({
+      id: email._id.toString(),
+      title: email.title,
+      createdBy: email.createdBy.toString()
+    })));
+    
     res.status(200).json(emails);
   } catch (error) {
     console.error("Error fetching emails:", error);
