@@ -11,6 +11,14 @@ export const getEmails = async (req, res) => {
     console.log('Logged-in user _id:', req.user._id);
     console.log('Logged-in user role:', req.user.role?.name);
 
+    // Handle search query
+    if (req.query.search) {
+      query.$or = [
+        { title: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
     // If userId is provided in the query, always filter by that user
     if (req.query.userId) {
       try {

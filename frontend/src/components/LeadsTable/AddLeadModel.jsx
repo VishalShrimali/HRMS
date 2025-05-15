@@ -333,6 +333,23 @@ const AddLeadModel = ({
                     className="mt-1"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Client Status
+                  </label>
+                  <input
+                    type="checkbox"
+                    name="isExistingClient"
+                    checked={formData.isExistingClient}
+                    onChange={(e) => handleChange({
+                      target: {
+                        name: 'isExistingClient',
+                        value: e.target.checked
+                      }
+                    })}
+                    className="mt-1"
+                  />
+                </div>
               </div>
               <div className="mt-4 flex justify-end">
                 <button

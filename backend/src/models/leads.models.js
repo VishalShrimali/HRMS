@@ -50,6 +50,7 @@ const LeadSchema = new mongoose.Schema(
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
         dates: dateSchema,
+        isExistingClient: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

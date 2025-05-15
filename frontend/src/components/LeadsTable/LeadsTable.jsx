@@ -277,18 +277,20 @@ const LeadsTable = () => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
+  const [showExistingClientsOnly, setShowExistingClientsOnly] = useState(false);
 
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    groupId: "",
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     country: "USA (+1)",
-    phoneNumber: "",
-    secondPhoneNumber: "",
-    dates: { birthDate: "", joinDate: "" },
+    dates: {
+      birthDate: "",
+      joinDate: "",
+    },
     address: {
       line1: "",
       line2: "",
@@ -299,13 +301,13 @@ const LeadsTable = () => {
       county: "",
       country: "USA",
     },
-    phone: "",
     userPreferences: {
       policy: "active",
       whatsappMessageReceive: false,
       browserNotifications: false,
       emailReceive: false,
     },
+    isExistingClient: false,
   });
 
   const fetchUsers = useCallback(async () => {
@@ -653,6 +655,7 @@ const LeadsTable = () => {
             lead.userPreferences?.browserNotifications || false,
           emailReceive: lead.userPreferences?.emailReceive || false,
         },
+        isExistingClient: lead.isExistingClient || false,
       });
       setEditingLeadState(lead);
       setShowEditLeadModal(true);
@@ -680,7 +683,11 @@ const LeadsTable = () => {
       ? lead.userId && lead.userId.toString() === selectedUserId
       : true;
 
-    return matchesSearch && matchesGroup && matchesUser;
+    const matchesClientFilter = showExistingClientsOnly
+      ? lead.isExistingClient === true
+      : true;
+
+    return matchesSearch && matchesGroup && matchesUser && matchesClientFilter;
   });
 
   const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
@@ -1145,10 +1152,12 @@ const LeadsTable = () => {
       firstName: "",
       lastName: "",
       email: "",
+      phone: "",
       country: "USA (+1)",
-      phoneNumber: "",
-      secondPhoneNumber: "",
-      dates: { birthDate: "", joinDate: "" },
+      dates: {
+        birthDate: "",
+        joinDate: "",
+      },
       address: {
         line1: "",
         line2: "",
@@ -1159,17 +1168,17 @@ const LeadsTable = () => {
         county: "",
         country: "USA",
       },
-      phone: "",
       userPreferences: {
         policy: "active",
         whatsappMessageReceive: false,
         browserNotifications: false,
         emailReceive: false,
       },
+      isExistingClient: false,
     });
     setEditingLeadState(null);
     setFormErrors({});
-    setFormSubmitted(false); // Reset form submitted state
+    setFormSubmitted(false);
   };
 
   // Reset group form
@@ -1177,7 +1186,7 @@ const LeadsTable = () => {
     setGroupFormData({ name: "", description: "", members: [] });
     setEditingGroup(null);
     setGroupFormErrors({});
-    setFormSubmitted(false); // Reset form submitted state
+    setFormSubmitted(false);
   };
 
   // Determine if the user is an admin
@@ -1203,22 +1212,40 @@ const LeadsTable = () => {
                 Records Found)
               </span>
             </div>
-            <div className="relative">
-              <input
-                type="text"
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-72 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search here..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                  setCurrentGroupPage(1);
-                }}
-              />
-              <Search
-                className="absolute left-3 top-2.5 text-gray-400"
-                size={16}
-              />
+            <div className="flex items-center space-x-4">
+              {activeTab === "personal" && (
+                <div className="flex items-center space-x-2">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={showExistingClientsOnly}
+                      onChange={(e) => setShowExistingClientsOnly(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ml-2 text-sm font-medium text-gray-700">
+                      Show Existing Clients Only
+                    </span>
+                  </label>
+                </div>
+              )}
+              <div className="relative">
+                <input
+                  type="text"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-72 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Search here..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                    setCurrentGroupPage(1);
+                  }}
+                />
+                <Search
+                  className="absolute left-3 top-2.5 text-gray-400"
+                  size={16}
+                />
+              </div>
             </div>
           </div>
 

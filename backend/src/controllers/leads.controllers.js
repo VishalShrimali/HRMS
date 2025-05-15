@@ -85,7 +85,8 @@ export const createLead = async (req, res) => {
             secondPhoneNumber,
             addresses,
             dates,
-            userPreferences
+            userPreferences: userPrefs,
+            isExistingClient
         } = req.body;
 
         // Validate required fields
@@ -102,7 +103,7 @@ export const createLead = async (req, res) => {
         // Create fullName and initialize other fields
         const fullName = `${firstName} ${lastName}`;
         const newLead = new Lead({
-            userId: req.user._id, // Add the current user's ID
+            userId: req.user._id,
             firstName,
             lastName,
             fullName,
@@ -118,11 +119,12 @@ export const createLead = async (req, res) => {
                 passwordChangedAt: dates?.passwordChangedAt ? new Date(dates?.passwordChangedAt).getTime() : "",
             },
             userPreferences: {
-                policy: userPreferences?.policy || "active",
-                whatsappMessageReceive: !!userPreferences?.whatsappMessageReceive,
-                browserNotifications: !!userPreferences?.browserNotifications,
-                emailReceive: !!userPreferences?.emailReceive,
-            }
+                policy: userPrefs?.policy || "active",
+                whatsappMessageReceive: !!userPrefs?.whatsappMessageReceive,
+                browserNotifications: !!userPrefs?.browserNotifications,
+                emailReceive: !!userPrefs?.emailReceive,
+            },
+            isExistingClient: !!isExistingClient
         });
 
         const savedLead = await newLead.save();
@@ -177,7 +179,8 @@ export const updateLead = async (req, res) => {
             country,
             addresses,
             dates,
-            userPreferences
+            userPreferences: userPrefs,
+            isExistingClient
         } = req.body;
 
         const updateData = {};
@@ -195,6 +198,7 @@ export const updateLead = async (req, res) => {
         if (secondPhoneNumber !== undefined) updateData.secondPhoneNumber = secondPhoneNumber;
         if (country !== undefined) updateData.country = country;
         if (addresses !== undefined) updateData.addresses = addresses;
+        if (isExistingClient !== undefined) updateData.isExistingClient = !!isExistingClient;
 
         // Handle updating dates and userPreferences fields
         if (dates !== undefined) {
@@ -206,12 +210,12 @@ export const updateLead = async (req, res) => {
             };
         }
 
-        if (userPreferences !== undefined) {
+        if (userPrefs !== undefined) {
             updateData.userPreferences = {
-                policy: userPreferences?.policy || "active",
-                whatsappMessageReceive: !!userPreferences?.whatsappMessageReceive,
-                browserNotifications: !!userPreferences?.browserNotifications,
-                emailReceive: !!userPreferences?.emailReceive,
+                policy: userPrefs?.policy || "active",
+                whatsappMessageReceive: !!userPrefs?.whatsappMessageReceive,
+                browserNotifications: !!userPrefs?.browserNotifications,
+                emailReceive: !!userPrefs?.emailReceive,
             };
         }
 

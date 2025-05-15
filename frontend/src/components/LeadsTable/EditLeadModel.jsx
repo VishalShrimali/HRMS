@@ -10,11 +10,10 @@ const EditLeadModal = ({
 }) => {
   return (
     <dialog
-      open
-      className="fixed w-full h-[100vh] inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      open={true}
+      className="fixed w-full m-0 h-[100vh] inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
-      <div className="bg-white rounded-lg w-full max-w-3xl p-6">
-        {/* Header */}
+      <div className="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center border-b pb-4 mb-4">
           <h5 className="text-xl font-semibold text-gray-800">Edit Lead</h5>
           <button
@@ -24,14 +23,106 @@ const EditLeadModal = ({
             <X size={20} />
           </button>
         </div>
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          {/* Personal Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                First Name *
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className={`mt-1 p-2 w-full border rounded ${
+                  formErrors.firstName ? "border-red-500" : "border-gray-300"
+                }`}
+                required
+              />
+              {formErrors.firstName && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Last Name *
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className={`mt-1 p-2 w-full border rounded ${
+                  formErrors.lastName ? "border-red-500" : "border-gray-300"
+                }`}
+                required
+              />
+              {formErrors.lastName && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>
+              )}
+            </div>
+          </div>
 
-        {/* Form */}
-        <form onSubmit={handleEditSubmit} className="grid grid-cols-2 gap-4 overflow-y-auto max-h-[70vh]">
-          {/* Basic Info */}
-          <InputField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} error={formErrors.firstName} />
-          <InputField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} error={formErrors.lastName} />
-          <InputField label="Email" name="email" type="email" value={formData.email} onChange={handleChange} error={formErrors.email} />
-          <InputField label="Phone" name="phone" value={formData.phone} onChange={handleChange} error={formErrors.phone} />
+          {/* Contact Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Email *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`mt-1 p-2 w-full border rounded ${
+                  formErrors.email ? "border-red-500" : "border-gray-300"
+                }`}
+                required
+              />
+              {formErrors.email && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Phone *
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`mt-1 p-2 w-full border rounded ${
+                  formErrors.phone ? "border-red-500" : "border-gray-300"
+                }`}
+                required
+              />
+              {formErrors.phone && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Client Status */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isExistingClient"
+              name="isExistingClient"
+              checked={formData.isExistingClient}
+              onChange={(e) => handleChange({
+                target: {
+                  name: 'isExistingClient',
+                  value: e.target.checked
+                }
+              })}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="isExistingClient" className="text-sm font-medium text-gray-700">
+              This is an existing client
+            </label>
+          </div>
 
           {/* Dates */}
           <InputField label="Birth Date" name="dates.birthDate" type="date" value={formData.dates?.birthDate || ""} onChange={handleChange} error={formErrors.birthDate} />

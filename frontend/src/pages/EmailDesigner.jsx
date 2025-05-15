@@ -1,14 +1,16 @@
-import { useEffect, useState, useCallback, Fragment } from "react";
+import { useEffect, useState, useCallback, Fragment, useMemo } from "react";
 import { getEmails, createEmail, updateEmail, deleteEmail } from "../api";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from '../api/BASEURL';
 import { getAllUsers } from "../api/GroupsApi";
+import debounce from 'lodash/debounce';
 
 const EmailDesigner = () => {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingEmail, setEditingEmail] = useState(null);
@@ -17,6 +19,22 @@ const EmailDesigner = () => {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  // Debounce search input
+  const debouncedSetSearch = useMemo(
+    () => debounce((value) => {
+      setDebouncedSearch(value);
+      setPage(1); // Reset to first page when search changes
+    }, 300),
+    []
+  );
+
+  // Update search handler
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    debouncedSetSearch(value);
+  };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("userData"));
@@ -32,9 +50,9 @@ const EmailDesigner = () => {
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('Fetching emails with params:', { page, search, selectedUserId });
+      console.log('Fetching emails with params:', { page, search: debouncedSearch, selectedUserId });
       // Pass selectedUserId if admin
-      const data = await getEmails(page, search, selectedUserId);
+      const data = await getEmails(page, debouncedSearch, selectedUserId);
       console.log('Received emails data:', data.map(email => ({
         id: email._id,
         title: email.title,
@@ -46,12 +64,19 @@ const EmailDesigner = () => {
       console.error("Error fetching emails:", error);
     }
     setLoading(false);
-  }, [page, search, selectedUserId]);
+  }, [page, debouncedSearch, selectedUserId]);
 
   useEffect(() => {
     console.log('Selected user changed:', selectedUserId);
     fetchEmails();
   }, [fetchEmails, selectedUserId]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetSearch.cancel();
+    };
+  }, [debouncedSetSearch]);
 
   const handleCreate = async () => {
     if (!newEmail.title) return;
@@ -120,18 +145,24 @@ const EmailDesigner = () => {
           ) : (
             <div className="text-red-500">No users found or users data is invalid. Check backend response.</div>
           )}
-          {console.log('Dropdown users:', users)}
         </div>
       )}
 
       <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search emails..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div className="relative w-1/3">
+          <input
+            type="text"
+            placeholder="Search emails..."
+            value={search}
+            onChange={handleSearchChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          {loading && (
+            <div className="absolute right-3 top-2.5">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+        </div>
         <button
           onClick={() => setShowModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
