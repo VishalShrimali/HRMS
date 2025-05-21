@@ -26,7 +26,8 @@ import GroupTable from "../GroupsComponents/GroupTable";
 import AddGroupModel from "../GroupsComponents/AddGroupModel";
 import GroupsControlsComponent from "../GroupsComponents/GroupsControlsComponent";
 import axios from "axios";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../../api/BASEURL";
+
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
@@ -753,55 +754,29 @@ const LeadsTable = () => {
     }
   };
 
-  // Update validateLeadForm to include phone number validation
+  // Update validateLeadForm to use 'phone' consistently
   const validateLeadForm = () => {
     const errors = {};
 
-    // Basic Info Validation
+    // Only validate required fields
     if (!formData.firstName?.trim()) {
       errors.firstName = "First Name is required";
     }
     if (!formData.lastName?.trim()) {
       errors.lastName = "Last Name is required";
     }
-    if (!formData.email?.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Please enter a valid email";
-    }
 
     // Phone validation
-    const phone = formData.phoneNumber || formData.phone;
-    if (!phone) {
-      errors.phoneNumber = "Phone Number is required";
-    } else if (!/^\d{10}$/.test(phone)) {
-      errors.phoneNumber = "Phone number must be exactly 10 digits";
+    if (!formData.phone) {
+      errors.phone = "Phone Number is required";
+    } else if (!/^\d{10,15}$/.test(formData.phone)) {
+      errors.phone = "Phone number must be between 10 and 15 digits";
     }
 
-    // // Address Validation
-    // if (!formData.address?.line1?.trim()) {
-    //   errors.line1 = "Address Line 1 is required";
-    // }
-    // if (!formData.address?.pincode?.toString()?.trim()) {
-    //   errors.pincode = "Pincode is required";
-    // }
-    // if (!formData.address?.city?.trim()) {
-    //   errors.city = "City is required";
-    // }
-    // if (!formData.address?.state?.trim()) {
-    //   errors.state = "State is required";
-    // }
-    // if (!formData.address?.country?.trim()) {
-    //   errors.country = "Country is required";
-    // }
-
-    // // Dates Validation
-    // if (!formData.dates?.birthDate) {
-    //   errors.birthDate = "Birth Date is required";
-    // }
-    // if (!formData.dates?.joinDate) {
-    //   errors.joinDate = "Join Date is required";
-    // }
+    // Email validation only if provided
+    if (formData.email?.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -848,7 +823,6 @@ const LeadsTable = () => {
       case "state":
         if (!fieldValue) error = "State is required";
         break;
-      case "phoneNumber":
       case "phone":
         if (!fieldValue) {
           error = "Phone number is required";
@@ -884,50 +858,57 @@ const LeadsTable = () => {
     setGroupFormErrors({ ...groupFormErrors, [name]: "" });
   };
 
-  // Handle add lead
+  // Update handleAddLeadSubmit to use consistent phone field
   const handleAddLeadSubmit = async (e) => {
     e.preventDefault();
     setFormSubmitted(true);
     if (!validateLeadForm()) return;
 
     try {
+      // Start with only the required fields
       const leadData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phoneNumber || formData.phone,
-        country: formData.country.trim(),
-        groupId: formData.groupId || null,
-        date: new Date().toISOString(),
-        addresses: [
-          {
-            line1: formData.address.line1.trim(),
-            line2: formData.address.line2.trim(),
-            line3: formData.address.line3.trim(),
-            pincode: formData.address.pincode.trim(),
-            city: formData.address.city.trim(),
-            state: formData.address.state.trim(),
-            county: formData.address.county.trim(),
-            country: formData.address.country.trim(),
-          },
-        ],
-        dates: {
-          birthDate: formData.dates.birthDate,
-          joinDate: formData.dates.joinDate,
-        },
-        userPreferences: {
-          policy: formData.userPreferences.policy,
-          whatsappMessageReceive:
-            formData.userPreferences.whatsappMessageReceive,
-          browserNotifications: formData.userPreferences.browserNotifications,
-          emailReceive: formData.userPreferences.emailReceive,
-        },
+        phone: formData.phone,
       };
 
+      // Only add optional fields if they have values
+      if (formData.groupId?.trim()) {
+        leadData.groupId = formData.groupId.trim();
+      }
+      if (formData.leadStatus) {
+        leadData.leadStatus = formData.leadStatus;
+      }
+      if (formData.email?.trim()) {
+        leadData.email = formData.email.trim();
+      }
+      if (formData.address?.line1?.trim()) {
+        leadData.addresses = [{
+          line1: formData.address.line1.trim(),
+          ...(formData.address.line2?.trim() && { line2: formData.address.line2.trim() }),
+          ...(formData.address.pincode?.trim() && { pincode: formData.address.pincode.trim() }),
+          ...(formData.address.city?.trim() && { city: formData.address.city.trim() }),
+          ...(formData.address.state?.trim() && { state: formData.address.state.trim() }),
+          ...(formData.address.country?.trim() && { country: formData.address.country.trim() }),
+        }];
+      }
+      if (formData.dates?.birthDate) {
+        leadData.dates = { ...leadData.dates, birthDate: formData.dates.birthDate };
+      }
+      if (formData.dates?.joinDate) {
+        leadData.dates = { ...leadData.dates, joinDate: formData.dates.joinDate };
+      }
+      if (formData.userPreferences) {
+        leadData.userPreferences = {
+          policy: formData.userPreferences.policy || "active",
+          whatsappMessageReceive: !!formData.userPreferences.whatsappMessageReceive,
+          browserNotifications: !!formData.userPreferences.browserNotifications,
+          emailReceive: !!formData.userPreferences.emailReceive,
+        };
+      }
+
       const response = await addLead(leadData);
-      setLeads(
-        [...leads, response.lead].filter((lead) => lead && lead.firstName)
-      );
+      setLeads([...leads, response.lead].filter((lead) => lead && lead.firstName));
       setShowAddLeadModal(false);
       resetLeadForm();
       setError(null);
@@ -940,7 +921,7 @@ const LeadsTable = () => {
       if (errorMessage.includes("phone")) {
         setFormErrors((prev) => ({
           ...prev,
-          phoneNumber: "Phone number must be exactly 10 digits",
+          phone: "Phone number must be between 10 and 15 digits",
         }));
       } else if (errorMessage === "Email already exists") {
         setFormErrors((prev) => ({
@@ -948,7 +929,6 @@ const LeadsTable = () => {
           email: "Email already exists",
         }));
       } else {
-        // For other validation errors, update the form errors
         setFormErrors((prev) => ({
           ...prev,
           general: errorMessage,
@@ -964,42 +944,65 @@ const LeadsTable = () => {
     if (!validateLeadForm()) return;
 
     try {
-      const response = await updateLead(editingLead._id, {
+      // Prepare the update data, only including non-empty values
+      const updateData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
         phone: formData.phone.trim(),
-        country: formData.country.trim(),
-        addresses: [
-          {
-            line1: formData.address.line1.trim(),
-            line2: formData.address.line2.trim(),
-            line3: formData.address.line3.trim(),
-            pincode: formData.address.pincode.trim(),
-            city: formData.address.city.trim(),
-            state: formData.address.state.trim(),
-            county: formData.address.county.trim(),
-            country: formData.address.country.trim(),
-          },
-        ],
-        dates: {
-          birthDate: formData.dates.birthDate
-            ? new Date(formData.dates.birthDate).getTime()
-            : "",
-          joinDate: formData.dates.joinDate
-            ? new Date(formData.dates.joinDate).getTime()
-            : Date.now(),
-          lastLogin: editingLead.dates?.lastLogin || "",
-          passwordChangedAt: editingLead.dates?.passwordChangedAt || "",
-        },
-        userPreferences: {
-          policy: formData.userPreferences.policy,
-          whatsappMessageReceive:
-            formData.userPreferences.whatsappMessageReceive,
-          browserNotifications: formData.userPreferences.browserNotifications,
-          emailReceive: formData.userPreferences.emailReceive,
-        },
-      });
+      };
+
+      // Only add optional fields if they have values
+      if (formData.email?.trim()) {
+        updateData.email = formData.email.trim();
+      }
+      if (formData.country?.trim()) {
+        updateData.country = formData.country.trim();
+      }
+
+      // Handle address if any field is filled
+      if (formData.address?.line1?.trim() || 
+          formData.address?.city?.trim() || 
+          formData.address?.state?.trim() || 
+          formData.address?.pincode?.trim()) {
+        updateData.addresses = [{
+          ...(formData.address.line1?.trim() && { line1: formData.address.line1.trim() }),
+          ...(formData.address.line2?.trim() && { line2: formData.address.line2.trim() }),
+          ...(formData.address.line3?.trim() && { line3: formData.address.line3.trim() }),
+          ...(formData.address.pincode?.trim() && { pincode: formData.address.pincode.trim() }),
+          ...(formData.address.city?.trim() && { city: formData.address.city.trim() }),
+          ...(formData.address.state?.trim() && { state: formData.address.state.trim() }),
+          ...(formData.address.county?.trim() && { county: formData.address.county.trim() }),
+          ...(formData.address.country?.trim() && { country: formData.address.country.trim() }),
+        }];
+      }
+
+      // Handle dates only if they are provided
+      if (formData.dates?.birthDate || formData.dates?.joinDate) {
+        updateData.dates = {
+          ...(formData.dates.birthDate && { 
+            birthDate: new Date(formData.dates.birthDate).getTime() 
+          }),
+          ...(formData.dates.joinDate && { 
+            joinDate: new Date(formData.dates.joinDate).getTime() 
+          }),
+          // Preserve existing dates
+          ...(editingLead.dates?.lastLogin && { lastLogin: editingLead.dates.lastLogin }),
+          ...(editingLead.dates?.passwordChangedAt && { passwordChangedAt: editingLead.dates.passwordChangedAt }),
+        };
+      }
+
+      // Handle user preferences if any are set
+      if (formData.userPreferences) {
+        updateData.userPreferences = {
+          ...(formData.userPreferences.policy && { policy: formData.userPreferences.policy }),
+          whatsappMessageReceive: !!formData.userPreferences.whatsappMessageReceive,
+          browserNotifications: !!formData.userPreferences.browserNotifications,
+          emailReceive: !!formData.userPreferences.emailReceive,
+        };
+      }
+
+      console.log('Sending update data:', updateData); // Debug log
+      const response = await updateLead(editingLead._id, updateData);
 
       // Update the leads state with the new data
       const updatedLeads = leads.map((lead) => {
@@ -1029,7 +1032,14 @@ const LeadsTable = () => {
       await fetchLeads();
     } catch (err) {
       console.error("Error updating lead:", err);
-      setError(err.response?.data?.message || "Failed to update lead");
+      const errorMessage = err.response?.data?.message || "Failed to update lead";
+      setError(errorMessage);
+      // Log the full error for debugging
+      console.error("Full error details:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
     }
   };
 

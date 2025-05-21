@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
-    line1: { type: String, required: true },
+    line1: { type: String },
     line2: { type: String },
     line3: { type: String },
-    pincode: { type: String, required: true, match: /^[0-9]{5,6}$/ },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
+    pincode: { type: String, match: /^[0-9]{5,6}$/ },
+    city: { type: String },
+    state: { type: String },
     county: { type: String },
-    country: { type: String, required: true },
+    country: { type: String },
 });
 
 const userPreferencesSchema = new mongoose.Schema({
@@ -23,11 +23,12 @@ const userPreferencesSchema = new mongoose.Schema({
 });
 
 const dateSchema = new mongoose.Schema({
-    joinDate: { type: Number, required: true },
-    lastLogin: { type: Date }, // Example: Add other date fields here
+    joinDate: { type: Number },
+    lastLogin: { type: Date },
     passwordChangedAt: { type: Date },
-    birthDate: { type: Date},
+    birthDate: { type: Date },
 });
+
 const LeadSchema = new mongoose.Schema(
     {   
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -37,7 +38,6 @@ const LeadSchema = new mongoose.Schema(
         fullName: { type: String, required: true, trim: true },
         email: {
             type: String,
-            required: true,
             unique: true,
             match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         },
@@ -50,7 +50,11 @@ const LeadSchema = new mongoose.Schema(
         addresses: [addressSchema],
         userPreferences: userPreferencesSchema,
         dates: dateSchema,
-        isExistingClient: { type: Boolean, default: false },
+        leadStatus: {
+            type: String,
+            enum: ["new", "existing"],
+            default: "new"
+        },
     },
     { timestamps: true }
 );

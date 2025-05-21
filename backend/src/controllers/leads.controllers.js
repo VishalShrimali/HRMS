@@ -86,18 +86,33 @@ export const createLead = async (req, res) => {
             addresses,
             dates,
             userPreferences: userPrefs,
-            isExistingClient
+            leadStatus
         } = req.body;
 
         // Validate required fields
-        if (!firstName || !lastName || !email || !phone) {
-            return res.status(400).json({ message: "First name, last name, email, and phone are required fields" });
+        if (!firstName || !lastName || !phone) {
+            return res.status(400).json({ message: "First name, last name, and phone are required fields" });
         }
 
-        // Check if email already exists
-        const existingLead = await Lead.findOne({ email });
-        if (existingLead) {
-            return res.status(400).json({ message: "Email already exists" });
+        // Validate phone format
+        if (!/^[0-9]{10,15}$/.test(phone)) {
+            return res.status(400).json({ message: "Invalid phone number format" });
+        }
+
+        // Validate leadStatus if provided
+        if (leadStatus && !["new", "existing"].includes(leadStatus)) {
+            return res.status(400).json({ message: "Invalid lead status" });
+        }
+
+        // Check if email exists and is valid (only if provided)
+        if (email) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return res.status(400).json({ message: "Invalid email format" });
+            }
+            const existingLead = await Lead.findOne({ email });
+            if (existingLead) {
+                return res.status(400).json({ message: "Email already exists" });
+            }
         }
 
         // Create fullName and initialize other fields
@@ -124,7 +139,7 @@ export const createLead = async (req, res) => {
                 browserNotifications: !!userPrefs?.browserNotifications,
                 emailReceive: !!userPrefs?.emailReceive,
             },
-            isExistingClient: !!isExistingClient
+            leadStatus: leadStatus || "new"
         });
 
         const savedLead = await newLead.save();
@@ -180,7 +195,7 @@ export const updateLead = async (req, res) => {
             addresses,
             dates,
             userPreferences: userPrefs,
-            isExistingClient
+            leadStatus
         } = req.body;
 
         const updateData = {};
@@ -198,7 +213,12 @@ export const updateLead = async (req, res) => {
         if (secondPhoneNumber !== undefined) updateData.secondPhoneNumber = secondPhoneNumber;
         if (country !== undefined) updateData.country = country;
         if (addresses !== undefined) updateData.addresses = addresses;
-        if (isExistingClient !== undefined) updateData.isExistingClient = !!isExistingClient;
+        if (leadStatus !== undefined) {
+            if (!["new", "existing"].includes(leadStatus)) {
+                return res.status(400).json({ message: "Invalid lead status" });
+            }
+            updateData.leadStatus = leadStatus;
+        }
 
         // Handle updating dates and userPreferences fields
         if (dates !== undefined) {

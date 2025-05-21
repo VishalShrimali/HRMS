@@ -53,7 +53,16 @@ export const addLead = async (leadData) => {
 
 export const deleteLead = async (leadId) => {
   try {
-    await api.delete(`/leads/${leadId}`);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    await api.delete(`/leads/${leadId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Error deleting lead:", error);
     throw error;
@@ -61,13 +70,36 @@ export const deleteLead = async (leadId) => {
 };
 
 export const getGroups = async () => {
-  const response = await api.get("/groups"); // use your actual endpoint
-  return response.data;
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.get("/groups", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    throw error;
+  }
 };
 
 export const updateLead = async (leadId, updatedData) => {
   try {
-    const response = await api.put(`/leads/${leadId}`, updatedData);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.put(`/leads/${leadId}`, updatedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error updating lead:", error);
@@ -81,6 +113,11 @@ export const importLeads = async (file) => {
   }
 
   try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
     // Parse the CSV file into JSON
     const jsonData = await new Promise((resolve, reject) => {
       Papa.parse(file, {
@@ -117,7 +154,11 @@ export const importLeads = async (file) => {
     const formattedData = jsonData.map(convertKeys);
 
     // ✅ Send formatted data to backend
-    const response = await api.post('/leads/importleads', formattedData);
+    const response = await api.post('/leads/importleads', formattedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     const errorMessage =
@@ -131,11 +172,18 @@ export const importLeads = async (file) => {
   }
 };
 
-
 export const exportLeads = async () => {
   try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
     const response = await api.get('/leads/export', {
-      responseType: 'blob', // Important for file downloads
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     const blob = new Blob([response.data], { type: 'text/csv' });
@@ -155,7 +203,16 @@ export const exportLeads = async () => {
 
 export const getLeadById = async (leadId) => {
   try {
-    const response = await api.get(`/leads/${leadId}`); // ✅ use your baseURL instance
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.get(`/leads/${leadId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     console.log("API Response:", response.data);
     return response.data;
   } catch (error) {
