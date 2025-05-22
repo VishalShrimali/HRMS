@@ -127,7 +127,7 @@ const EditLeadModal = ({
                     </label>
                     <select
                       name="leadStatus"
-                      value={formData.leadStatus || "new"}
+                      value={formData.leadStatus}
                       onChange={handleChange}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     >
