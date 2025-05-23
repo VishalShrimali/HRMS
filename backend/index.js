@@ -14,6 +14,8 @@ import emailRoutes from "./src/routes/email.routes.js";
 import templateRoutes from "./src/routes/template.routes.js";
 import leadsRouter from "./src/routes/leads.routes.js";
 import groupRouter from "./src/routes/leadsGroup.routes.js";
+import meetingsRouter from "./src/routes/meetings.routes.js";
+import policiesRouter from "./src/routes/policies.routes.js";
 
 dotenv.config();
 
@@ -46,6 +48,8 @@ app.use("/api/v1/emails", emailRoutes);
 app.use("/api/v1/templates", templateRoutes);
 app.use("/api/v1/leads", leadsRouter);
 app.use("/api/v1/groups", groupRouter);
+app.use("/api/v1", meetingsRouter);
+app.use("/api/v1", policiesRouter);
 
 // ✅ Serve React static files
 app.use(express.static(path.join(__dirname, "public")));

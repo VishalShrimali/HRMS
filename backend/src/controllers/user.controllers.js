@@ -336,3 +336,27 @@ export const getUsersWithPagination = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Set password for invited user
+export const setPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+        if (!token || !password) {
+            return res.status(400).json({ message: "Token and password are required." });
+        }
+        const user = await User.findOne({ passwordSetupToken: token });
+        if (!user || !user.passwordSetupExpires || user.passwordSetupExpires < new Date()) {
+            return res.status(400).json({ message: "Invalid or expired token." });
+        }
+        // Hash the password
+        const bcrypt = await import('bcrypt');
+        const hashedPassword = await bcrypt.default.hash(password, 10);
+        user.password = hashedPassword;
+        user.passwordSetupToken = undefined;
+        user.passwordSetupExpires = undefined;
+        await user.save();
+        res.status(200).json({ message: "Password set successfully." });
+    } catch (error) {
+        res.status(500).json({ message: "Error setting password. Please try again." });
+    }
+};

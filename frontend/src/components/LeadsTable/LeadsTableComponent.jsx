@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, Calendar } from "lucide-react";
 
 const LeadsTableComponent = ({
   paginatedLeads,
@@ -10,6 +10,7 @@ const LeadsTableComponent = ({
   setFormData,
   setShowEditModal,
   handleDelete,
+  onAnnualReview,
 }) => {
   const handleEditLead = (lead) => {
     setFormData({
@@ -70,7 +71,7 @@ const LeadsTableComponent = ({
                   type="checkbox"
                   checked={selectedLeads.includes(lead._id)}
                   onChange={() => {
-                    console.log("Checkbox changed for lead ID:", lead._id); // Add logging
+                    console.log("Checkbox changed for lead ID:", lead._id);
                     handleSelectLead(lead._id);
                   }}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -81,6 +82,13 @@ const LeadsTableComponent = ({
               <td className="p-3 text-sm text-gray-900">{lead.phone}</td>
               <td className="p-3 text-sm text-gray-900">{lead.country}</td>
               <td className="p-3 text-sm flex space-x-2">
+                <button
+                  className="text-blue-500 hover:text-blue-700"
+                  onClick={() => onAnnualReview(lead)}
+                  title="Annual Review"
+                >
+                  <Calendar size={16} />
+                </button>
                 <button
                   className="text-yellow-500 hover:text-yellow-700"
                   onClick={() => handleEditLead(lead)}

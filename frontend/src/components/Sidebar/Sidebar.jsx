@@ -162,6 +162,15 @@ const Sidebar = () => {
               isActive={isActive("/email/designer")}
               isAdmin={isAdmin}
             />
+
+              <SidebarItem
+              to="/team"
+              icon={<FaEnvelope size={18} />}
+              text="Team Management"
+              isOpen={isOpen}
+              isActive={isActive("/team")}
+              isAdmin={isAdmin}
+            />
             
             <SidebarItem
               to="/settings"

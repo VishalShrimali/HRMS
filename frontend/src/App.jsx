@@ -15,6 +15,8 @@ import Home from "./pages/Home";
 import RolesManager from "./components/RolesManager/RolesManager";
 import EmailDesigner from "./pages/EmailDesigner";
 import CustomEmailEditor from "./pages/EmailEditor";
+import TeamManagement from './components/TeamManagement/TeamManagement';
+
 let token = localStorage.getItem("token");
 const Protected = ({ isAuthenticated, children }) => {
   return isAuthenticated ? children : <Navigate to="/auth/login" />;
@@ -51,6 +53,7 @@ function App() {
             <Route index path="designer" element={<EmailDesigner />} />
             <Route path="editor" element={<CustomEmailEditor />} />
           </Route>
+          <Route path="/team" element={<TeamManagement />} />
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
         </Route>

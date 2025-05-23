@@ -1,5 +1,7 @@
 import express from 'express';
 import upload from '../middleware/upload.middleware.js';
+import meetingsRouter from './meetings.routes.js';
+import policiesRouter from './policies.routes.js';
 
 import {
     getLeads,
@@ -13,6 +15,10 @@ import {
 import { protect } from '../middleware/auth.middlware.js';
 
 const leadsRouter = express.Router();
+
+// Forward subresource routes
+leadsRouter.use('/:leadId/meetings', meetingsRouter);
+leadsRouter.use('/:leadId/policies', policiesRouter);
 
 // Routes
 leadsRouter.get('/export', protect, exportLeads); // Export leads (static route)

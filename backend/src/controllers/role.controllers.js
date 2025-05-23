@@ -120,3 +120,16 @@ export const getUserRoleAndPermissions = async (req, res) => {
     res.status(400).json({ message: "Error fetching user role and permissions", error: error.message });
   }
 };
+
+// Get available roles for assignment
+export const getAvailableRoles = async (req, res) => {
+  try {
+    console.log('getAvailableRoles called');
+    const roles = await Role.find({}, '_id name level');
+    console.log('Roles found:', roles);
+    res.status(200).json({ roles });
+  } catch (error) {
+    console.error('Error in getAvailableRoles:', error);
+    res.status(400).json({ error: error.message });
+  }
+};

@@ -27,6 +27,7 @@ import AddGroupModel from "../GroupsComponents/AddGroupModel";
 import GroupsControlsComponent from "../GroupsComponents/GroupsControlsComponent";
 import axios from "axios";
 import { API_BASE_URL } from "../../api/BASEURL";
+import AnnualReviewModal from './AnnualReviewModal';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -279,6 +280,10 @@ const LeadsTable = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
   const [showNewClientsOnly, setShowNewClientsOnly] = useState(false);
+  const [showAnnualReviewModal, setShowAnnualReviewModal] = useState(false);
+  const [selectedLeadForReview, setSelectedLeadForReview] = useState(null);
+  const [policies, setPolicies] = useState([]);
+  const [policiesLoading, setPoliciesLoading] = useState(true);
 
   const fileInputRef = useRef(null);
 
@@ -1205,6 +1210,30 @@ const LeadsTable = () => {
   const userData = JSON.parse(localStorage.getItem("userData") || '{}');
   const isAdmin = userData.roleName === "ADMIN" || userData.roleName === "Super Admin";
 
+  // Handle annual review
+  const handleAnnualReview = (lead) => {
+    setSelectedLeadForReview(lead);
+    setShowAnnualReviewModal(true);
+  };
+
+  // Handle meeting scheduled
+  const handleMeetingScheduled = () => {
+    // Refresh leads data if needed
+    fetchLeads();
+  };
+
+  // Fetch policies for this lead
+  useEffect(() => {
+    if (!selectedLeadForReview || !selectedLeadForReview._id) return;
+    setPoliciesLoading(true);
+    axios.get(`${API_BASE_URL}/leads/${selectedLeadForReview._id}/policies`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => setPolicies(res.data.policies || []))
+      .catch(() => setPolicies([]))
+      .finally(() => setPoliciesLoading(false));
+  }, [selectedLeadForReview && selectedLeadForReview._id]);
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen">
@@ -1409,6 +1438,7 @@ const LeadsTable = () => {
                   setFormData={setFormData}
                   setShowEditModal={setShowEditLeadModal}
                   handleDelete={handleDeleteLead}
+                  onAnnualReview={handleAnnualReview}
                 />
               )}
               <PaginationSection
@@ -1462,6 +1492,37 @@ const LeadsTable = () => {
                   groupName={groupToAddLeads?.name || ""}
                   handleAddLeadsToGroupSubmit={handleAddLeadsToGroupSubmit}
                 />
+              )}
+              {/* Annual Review Modal */}
+              {showAnnualReviewModal && selectedLeadForReview && (
+                <AnnualReviewModal
+                  showModal={showAnnualReviewModal}
+                  setShowModal={setShowAnnualReviewModal}
+                  lead={selectedLeadForReview}
+                  onMeetingScheduled={handleMeetingScheduled}
+                >
+                  <div className="mt-8">
+                    <h6 className="font-medium text-gray-700 mb-2">Policies Sold</h6>
+                    {policiesLoading ? (
+                      <div>Loading policies...</div>
+                    ) : (
+                      <div>
+                        <div className="font-bold mb-2">Total: {(policies || []).length}</div>
+                        {(policies || []).length === 0 ? (
+                          <div>No policies sold yet.</div>
+                        ) : (
+                          <ul className="list-disc ml-6">
+                            {(policies || []).map(policy => (
+                              <li key={policy._id}>
+                                {policy.policyType} - {policy.amount} - {new Date(policy.soldAt).toLocaleDateString()}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </AnnualReviewModal>
               )}
             </>
           )}

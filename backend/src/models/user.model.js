@@ -38,8 +38,35 @@ const userSchema = new mongoose.Schema(
         role: { 
             type: mongoose.Schema.Types.ObjectId, 
             ref: "Role", 
-            required: false
+            required: true 
         },
+        // New fields for hierarchical structure
+        parent: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "User",
+            default: null 
+        },
+        team: [{ 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "User" 
+        }],
+        level: { 
+            type: Number, 
+            default: 0 // 0 for Super Admin, 1 for Team Leaders, 2 for Team Members
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        },
+        lastLogin: { type: Date },
+        createdBy: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "User",
+            required: true 
+        },
+        // Add fields for password setup invite
+        passwordSetupToken: { type: String },
+        passwordSetupExpires: { type: Date },
     },
     { timestamps: true }
 );
@@ -76,6 +103,52 @@ userSchema.statics.initializeFirstUserAsAdmin = async function () {
             await firstUser.save();
         }
     }
+};
+
+// Add method to check if user can manage another user
+userSchema.methods.canManageUser = async function(targetUser) {
+    // Super Admin can manage everyone
+    if (this.level === 0) return true;
+    
+    // Team Leaders can only manage their team members
+    if (this.level === 1) {
+        return this.team.includes(targetUser._id);
+    }
+    
+    // Team Members can't manage anyone
+    return false;
+};
+
+// Add method to get all users under this user in the hierarchy
+userSchema.methods.getSubordinates = async function() {
+    const subordinates = [];
+    const teamMembers = await this.model('User').find({ _id: { $in: this.team } });
+    
+    for (const member of teamMembers) {
+        subordinates.push(member);
+        if (member.level === 1) { // If team leader, get their team members too
+            const subTeam = await member.getSubordinates();
+            subordinates.push(...subTeam);
+        }
+    }
+    
+    return subordinates;
+};
+
+// Add method to get all permissions including inherited ones
+userSchema.methods.getAllPermissions = async function() {
+    const user = await this.populate('role');
+    const permissions = new Set(user.role.permissions);
+    
+    // If not Super Admin, get parent's permissions
+    if (this.level > 0 && this.parent) {
+        const parent = await this.model('User').findById(this.parent).populate('role');
+        if (parent) {
+            parent.role.permissions.forEach(p => permissions.add(p));
+        }
+    }
+    
+    return Array.from(permissions);
 };
 
 const User = mongoose.model("User", userSchema);

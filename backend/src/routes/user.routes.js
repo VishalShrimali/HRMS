@@ -10,6 +10,7 @@ import {
     forgotPassword,
     resetPassword,
     getAllUsersWithFirstNameLastNameId, // Import the new controller
+    setPassword
 } from "../controllers/user.controllers.js";
 import { authorizeRole, protect}  from "../middleware/auth.middlware.js";
 
@@ -48,6 +49,7 @@ userRouter.put('/profile', protect, updateUserProfile);
 userRouter.delete('/delete', protect, deleteUser);
 userRouter.post('/forgot-password', forgotPassword);
 userRouter.post('/reset-password', resetPassword);
+userRouter.post('/set-password', setPassword);
 userRouter.get('/list', (req, res, next) => {
     authorizeRole(["ADMIN", "Super Admin"], req, res, next);
 }, (req, res) => {
