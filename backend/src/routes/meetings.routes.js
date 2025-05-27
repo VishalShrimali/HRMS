@@ -1,10 +1,14 @@
 import express from "express";
 import { Meeting } from "../models/meeting.models.js";
+import { protect } from "../middleware/auth.middlware.js";
 
-const router = express.Router();
+const router = express.Router({mergeParams:true});
 
-// GET /api/leads/:leadId/meetings - Get all meetings for a lead
-router.get("/leads/:leadId/meetings", async (req, res) => {
+// Apply authentication middleware to all routes
+router.use(protect);
+
+// GET /api/v1/leads/:leadId/meetings - Get all meetings for a lead
+router.get("/", async (req, res) => {
   try {
     const meetings = await Meeting.find({ lead: req.params.leadId }).sort({ dateTime: -1 });
     res.json({ meetings });
@@ -13,9 +17,10 @@ router.get("/leads/:leadId/meetings", async (req, res) => {
   }
 });
 
-// POST /api/leads/:leadId/meetings - Schedule a new meeting for a lead
-router.post("/leads/:leadId/meetings", async (req, res) => {
+// POST /api/v1/leads/:leadId/meetings - Schedule a new meeting for a lead
+router.post("/", async (req, res) => {
   try {
+    console.log(req.body);
     const { dateTime, notes, type } = req.body;
     const meeting = new Meeting({
       lead: req.params.leadId,

@@ -18,7 +18,7 @@ const leadsRouter = express.Router();
 
 // Forward subresource routes
 leadsRouter.use('/:leadId/meetings', meetingsRouter);
-leadsRouter.use('/:leadId/policies', policiesRouter);
+leadsRouter.use('/:id/policies', policiesRouter);
 
 // Routes
 leadsRouter.get('/export', protect, exportLeads); // Export leads (static route)

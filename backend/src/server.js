@@ -21,11 +21,11 @@ app.use(express.urlencoded({ extended: true }));
 connectionDB();
 
 // Routes
-app.use('/api/user', userRouter);
-app.use('/api/leads', leadsRouter);
-app.use('/api/groups', groupRouter);
-app.use('/api/emails', emailRoutes);
-app.use('/api/team', teamRouter);
+app.use('/api/v1/user', userRouter);
+app.use('/api/v1/leads', leadsRouter);
+app.use('/api/v1/groups', groupRouter);
+app.use('/api/v1/emails', emailRoutes);
+app.use('/api/v1/team', teamRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
