@@ -32,7 +32,12 @@ const TeamManagement = () => {
   const fetchRoles = async () => {
     try {
       const response = await TeamApi.getAvailableRoles();
-      setRoles(response.roles || []);
+      if (response && response.roles) {
+        setRoles(response.roles);
+      } else {
+        console.error('Invalid roles response:', response);
+        setError('Failed to fetch roles: Invalid response format');
+      }
     } catch (err) {
       console.error('Error in fetchRoles:', err);
       setError(err.message || 'Failed to fetch roles');

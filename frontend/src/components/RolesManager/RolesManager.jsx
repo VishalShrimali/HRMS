@@ -2,6 +2,40 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from '../../api/BASEURL';
 
+// Create axios instance with auth configuration
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add request interceptor
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 const RolesManager = () => {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -22,8 +56,7 @@ const RolesManager = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/roles`);
-      console.log(response);
+      const response = await api.get('/roles');
       setRoles(response.data);
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -33,9 +66,7 @@ const RolesManager = () => {
   const handleRoleSelect = async (roleName) => {
     try {
       setSelectedRole(roleName);
-      const response = await axios.get(
-        `${API_BASE_URL}/roles/permissions/${roleName}`
-      );
+      const response = await api.get(`/roles/permissions/${roleName}`);
       setPermissions(response.data.permissions);
     } catch (error) {
       console.error("Error fetching permissions:", error);
@@ -44,7 +75,7 @@ const RolesManager = () => {
 
   const handleAddRole = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/roles/add`, newRole);
+      await api.post('/roles/add', newRole);
       setNewRole({ name: "", permissions: [] });
       fetchRoles();
     } catch (error) {
@@ -54,12 +85,9 @@ const RolesManager = () => {
 
   const handleAddPermissions = async () => {
     try {
-      await axios.put(
-        `${API_BASE_URL}/roles/permissions/add/${selectedRole}`,
-        {
-          permissions: newPermissions.split(","),
-        }
-      );
+      await api.put(`/roles/permissions/add/${selectedRole}`, {
+        permissions: newPermissions.split(","),
+      });
       setNewPermissions("");
       handleRoleSelect(selectedRole);
     } catch (error) {
@@ -69,9 +97,7 @@ const RolesManager = () => {
 
   const handleRemovePermissions = async (permission) => {
     try {
-      await axios.delete(
-        `${API_BASE_URL}/roles/permissions/remove/${selectedRole}/${permission}`
-      );
+      await api.delete(`/roles/permissions/remove/${selectedRole}/${permission}`);
       handleRoleSelect(selectedRole);
     } catch (error) {
       console.error("Error removing permission:", error);
@@ -81,18 +107,9 @@ const RolesManager = () => {
   // Fetch users with pagination and search
   const fetchUsers = async (page = 1, search = "") => {
     try {
-      page;
-      search;
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${API_BASE_URL}/user/list`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(response.data.users);
+      const response = await api.get('/user/list', {
+        params: { page, search }
+      });
       setUsers(response.data.users);
       setPagination({
         page: response.data.currentPage,
@@ -106,7 +123,7 @@ const RolesManager = () => {
   // Fetch roles for dropdown
   const fetchRolesDropdown = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/roles`);
+      const response = await api.get('/roles');
       setRolesDropdown(response.data);
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -117,17 +134,8 @@ const RolesManager = () => {
   const handleAssignRole = async (userId) => {
     try {
       const roleId = selectedRoleForUser[userId];
-      await axios.post(
-        `${API_BASE_URL}/user/role`,
-        { userId, roleId },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await api.post('/user/role', { userId, roleId });
       alert("Role Assigned!");
-      
       fetchUsers(pagination.page, searchQuery);
     } catch (error) {
       console.error("Error assigning role:", error);

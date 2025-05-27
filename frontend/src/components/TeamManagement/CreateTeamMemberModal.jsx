@@ -131,11 +131,15 @@ const CreateTeamMemberModal = ({ showModal, setShowModal, roles, onSubmit }) => 
                 }`}
               >
                 <option value="">Select a role</option>
-                {roles.map(role => (
-                  <option key={role._id} value={role._id}>
-                    {role.name}
-                  </option>
-                ))}
+                {Array.isArray(roles) && roles.length > 0 ? (
+                  roles.map(role => (
+                    <option key={role._id} value={role._id}>
+                      {role.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>No roles available</option>
+                )}
               </select>
               {errors.roleId && (
                 <p className="mt-1 text-sm text-red-500">{errors.roleId}</p>

@@ -124,12 +124,19 @@ export const getUserRoleAndPermissions = async (req, res) => {
 // Get available roles for assignment
 export const getAvailableRoles = async (req, res) => {
   try {
-    console.log('getAvailableRoles called');
-    const roles = await Role.find({}, '_id name level');
-    console.log('Roles found:', roles);
+    const roles = await Role.find({}, '_id name level').sort({ level: 1 });
+    if (!roles || roles.length === 0) {
+      return res.status(200).json({ 
+        roles: [],
+        message: 'No roles found'
+      });
+    }
     res.status(200).json({ roles });
   } catch (error) {
     console.error('Error in getAvailableRoles:', error);
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ 
+      error: 'Failed to fetch available roles',
+      details: error.message 
+    });
   }
 };
