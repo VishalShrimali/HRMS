@@ -16,6 +16,8 @@ import RolesManager from "./components/RolesManager/RolesManager";
 import EmailDesigner from "./pages/EmailDesigner";
 import CustomEmailEditor from "./pages/EmailEditor";
 import TeamManagement from './components/TeamManagement/TeamManagement';
+import UpcomingMeetings from "./components/Meetings/UpcomingMeetings";
+import MeetingsCalendar from "./components/Meetings/MeetingsCalendar";
 
 let token = localStorage.getItem("token");
 const Protected = ({ isAuthenticated, children }) => {
@@ -56,6 +58,8 @@ function App() {
           <Route path="/team" element={<TeamManagement />} />
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
+          <Route path="meetings" element={<Protected isAuthenticated={isAuthenticated}><UpcomingMeetings /></Protected>} />
+          <Route path="calendar" element={<Protected isAuthenticated={isAuthenticated}><MeetingsCalendar /></Protected>} />
         </Route>
         <Route path="auth">
           <Route path="register" element={<Register />} />

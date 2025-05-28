@@ -108,6 +108,40 @@ const AnnualReviewModal = ({
     }
   };
 
+  const handleDownloadICS = async (meetingId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/ics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        alert('Failed to download calendar file');
+        return;
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meeting-${meetingId}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to download calendar file');
+    }
+  };
+
+  function getGoogleCalendarUrl(meeting) {
+    const title = encodeURIComponent(`Meeting with ${meeting.lead?.firstName || ''} ${meeting.lead?.lastName || ''}`);
+    const description = encodeURIComponent(meeting.notes || '');
+    const start = new Date(meeting.dateTime);
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour meeting
+    const formatDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const dates = `${formatDate(start)}/${formatDate(end)}`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${description}`;
+  }
+
   if (!showModal) return null;
 
   return (
@@ -247,6 +281,20 @@ const AnnualReviewModal = ({
                     }`}>
                       {meeting.status}
                     </span>
+                    <button
+                      onClick={() => handleDownloadICS(meeting._id)}
+                      className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      Add to Calendar
+                    </button>
+                    <a
+                      href={getGoogleCalendarUrl(meeting)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
+                    >
+                      Add to Google Calendar
+                    </a>
                   </div>
                   {meeting.notes && (
                     <p className="mt-2 text-gray-600 text-sm">{meeting.notes}</p>

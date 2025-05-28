@@ -10,6 +10,7 @@ import {
   FaClipboardList,
   FaCog,
   FaTimes,
+  FaCalendarAlt,
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -152,6 +153,22 @@ const Sidebar = () => {
               text="Leads"
               isOpen={isOpen}
               isActive={isActive("/leads")}
+              isAdmin={isAdmin}
+            />
+            <SidebarItem
+              to="/meetings"
+              icon={<FaCalendarAlt size={18} />}
+              text="Meetings"
+              isOpen={isOpen}
+              isActive={isActive("/meetings")}
+              isAdmin={isAdmin}
+            />
+            <SidebarItem
+              to="/calendar"
+              icon={<FaCalendarAlt size={18} />}
+              text="Calendar"
+              isOpen={isOpen}
+              isActive={isActive("/calendar")}
               isAdmin={isAdmin}
             />
             <SidebarItem
