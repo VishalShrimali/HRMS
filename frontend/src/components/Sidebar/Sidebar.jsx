@@ -164,14 +164,6 @@ const Sidebar = () => {
               isAdmin={isAdmin}
             />
             <SidebarItem
-              to="/calendar"
-              icon={<FaCalendarAlt size={18} />}
-              text="Calendar"
-              isOpen={isOpen}
-              isActive={isActive("/calendar")}
-              isAdmin={isAdmin}
-            />
-            <SidebarItem
               to="/email/designer"
               icon={<FaEnvelope size={18} />}
               text="Email Editor"
@@ -195,6 +187,15 @@ const Sidebar = () => {
               text="Settings"
               isOpen={isOpen}
               isActive={isActive("/settings")}
+              isAdmin={isAdmin}
+            />
+
+            <SidebarItem
+              to="/calendar"
+              icon={<FaCalendarAlt size={18} />}
+              text="Calendar"
+              isOpen={isOpen}
+              isActive={isActive("/calendar")}
               isAdmin={isAdmin}
             />
 

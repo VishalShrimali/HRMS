@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Download, Clock, Plus } from 'lucide-react';
+import { X, Calendar, Download, Clock, Plus, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
+import { useNavigate } from 'react-router-dom';
 
 const AnnualReviewModal = ({
   showModal,
@@ -16,17 +17,26 @@ const AnnualReviewModal = ({
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [meetingNotes, setMeetingNotes] = useState('');
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const navigate = useNavigate();
 
   // Fetch meetings history
   useEffect(() => {
     const fetchMeetings = async () => {
       if (!lead?._id) return;
       try {
+        setLoading(true);
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setMeetings(response.data.meetings || []);
+        
+        // Sort meetings by date, most recent first
+        const sortedMeetings = (response.data.meetings || []).sort((a, b) => 
+          new Date(b.dateTime) - new Date(a.dateTime)
+        );
+        
+        setMeetings(sortedMeetings);
         setError(null);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to fetch meetings');
@@ -77,7 +87,7 @@ const AnnualReviewModal = ({
       const token = localStorage.getItem('token');
       const meetingDateTime = new Date(`${selectedDate}T${selectedTime}`);
       
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}/leads/${lead._id}/meetings`,
         {
           dateTime: meetingDateTime.toISOString(),
@@ -87,11 +97,8 @@ const AnnualReviewModal = ({
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Refresh meetings list
-      const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMeetings(response.data.meetings || []);
+      // Update meetings state with the new meeting
+      setMeetings(prevMeetings => [...prevMeetings, response.data.meeting]);
       
       // Reset form
       setSelectedDate('');
@@ -99,9 +106,12 @@ const AnnualReviewModal = ({
       setMeetingNotes('');
       setShowCalendar(false);
       
+      // Notify parent component to refresh upcoming meetings
       if (onMeetingScheduled) {
         onMeetingScheduled();
       }
+      
+      setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to schedule meeting');
       console.error('Error scheduling meeting:', err);
@@ -142,6 +152,67 @@ const AnnualReviewModal = ({
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${description}`;
   }
 
+  const handleAddEvent = async () => {
+    if (newEvent.title && newEvent.start && newEvent.end && lead._id) {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            dateTime: newEvent.start,
+            notes: newEvent.description,
+            type: 'custom', // or whatever type you want
+          }),
+        });
+        if (response.ok) {
+          await fetchMeetings(); // Refresh meetings from backend
+          // Notify parent component to refresh upcoming meetings
+          if (onMeetingScheduled) {
+            onMeetingScheduled();
+          }
+          setShowModal(false);
+        } else {
+          const error = await response.json();
+          setError(error.message || 'Failed to create meeting');
+        }
+      } catch (err) {
+        setError('Failed to create meeting');
+        console.error('Error creating meeting:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Example function to add a meeting
+  async function addMeeting({ dateTime, notes, type }) {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/v1/meetings/general', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ dateTime, notes, type }),
+    });
+    if (!response.ok) throw new Error('Failed to add meeting');
+    return await response.json();
+  }
+
+  async function fetchMeetings() {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/v1/meetings', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch meetings');
+    return (await response.json()).meetings;
+  }
+
   if (!showModal) return null;
 
   return (
@@ -178,7 +249,7 @@ const AnnualReviewModal = ({
         {/* Actions */}
         <div className="flex space-x-4 mb-6">
           <button
-            onClick={() => setShowCalendar(!showCalendar)}
+            onClick={() => navigate('/calendar', { state: { openAddModal: true, prefill: { lead } } })}
             className="flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             <Calendar className="mr-2" size={16} />
@@ -193,114 +264,87 @@ const AnnualReviewModal = ({
           </button>
         </div>
 
-        {/* Schedule Meeting Form */}
-        {showCalendar && (
-          <form onSubmit={handleScheduleMeeting} className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h6 className="font-medium text-gray-700 mb-4">Schedule New Meeting</h6>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Time
-                </label>
-                <input
-                  type="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Meeting Notes
-              </label>
-              <textarea
-                value={meetingNotes}
-                onChange={(e) => setMeetingNotes(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                rows="3"
-                placeholder="Add any notes about the meeting..."
-              />
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCalendar(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Schedule Meeting
-              </button>
-            </div>
-          </form>
-        )}
-
         {/* Meetings History */}
         <div>
-          <h6 className="font-medium text-gray-700 mb-4">Meeting History</h6>
+          <h6 className="font-semibold text-lg text-blue-700 mb-4 flex items-center gap-2">
+            <Calendar className="text-blue-400" size={20} />
+            Meeting History
+          </h6>
           {loading ? (
             <div className="text-center py-4 text-gray-500">Loading meetings...</div>
           ) : meetings.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No meetings scheduled yet</div>
+            <div className="text-center py-4 text-gray-400">
+              <Calendar className="mx-auto mb-2" size={32} />
+              No meetings scheduled yet
+            </div>
           ) : (
-            <div className="space-y-4">
-              {meetings.map((meeting) => (
-                <div
-                  key={meeting._id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="text-gray-400 mr-2" size={16} />
-                      <span className="font-medium">
+            <div className="flex flex-col gap-4">
+              {meetings.map((meeting) => {
+                // Color and icon based on status
+                let statusColor = "bg-yellow-100 text-yellow-800";
+                let borderColor = "border-yellow-300";
+                let statusIcon = <Clock className="text-yellow-500" size={16} />;
+                if (meeting.status === "completed") {
+                  statusColor = "bg-green-100 text-green-800";
+                  borderColor = "border-green-300";
+                  statusIcon = <CheckCircle className="text-green-500" size={16} />;
+                } else if (meeting.status === "cancelled") {
+                  statusColor = "bg-red-100 text-red-800";
+                  borderColor = "border-red-300";
+                  statusIcon = <X className="text-red-500" size={16} />;
+                }
+
+                return (
+                  <div
+                    key={meeting._id}
+                    className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border-l-4 ${borderColor} bg-white shadow`}
+                  >
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-gray-700 font-medium text-base">
+                        <Clock className="text-blue-400" size={18} />
                         {new Date(meeting.dateTime).toLocaleString()}
-                      </span>
+                        {meeting.type && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
+                            {meeting.type.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+                      {meeting.lead && (
+                        <div className="text-gray-500 text-xs flex items-center gap-1 mt-1">
+                          <span className="font-semibold">Lead:</span> {meeting.lead.firstName} {meeting.lead.lastName}
+                        </div>
+                      )}
+                      {meeting.notes && (
+                        <div className="text-gray-500 text-sm mt-1">
+                          {meeting.notes}
+                        </div>
+                      )}
                     </div>
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      meeting.status === 'completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {meeting.status}
-                    </span>
-                    <button
-                      onClick={() => handleDownloadICS(meeting._id)}
-                      className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    >
-                      Add to Calendar
-                    </button>
-                    <a
-                      href={getGoogleCalendarUrl(meeting)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
-                    >
-                      Add to Google Calendar
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+                        {statusIcon}
+                        {meeting.status}
+                      </span>
+                      <button
+                        onClick={() => handleDownloadICS(meeting._id)}
+                        className="ml-2 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center gap-1 transition"
+                      >
+                        <Download size={14} />
+                        ICS
+                      </button>
+                      <a
+                        href={getGoogleCalendarUrl(meeting)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium flex items-center gap-1 transition"
+                      >
+                        <Calendar size={14} />
+                        Google Calendar
+                      </a>
+                    </div>
                   </div>
-                  {meeting.notes && (
-                    <p className="mt-2 text-gray-600 text-sm">{meeting.notes}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

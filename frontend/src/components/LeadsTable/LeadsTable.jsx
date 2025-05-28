@@ -28,6 +28,7 @@ import GroupsControlsComponent from "../GroupsComponents/GroupsControlsComponent
 import axios from "axios";
 import { API_BASE_URL } from "../../api/BASEURL";
 import AnnualReviewModal from './AnnualReviewModal';
+import UpcomingMeetings from '../Meetings/UpcomingMeetings';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -1222,6 +1223,13 @@ const LeadsTable = () => {
     fetchLeads();
   };
 
+  // Handle meeting added
+  const handleMeetingAdded = (refreshMeetings) => {
+    if (refreshMeetings) {
+      refreshMeetings();
+    }
+  };
+
   // Fetch policies for this lead
   useEffect(() => {
     if (!selectedLeadForReview || !selectedLeadForReview._id) return;
@@ -1587,6 +1595,8 @@ const LeadsTable = () => {
           )}
         </div>
       </div>
+      {/* Add UpcomingMeetings component */}
+      <UpcomingMeetings onMeetingAdded={handleMeetingAdded} />
     </ErrorBoundary>
   );
 };

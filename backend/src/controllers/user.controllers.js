@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { sendResetLink } from "../utils/email.utils.js";
 import { encrypt } from "../../helper/helper.js";
 import mongoose from "mongoose";
+import { Role } from "../models/role.models.js";
 
 dotenv.config(); // Load environment variables
 
@@ -58,11 +59,26 @@ export const registerUser = async (req, res) => {
                 });
             }
             userData.role = adminRole._id;
+            // For first user, we'll set createdBy to their own ID after creation
+            userData.createdBy = null; // Temporarily set to null
+        } else {
+            // For subsequent users, set createdBy to the ID of the user creating them
+            // This assumes the creating user's ID is available in the request
+            if (!req.user) {
+                return res.status(401).json({ message: "Authentication required to create new users" });
+            }
+            userData.createdBy = req.user._id;
         }
 
         const user = await User.create(userData);
 
-        console.log("User registered successfully:", user); // Debugging log
+        // If this is the first user, update their createdBy field to their own ID
+        if (isFirstUser) {
+            user.createdBy = user._id;
+            await user.save();
+        }
+
+        console.log("User registered successfully:", user);
         res.status(201).json({ 
             message: "User registered successfully", 
             user,
@@ -359,4 +375,24 @@ export const setPassword = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Error setting password. Please try again." });
     }
+};
+
+export const getAvailableRoles = async (req, res) => {
+  try {
+    // Remove the projection and sort if you want all fields and all roles
+    const roles = await Role.find({});
+    if (!roles || roles.length === 0) {
+      return res.status(200).json({ 
+        roles: [],
+        message: 'No roles found'
+      });
+    }
+    res.status(200).json({ roles });
+  } catch (error) {
+    console.error('Error in getAvailableRoles:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch available roles',
+      details: error.message 
+    });
+  }
 };

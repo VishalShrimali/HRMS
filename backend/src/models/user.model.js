@@ -62,7 +62,10 @@ const userSchema = new mongoose.Schema(
         createdBy: { 
             type: mongoose.Schema.Types.ObjectId, 
             ref: "User",
-            required: true 
+            required: function() {
+                // Only require createdBy if this is not the first user
+                return this.model('User').countDocuments() > 0;
+            }
         },
         // Add fields for password setup invite
         passwordSetupToken: { type: String },
