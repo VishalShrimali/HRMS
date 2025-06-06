@@ -45,9 +45,10 @@ RoleSchema.methods.getAllPermissions = async function() {
 
 // Method to check if role can be assigned by another role
 RoleSchema.methods.canBeAssignedBy = function(assignerRole) {
+  // ADMIN (level 0) can assign any role
+  if (assignerRole.level === 0) return true;
   // System roles can only be assigned by Super Admin
   if (this.isSystem && assignerRole.level !== 0) return false;
-  
   // Can only assign roles of lower level
   return assignerRole.level < this.level;
 };

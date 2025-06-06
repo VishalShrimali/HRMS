@@ -7,6 +7,10 @@ import crypto from "crypto";
 // Create a new team member
 export const createTeamMember = async (req, res) => {
     try {
+        console.log("createTeamMember called");
+        console.log("Request body:", req.body);
+        console.log("Authenticated user:", req.user);
+
         const { firstName, lastName, email, roleId } = req.body;
         const creator = req.user;
 
@@ -22,7 +26,7 @@ export const createTeamMember = async (req, res) => {
         }
 
         // Check if creator can assign this role
-        if (!role.canBeAssignedBy(await Role.findById(creator.role))) {
+        if (!role.canBeAssignedBy(creator.role)) {
             throw new ApiError(403, "You don't have permission to assign this role");
         }
 
@@ -70,10 +74,8 @@ export const createTeamMember = async (req, res) => {
             user: userResponse
         });
     } catch (error) {
-        res.status(error.statusCode || 500).json({
-            success: false,
-            message: error.message
-        });
+        console.error("Error in createTeamMember:", error);
+        return res.status(500).json({ message: error.message });
     }
 };
 
@@ -249,4 +251,4 @@ export const getTeamHierarchy = async (req, res) => {
             message: error.message
         });
     }
-}; 
+};

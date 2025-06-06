@@ -13,7 +13,7 @@ export const registerUser = async (req, res) => {
     try {
         const { firstName, lastName, email, phone, password, country } = req.body;
 
-        console.log("Received registration data:", req.body); // Debugging log
+        console.log("Received registration data:", req.body);
 
         // Validate required fields
         if (!firstName || !lastName || !email || !phone || !password || !country) {
@@ -31,10 +31,10 @@ export const registerUser = async (req, res) => {
         const isFirstUser = userCount === 0;
 
         let fullName = `${firstName} ${lastName}`;
-        const joinDate = Date.now(); // Assign current timestamp as join date
-        const hashedPassword = bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
+        const joinDate = Date.now();
+        const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // Create user data
+        // Create user data (do not assign role for non-first users)
         const userData = {
             firstName,
             lastName,
@@ -46,30 +46,73 @@ export const registerUser = async (req, res) => {
             dates: { joinDate }
         };
 
-        // If this is the first user, make them an admin
         if (isFirstUser) {
+            // For first user, assign ADMIN role.
             const Role = mongoose.model("Role");
             let adminRole = await Role.findOne({ name: "ADMIN" });
-
             if (!adminRole) {
+                // Create ADMIN role if it doesn't exist and supply createdBy
                 adminRole = await Role.create({
                     name: "ADMIN",
-                    permissions: ["*****"]
+                    description: "System Administrator with full access",
+                    permissions: ["*****"],
+                    level: 0,
+                    isSystem: true,
+                    createdBy: new mongoose.Types.ObjectId() // temporary ObjectId
                 });
             }
             userData.role = adminRole._id;
+            userData.level = 0; // Super Admin
+            // Supply a temporary valid ObjectId for createdBy
+            userData.createdBy = new mongoose.Types.ObjectId();
+        } else {
+            // For subsequent registrations, assign a default "PENDING" role.
+            const Role = mongoose.model("Role");
+            let pendingRole = await Role.findOne({ name: "PENDING" });
+            if (!pendingRole) {
+                pendingRole = await Role.create({
+                    name: "PENDING",
+                    description: "Pending approval by admin",
+                    permissions: [],
+                    level: 99,
+                    isSystem: false,
+                    createdBy: new mongoose.Types.ObjectId() // temporary ObjectId
+                });
+            }
+            userData.role = pendingRole._id;
+            userData.level = 99; // Adjust level as needed
+            userData.createdBy = req.user ? req.user._id : new mongoose.Types.ObjectId();
         }
 
         const user = await User.create(userData);
 
-        console.log("User registered successfully:", user); // Debugging log
-        res.status(201).json({ 
-            message: "User registered successfully", 
-            user,
+        // For self-registrations, update the createdBy to user's own _id after creation
+        if (!req.user) {
+            user.createdBy = user._id;
+            await user.save();
+        }
+
+        // Generate token for immediate login (if role has been assigned)
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: "1d" }
+        );
+
+        console.log("User registered successfully:", user);
+        res.status(201).json({
+            message: "User registered successfully. An admin will assign you a role shortly.",
+            token,
+            user: {
+                fullName: user.fullName,
+                email: user.email,
+                role: user.role,
+                level: user.level
+            },
             isAdmin: isFirstUser
         });
     } catch (error) {
-        console.error("Error during registration:", error.message); // Debugging log
+        console.error("Error during registration:", error.message);
         res.status(400).json({ message: error.message });
     }
 };

@@ -16,6 +16,7 @@ import leadsRouter from "./src/routes/leads.routes.js";
 import groupRouter from "./src/routes/leadsGroup.routes.js";
 import meetingsRouter from "./src/routes/meetings.routes.js";
 import policiesRouter from "./src/routes/policies.routes.js";
+import { teamRouter } from "./src/routes/team.routes.js";
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use("/api/v1/leads", leadsRouter);
 app.use("/api/v1/groups", groupRouter);
 app.use("/api/v1", meetingsRouter);
 app.use("/api/v1", policiesRouter);
+app.use("/api/v1/team", teamRouter);
 
 // ✅ Serve React static files
 app.use(express.static(path.join(__dirname, "public")));
@@ -60,10 +62,20 @@ app.get("*", (req, res) => {
 });
 
 // Handle Non-Existent API Routes (this will only catch API paths)
-app.use((req, res) => {
+app.use((req, res, next) => {
   res.status(404).json({
     message: "Route not found",
     requestedRoute: `${req.method} ${req.originalUrl}`,
+  });
+});
+
+// Error handling middleware (from server.js)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
