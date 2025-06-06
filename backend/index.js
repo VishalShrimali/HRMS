@@ -7,7 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { connectionDB } from "./src/utils/database.utils.js";
-import { userRouter } from "./src/routes/user.routes.js";
+import  userRouter  from "./src/routes/user.routes.js";
 import { sendGreetings } from "./src/utils/Greetings.utils.js";
 import roleRouter from "./src/routes/role.routes.js";
 import emailRoutes from "./src/routes/email.routes.js";

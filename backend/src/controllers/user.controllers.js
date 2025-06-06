@@ -14,7 +14,7 @@ export const registerUser = async (req, res) => {
     try {
         const { firstName, lastName, email, phone, password, country } = req.body;
 
-        console.log("Received registration data:", req.body); // Debugging log
+        console.log("Received registration data:", req.body);
 
         // Validate required fields
         if (!firstName || !lastName || !email || !phone || !password || !country) {
@@ -32,8 +32,8 @@ export const registerUser = async (req, res) => {
         const isFirstUser = userCount === 0;
 
         let fullName = `${firstName} ${lastName}`;
-        const joinDate = Date.now(); // Assign current timestamp as join date
-        const hashedPassword = bcrypt.hashSync(password, 10); // Hash the password with salt rounds = 10
+        const joinDate = Date.now();
+        const hashedPassword = bcrypt.hashSync(password, 10);
 
         // Create user data
         const userData = {
@@ -59,33 +59,61 @@ export const registerUser = async (req, res) => {
                 });
             }
             userData.role = adminRole._id;
-            // For first user, we'll set createdBy to their own ID after creation
-            userData.createdBy = null; // Temporarily set to null
+            userData.createdBy = null; // Will be updated after creation
         } else {
-            // For subsequent users, set createdBy to the ID of the user creating them
-            // This assumes the creating user's ID is available in the request
-            if (!req.user) {
-                return res.status(401).json({ message: "Authentication required to create new users" });
+            // For subsequent users, check if the request is authenticated
+            if (req.headers.authorization) {
+                try {
+                    const token = req.headers.authorization.split(" ")[1];
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+                    const creator = await User.findById(decoded.id).populate("role");
+                    
+                    if (!creator || !["ADMIN", "Super Admin"].includes(creator.role.name)) {
+                        return res.status(403).json({ 
+                            message: "Only administrators can create new users" 
+                        });
+                    }
+                    userData.createdBy = creator._id;
+                } catch (error) {
+                    return res.status(401).json({ 
+                        message: "Invalid authentication token" 
+                    });
+                }
+            } else {
+                return res.status(401).json({ 
+                    message: "Authentication required to create new users" 
+                });
             }
-            userData.createdBy = req.user._id;
         }
 
         const user = await User.create(userData);
 
-        // If this is the first user, update their createdBy field to their own ID
+        // If this is the first user, update their createdBy field
         if (isFirstUser) {
             user.createdBy = user._id;
             await user.save();
         }
 
+        // Generate token for the new user
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: "1d" }
+        );
+
         console.log("User registered successfully:", user);
         res.status(201).json({ 
             message: "User registered successfully", 
-            user,
-            isAdmin: isFirstUser
+            token,
+            user: {
+                fullName: user.fullName,
+                email: user.email,
+                role: user.role,
+                isAdmin: isFirstUser
+            }
         });
     } catch (error) {
-        console.error("Error during registration:", error.message); // Debugging log
+        console.error("Error during registration:", error.message);
         res.status(400).json({ message: error.message });
     }
 };
