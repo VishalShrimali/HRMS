@@ -384,11 +384,18 @@ export const getUsersWithPagination = async (req, res) => {
 export const setPassword = async (req, res) => {
     try {
         const { token, password } = req.body;
+        console.log("Set password request received. Token length:", token?.length, "Password length:", password?.length);
+
         if (!token || !password) {
+            console.log("Missing token or password.");
             return res.status(400).json({ message: "Token and password are required." });
         }
         const user = await User.findOne({ passwordSetupToken: token });
+        console.log("User found with token:", !!user);
+
         if (!user || !user.passwordSetupExpires || user.passwordSetupExpires < new Date()) {
+            console.log("Invalid or expired token detected.");
+            console.log("User exists:", !!user, "passwordSetupExpires exists:", !!user?.passwordSetupExpires, "Expired:", user?.passwordSetupExpires < new Date());
             return res.status(400).json({ message: "Invalid or expired token." });
         }
         // Hash the password

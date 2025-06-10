@@ -40,7 +40,7 @@ export const createTeamMember = async (req, res) => {
             lastName,
             fullName: `${firstName} ${lastName}`,
             email,
-            password: 'TEMP', // Placeholder, will be set on password setup
+            password: 'TEMP_PASSWORD_123', // Changed from 'TEMP' to meet minimum length requirement
             role: roleId,
             parent: creator._id,
             level: role.level,
