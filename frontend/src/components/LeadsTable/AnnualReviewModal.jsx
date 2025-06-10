@@ -309,4 +309,4 @@ const AnnualReviewModal = ({
   );
 };
 
-export default AnnualReviewModal; 
+export default AnnualReviewModal;

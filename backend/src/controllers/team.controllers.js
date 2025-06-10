@@ -14,8 +14,12 @@ export const createTeamMember = async (req, res) => {
         const { firstName, lastName, email, roleId } = req.body;
         const creator = req.user;
 
+        console.log("Creator's role in createTeamMember:", creator.role);
         // Validate creator's permissions
-        if (!await creator.canManageUser({ _id: null })) {
+        const creatorPermissions = await creator.getAllPermissions();
+        console.log("Creator's permissions in createTeamMember:", creatorPermissions);
+
+        if (!creatorPermissions.includes("create_team_member")) {
             throw new ApiError(403, "You don't have permission to create team members");
         }
 
