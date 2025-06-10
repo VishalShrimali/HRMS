@@ -115,7 +115,7 @@ export const TeamApi = {
   // Set password for invited user
   setPassword: async (token, password) => {
     try {
-      const response = await api.post('/users/set-password', { token, password });
+      const response = await api.post('/user/set-password', { token, password });
       return response.data;
     } catch (error) {
       console.error('Error setting password:', error);

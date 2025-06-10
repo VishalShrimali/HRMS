@@ -133,7 +133,7 @@ const EmailDesigner = () => {
             <select
               value={selectedUserId}
               onChange={e => setSelectedUserId(e.target.value)}
-              className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Users</option>
               {users.map(user => (
@@ -155,7 +155,7 @@ const EmailDesigner = () => {
             placeholder="Search emails..."
             value={search}
             onChange={handleSearchChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {loading && (
             <div className="absolute right-3 top-2.5">
@@ -284,28 +284,28 @@ const EmailDesigner = () => {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title className="text-lg font-medium text-gray-900">
+                  <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
                     {editingEmail ? "Edit Email" : "Add New Email"}
                   </Dialog.Title>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700">
+                  <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Title
                     </label>
                     <input
                       type="text"
-                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={newEmail.title}
                       onChange={(e) =>
                         setNewEmail({ ...newEmail, title: e.target.value })
                       }
                     />
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700">
+                  <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Description
                     </label>
                     <textarea
-                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows="4"
                       value={newEmail.description}
                       onChange={(e) =>
@@ -317,14 +317,14 @@ const EmailDesigner = () => {
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
-                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                      className="bg-gray-100 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                       onClick={handleCloseModal}
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       onClick={handleCreate}
                     >
                       {editingEmail ? "Update" : "Add"}

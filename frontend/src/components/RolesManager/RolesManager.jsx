@@ -159,7 +159,7 @@ const RolesManager = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchUsers(1, searchQuery)}
-            className="p-2 border border-gray-300 rounded-md mb-4 w-full"
+            className="p-2 border border-gray-300 rounded-md mb-4 w-full bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <ul className="list-disc pl-5">
             {users.map((user) => (
@@ -173,7 +173,7 @@ const RolesManager = () => {
                       [user._id]: e.target.value,
                     })
                   }
-                  className="p-2 border border-gray-300 rounded-md"
+                  className="p-2 border border-gray-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="" disabled>
                     Select Role
@@ -233,7 +233,7 @@ const RolesManager = () => {
                 onChange={(e) =>
                   setNewRole({ ...newRole, name: e.target.value })
                 }
-                className="p-2 border border-gray-300 rounded-md"
+                className="p-2 border border-gray-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"
@@ -245,7 +245,7 @@ const RolesManager = () => {
                     permissions: e.target.value.split(","),
                   })
                 }
-                className="p-2 border border-gray-300 rounded-md"
+                className="p-2 border border-gray-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={handleAddRole}
@@ -296,7 +296,7 @@ const RolesManager = () => {
                   placeholder="Add Permissions (comma-separated)"
                   value={newPermissions}
                   onChange={(e) => setNewPermissions(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-md"
+                  className="p-2 border border-gray-300 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   onClick={handleAddPermissions}
