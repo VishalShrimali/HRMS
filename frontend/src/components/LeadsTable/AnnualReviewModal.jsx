@@ -57,8 +57,53 @@ const AnnualReviewModal = ({ lead, onClose, onMeetingScheduled }) => {
     setDownloadError(null);
     try {
       const token = localStorage.getItem('token');
+<<<<<<< HEAD
       if (!token) {
         setDownloadError('Authentication token missing. Please log in.');
+=======
+      const meetingDateTime = new Date(`${selectedDate}T${selectedTime}`);
+      
+      await axios.post(
+        `${API_BASE_URL}/leads/${lead._id}/meetings`,
+        {
+          dateTime: meetingDateTime.toISOString(),
+          notes: meetingNotes,
+          type: 'annual_review'
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Refresh meetings list
+      const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMeetings(response.data.meetings || []);
+      
+      // Reset form
+      setSelectedDate('');
+      setSelectedTime('');
+      setMeetingNotes('');
+      setShowCalendar(false);
+      
+      if (onMeetingScheduled) {
+        onMeetingScheduled();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to schedule meeting');
+      console.error('Error scheduling meeting:', err);
+      console.error('Full error object:', err);
+    }
+  };
+
+  const handleDownloadICS = async (meetingId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/ics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        alert('Failed to download calendar file');
+>>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
         return;
       }
 

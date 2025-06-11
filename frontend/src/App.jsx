@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
+=======
+import React, { Component, useState, useEffect } from "react";
+>>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
 import {
   BrowserRouter as Router,
   Routes,
@@ -30,12 +34,20 @@ const Protected = ({ children }) => {
 };
 
 function App() {
+<<<<<<< HEAD
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
   }, []);
+=======
+  console.log(token);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
+  const [refreshMeetingsFlag, setRefreshMeetingsFlag] = useState(false);
+>>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
 
   return (
     <Router>
@@ -52,8 +64,13 @@ function App() {
           <Route
             path="leads"
             element={
+<<<<<<< HEAD
               <Protected>
                 <LeadTable />
+=======
+              <Protected isAuthenticated={isAuthenticated}>
+                <LeadTable setRefreshMeetingsFlag={setRefreshMeetingsFlag} />
+>>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
               </Protected>
             }
           />
@@ -84,6 +101,7 @@ function App() {
               } 
             />
           </Route>
+<<<<<<< HEAD
           <Route 
             path="/team" 
             element={
@@ -134,6 +152,13 @@ function App() {
               </Protected>
             } 
           />
+=======
+          <Route path="/team" element={<TeamManagement />} />
+          <Route path="employees" element={<div>Employees Page</div>} />
+          <Route path="settings" element={<div>Settings Page</div>} />
+          <Route path="meetings" element={<Protected isAuthenticated={isAuthenticated}><UpcomingMeetings refreshMeetingsFlag={refreshMeetingsFlag} /></Protected>} />
+          <Route path="calendar" element={<Protected isAuthenticated={isAuthenticated}><MeetingsCalendar /></Protected>} />
+>>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
         </Route>
         <Route path="auth">
           <Route path="register" element={<Register />} />

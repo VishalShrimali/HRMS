@@ -11,6 +11,7 @@ import {
     deleteLead,
     exportLeads,
     importLeads,
+    generateAnnualReviewPdf,
 } from '../controllers/leads.controllers.js';
 import { protect } from '../middleware/auth.middlware.js';
 
@@ -27,6 +28,7 @@ leadsRouter.post('/importleads', importLeads); // Import leads (static route)
 leadsRouter.get('/', protect, getLeads); // Get all leads
 
 leadsRouter.get('/:id', protect, getLeadById); // Get a single lead by ID
+leadsRouter.get('/:id/annual-review', protect, generateAnnualReviewPdf); // New route for annual review PDF
 
 leadsRouter.post('/', protect, createLead); // Create a new lead
 leadsRouter.put('/:id', protect, updateLead); // Update a lead by ID

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
 import { useNavigate } from 'react-router-dom';
 
-const UpcomingMeetings = () => {
+const UpcomingMeetings = ({ refreshMeetingsFlag }) => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,7 +11,7 @@ const UpcomingMeetings = () => {
 
   useEffect(() => {
     fetchMeetings();
-  }, []);
+  }, [refreshMeetingsFlag]);
 
   const fetchMeetings = async () => {
     try {
