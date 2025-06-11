@@ -241,7 +241,7 @@ const AddSelectedLeadsToGroupModal = ({
   );
 };
 
-const LeadsTable = () => {
+const LeadsTable = ({ setRefreshMeetingsFlag }) => {
   const [showActionBar, setShowActionBar] = useState(false);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1212,14 +1212,18 @@ const LeadsTable = () => {
 
   // Handle annual review
   const handleAnnualReview = (lead) => {
-    setSelectedLeadForReview(lead);
     setShowAnnualReviewModal(true);
+    setSelectedLeadForReview(lead);
   };
 
   // Handle meeting scheduled
   const handleMeetingScheduled = () => {
-    // Refresh leads data if needed
-    fetchLeads();
+    if (setRefreshMeetingsFlag) {
+      setRefreshMeetingsFlag(prev => !prev);
+    }
+    // Optionally, also refresh the current lead's meetings in this modal
+    // This might be redundant if AnnualReviewModal already refetches its own meetings
+    // but ensures consistency.
   };
 
   // Fetch policies for this lead

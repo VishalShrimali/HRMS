@@ -105,6 +105,7 @@ const AnnualReviewModal = ({
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to schedule meeting');
       console.error('Error scheduling meeting:', err);
+      console.error('Full error object:', err);
     }
   };
 

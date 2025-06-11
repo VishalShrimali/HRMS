@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
 
-const UpcomingMeetings = () => {
+const UpcomingMeetings = ({ refreshMeetingsFlag }) => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,7 +23,7 @@ const UpcomingMeetings = () => {
       }
     };
     fetchMeetings();
-  }, []);
+  }, [refreshMeetingsFlag]);
 
   const handleDownloadICS = async (meetingId) => {
     try {

@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { Component, useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -30,6 +30,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("token")
   );
+  const [refreshMeetingsFlag, setRefreshMeetingsFlag] = useState(false);
 
   return (
     <Router>
@@ -47,7 +48,7 @@ function App() {
             path="leads"
             element={
               <Protected isAuthenticated={isAuthenticated}>
-                <LeadTable />
+                <LeadTable setRefreshMeetingsFlag={setRefreshMeetingsFlag} />
               </Protected>
             }
           />
@@ -59,7 +60,7 @@ function App() {
           <Route path="/team" element={<TeamManagement />} />
           <Route path="employees" element={<div>Employees Page</div>} />
           <Route path="settings" element={<div>Settings Page</div>} />
-          <Route path="meetings" element={<Protected isAuthenticated={isAuthenticated}><UpcomingMeetings /></Protected>} />
+          <Route path="meetings" element={<Protected isAuthenticated={isAuthenticated}><UpcomingMeetings refreshMeetingsFlag={refreshMeetingsFlag} /></Protected>} />
           <Route path="calendar" element={<Protected isAuthenticated={isAuthenticated}><MeetingsCalendar /></Protected>} />
         </Route>
         <Route path="auth">
