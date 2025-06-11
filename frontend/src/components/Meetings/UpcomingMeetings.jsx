@@ -1,29 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
+import { useNavigate } from 'react-router-dom';
 
 const UpcomingMeetings = () => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMeetings = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/meetings/all`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMeetings(response.data.meetings || []);
-        setError(null);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch meetings');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchMeetings();
   }, []);
+
+  const fetchMeetings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/meetings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMeetings(response.data.meetings || []);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch meetings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (meetingId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_BASE_URL}/meetings/${meetingId}`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchMeetings(); // Refresh the meetings list
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update meeting status');
+    }
+  };
+
+  const handleDelete = async (meetingId) => {
+    if (!window.confirm('Are you sure you want to delete this meeting?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/meetings/${meetingId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchMeetings(); // Refresh the meetings list
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete meeting');
+    }
+  };
 
   const handleDownloadICS = async (meetingId) => {
     try {
@@ -59,52 +92,124 @@ const UpcomingMeetings = () => {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${description}`;
   }
 
+  if (loading) {
+    return <div className="text-center py-4">Loading meetings...</div>;
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">Upcoming Meetings</h2>
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>}
-      {loading ? (
-        <div className="text-center py-4 text-gray-500">Loading meetings...</div>
-      ) : meetings.length === 0 ? (
-        <div className="text-center py-4 text-gray-500">No meetings scheduled yet</div>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Upcoming Meetings</h2>
+        
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {meetings.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          No meetings scheduled yet
+        </div>
       ) : (
-        <table className="min-w-full bg-white border rounded-lg">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Date & Time</th>
-              <th className="py-2 px-4 border-b">Lead</th>
-              <th className="py-2 px-4 border-b">Notes</th>
-              <th className="py-2 px-4 border-b">Status</th>
-              <th className="py-2 px-4 border-b">Calendar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {meetings.map(meeting => (
-              <tr key={meeting._id}>
-                <td className="py-2 px-4 border-b">{new Date(meeting.dateTime).toLocaleString()}</td>
-                <td className="py-2 px-4 border-b">{meeting.lead?.firstName} {meeting.lead?.lastName}</td>
-                <td className="py-2 px-4 border-b">{meeting.notes}</td>
-                <td className="py-2 px-4 border-b">{meeting.status}</td>
-                <td className="py-2 px-4 border-b">
+        <div className="grid gap-4">
+          {meetings.map((meeting) => (
+            <div
+              key={meeting._id}
+              className="bg-white rounded-lg shadow p-6"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">{meeting.title}</h3>
+                  <p className="text-gray-600 mt-1">
+                    {new Date(meeting.dateTime).toLocaleString()}
+                  </p>
+                  {meeting.location && (
+                    <p className="text-gray-600 mt-1">
+                      Location: {meeting.location}
+                    </p>
+                  )}
+                  {meeting.notes && (
+                    <p className="text-gray-600 mt-2">{meeting.notes}</p>
+                  )}
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Duration: {meeting.duration} minutes
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Type: {meeting.type}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <select
+                    value={meeting.status}
+                    onChange={(e) => handleStatusChange(meeting._id, e.target.value)}
+                    className="px-2 py-1 border rounded"
+                  >
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                   <button
-                    onClick={() => handleDownloadICS(meeting._id)}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    onClick={() => handleDelete(meeting._id)}
+                    className="px-2 py-1 text-red-500 hover:text-red-600"
                   >
-                    Add to Calendar
+                    Delete
                   </button>
-                  <a
-                    href={getGoogleCalendarUrl(meeting)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
-                  >
-                    Add to Google Calendar
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+
+              {meeting.attendees && meeting.attendees.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Attendees
+                  </h4>
+                  <div className="space-y-1">
+                    {meeting.attendees.map((attendee, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span>
+                          {attendee.name} ({attendee.email})
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          attendee.response === 'accepted'
+                            ? 'bg-green-100 text-green-800'
+                            : attendee.response === 'declined'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {attendee.response}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4">
+                <button
+                  onClick={() => handleDownloadICS(meeting._id)}
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Add to Calendar
+                </button>
+                <a
+                  href={getGoogleCalendarUrl(meeting)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
+                >
+                  Add to Google Calendar
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

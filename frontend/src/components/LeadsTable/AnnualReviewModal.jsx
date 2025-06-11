@@ -1,311 +1,234 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Download, Clock, Plus } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
+import { X, FileText, CalendarPlus, History } from 'lucide-react';
+import ScheduleMeeting from '../Meetings/ScheduleMeeting';
 
-const AnnualReviewModal = ({
-  showModal,
-  setShowModal,
-  lead,
-  onMeetingScheduled,
-}) => {
-  const [meetings, setMeetings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [meetingNotes, setMeetingNotes] = useState('');
+const AnnualReviewModal = ({ lead, onClose, onMeetingScheduled }) => {
+  const [meetingHistory, setMeetingHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
+  const [downloadError, setDownloadError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Fetch meetings history
   useEffect(() => {
-    const fetchMeetings = async () => {
-      if (!lead?._id) return;
+    const fetchMeetingHistory = async () => {
+      if (!lead || !lead._id) {
+        setHistoryError('Lead information is missing.');
+        setLoadingHistory(false);
+        return;
+      }
+
+      setLoadingHistory(true);
+      setHistoryError(null);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
-          headers: { Authorization: `Bearer ${token}` }
+        if (!token) {
+          setHistoryError('Authentication token missing. Please log in.');
+          setLoadingHistory(false);
+          return;
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/meetings/lead/${lead._id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
-        setMeetings(response.data.meetings || []);
-        setError(null);
+        setMeetingHistory(response.data.meetings || []);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch meetings');
-        console.error('Error fetching meetings:', err);
+        console.error('Error fetching meeting history:', err);
+        setHistoryError(err.response?.data?.message || 'Failed to fetch meeting history.');
       } finally {
-        setLoading(false);
+        setLoadingHistory(false);
       }
     };
 
-    if (showModal) {
-      fetchMeetings();
-    }
-  }, [lead?._id, showModal]);
+    fetchMeetingHistory();
+  }, [lead]);
 
-  // Handle PDF download
-  const handleDownloadPDF = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/annual-review`, {
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `annual-review-${lead.firstName}-${lead.lastName}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to download PDF');
-      console.error('Error downloading PDF:', err);
-    }
-  };
-
-  // Handle schedule meeting
-  const handleScheduleMeeting = async (e) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTime) {
-      setError('Please select both date and time');
+  const handleDownloadAnnualReview = async () => {
+    if (!lead || !lead._id) {
+      setDownloadError('Lead information is missing. Cannot download annual review.');
       return;
     }
 
+    setIsDownloading(true);
+    setDownloadError(null);
     try {
       const token = localStorage.getItem('token');
-      const meetingDateTime = new Date(`${selectedDate}T${selectedTime}`);
-      
-      await axios.post(
-        `${API_BASE_URL}/leads/${lead._id}/meetings`,
-        {
-          dateTime: meetingDateTime.toISOString(),
-          notes: meetingNotes,
-          type: 'annual_review'
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Refresh meetings list
-      const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/meetings`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMeetings(response.data.meetings || []);
-      
-      // Reset form
-      setSelectedDate('');
-      setSelectedTime('');
-      setMeetingNotes('');
-      setShowCalendar(false);
-      
-      if (onMeetingScheduled) {
-        onMeetingScheduled();
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to schedule meeting');
-      console.error('Error scheduling meeting:', err);
-    }
-  };
-
-  const handleDownloadICS = async (meetingId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/ics`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        alert('Failed to download calendar file');
+      if (!token) {
+        setDownloadError('Authentication token missing. Please log in.');
         return;
       }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `meeting-${meetingId}.ics`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+
+      const response = await axios.get(`${API_BASE_URL}/leads/${lead._id}/annual-review-pdf`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'blob',
+      });
+
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.setAttribute('download', `Annual_Review_${lead.firstName}_${lead.lastName}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(fileURL);
+
     } catch (err) {
-      alert('Failed to download calendar file');
+      console.error('Error downloading annual review:', err);
+      setDownloadError(err.response?.data?.message || 'Failed to download annual review. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  function getGoogleCalendarUrl(meeting) {
-    const title = encodeURIComponent(`Meeting with ${meeting.lead?.firstName || ''} ${meeting.lead?.lastName || ''}`);
-    const description = encodeURIComponent(meeting.notes || '');
-    const start = new Date(meeting.dateTime);
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour meeting
-    const formatDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const dates = `${formatDate(start)}/${formatDate(end)}`;
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${description}`;
-  }
+  const handleScheduleButtonClick = () => {
+    if (!lead || !lead._id) {
+      setDownloadError('Lead information is missing. Cannot schedule meeting.');
+      return;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setDownloadError('You are not authenticated. Please log in again.');
+      return;
+    }
+    setShowScheduleModal(true);
+  };
 
-  if (!showModal) return null;
+  const handleMeetingScheduled = () => {
+    setShowScheduleModal(false);
+    if (onMeetingScheduled) {
+      onMeetingScheduled();
+    }
+    // Re-fetch meeting history after a new meeting is scheduled
+    const fetchMeetingHistory = async () => {
+      if (!lead || !lead._id) return;
+      setLoadingHistory(true);
+      setHistoryError(null);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await axios.get(`${API_BASE_URL}/meetings/lead/${lead._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMeetingHistory(response.data.meetings || []);
+      } catch (err) {
+        console.error('Error re-fetching meeting history:', err);
+        setHistoryError(err.response?.data?.message || 'Failed to re-fetch meeting history.');
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    fetchMeetingHistory();
+  };
+
+  if (!lead) return null;
 
   return (
-    <dialog
-      open={showModal}
-      className="fixed w-full m-0 h-[100vh] inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div className="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <div>
-            <h5 className="text-xl font-semibold text-gray-800">
-              Annual Review - {lead?.firstName} {lead?.lastName}
-            </h5>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage meetings and download annual review report
-            </p>
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-xl p-4 w-full max-w-md transform transition-all duration-300 scale-100 opacity-100 ring-1 ring-gray-100">
+        <div className="flex justify-between items-center pb-2 mb-3 border-b border-gray-200">
+          <h2 className="text-xl font-extrabold text-gray-900">Annual Review</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <X size={20} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {/* Lead Information Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-3 rounded-lg shadow-lg flex items-center justify-between">
+            <h3 className="text-base font-semibold">
+              Review for {lead.firstName} {lead.lastName}
+            </h3>
+            <span className="text-xs opacity-80">ID: {lead._id.substring(0, 8)}...</span>
           </div>
-          <button
-            className="text-gray-500 hover:text-gray-700"
-            onClick={() => setShowModal(false)}
-          >
-            <X size={20} />
-          </button>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
-            {error}
+          {/* Annual Review Document Section */}
+          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-xl border border-blue-200 shadow-md flex flex-col items-center text-center overflow-hidden transform transition-all duration-300 hover:scale-[1.01] hover:shadow-lg">
+            <div className="absolute inset-0 bg-pattern-dots opacity-10"></div> {/* Subtle background pattern */}
+            <FileText size={28} className="text-blue-600 mb-2 animate-fade-in" />
+            <h3 className="text-base font-extrabold text-gray-900 mb-1">Annual Review Document</h3>
+            <p className="text-gray-700 mb-3 text-xs max-w-prose leading-relaxed">Generate and download the annual review document for <span className="font-semibold text-blue-700">{lead.firstName} {lead.lastName}</span>.</p>
+            {downloadError && <p className="text-red-500 text-xs mb-2">Error: {downloadError}</p>}
+            <button
+              onClick={handleDownloadAnnualReview}
+              className="relative w-full max-w-[180px] px-3 py-1.5 bg-blue-700 text-white rounded-full hover:bg-blue-800 transition-all duration-300 font-bold text-sm flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-95 transform"
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <span className="flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Downloading...
+                </span>
+              ) : (
+                <><FileText size={14} /> Download PDF</>
+              )}
+            </button>
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex space-x-4 mb-6">
-          <button
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            <Calendar className="mr-2" size={16} />
-            Schedule Meeting
-          </button>
-          <button
-            onClick={handleDownloadPDF}
-            className="flex items-center px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            <Download className="mr-2" size={16} />
-            Download Annual Review
-          </button>
+          {/* Meeting History Section */}
+          <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <History size={28} className="text-gray-600" />
+              <h3 className="text-base font-bold text-gray-800">Meeting History</h3>
+            </div>
+            {loadingHistory ? (
+              <div className="text-center py-3 text-gray-500 flex flex-col items-center">
+                <div className="animate-spin text-xl mb-1">⟳</div>
+                <p className="text-xs">Loading meeting history...</p>
+              </div>
+            ) : historyError ? (
+              <div className="text-center py-3 text-red-500 text-xs">
+                <p className="font-medium">Error: {historyError}</p>
+              </div>
+            ) : meetingHistory.length > 0 ? (
+              <ul className="space-y-2">
+                {meetingHistory.map(meeting => (
+                  <li key={meeting._id} className="p-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 text-xs shadow-sm hover:shadow-md transition-shadow">
+                    <p className="font-medium text-sm mb-0.5">{meeting.title || 'Untitled Meeting'}</p>
+                    <p className="text-gray-600 text-xs">Date: {new Date(meeting.dateTime).toLocaleDateString()}</p>
+                    <p className="text-gray-600 text-xs">Time: {new Date(meeting.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    {meeting.notes && <p className="text-gray-700 mt-1 italic break-words">Notes: {meeting.notes}</p>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-600 text-center py-3 text-xs">No previous meetings found for this lead.</p>
+            )}
+          </div>
+
+          {/* Schedule New Meeting Button */}
+          <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-md flex flex-col items-center text-center">
+            <CalendarPlus size={28} className="text-green-500 mb-2" />
+            <h3 className="text-base font-bold text-gray-800 mb-1">Schedule New Meeting</h3>
+            <p className="text-gray-600 mb-3 text-xs">Arrange a new meeting with <span className="font-semibold text-green-700">{lead.firstName} {lead.lastName}</span>.</p>
+            <button
+              onClick={handleScheduleButtonClick}
+              className="w-full max-w-[180px] px-3 py-1.5 bg-green-700 text-white rounded-xl hover:bg-green-600 transition-colors duration-200 font-semibold text-sm flex items-center justify-center gap-1 shadow-sm hover:shadow-md"
+            >
+              <CalendarPlus size={14} /> Schedule Meeting
+            </button>
+          </div>
         </div>
 
-        {/* Schedule Meeting Form */}
-        {showCalendar && (
-          <form onSubmit={handleScheduleMeeting} className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h6 className="font-medium text-gray-700 mb-4">Schedule New Meeting</h6>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Time
-                </label>
-                <input
-                  type="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Meeting Notes
-              </label>
-              <textarea
-                value={meetingNotes}
-                onChange={(e) => setMeetingNotes(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                rows="3"
-                placeholder="Add any notes about the meeting..."
-              />
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCalendar(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Schedule Meeting
-              </button>
-            </div>
-          </form>
+        {showScheduleModal && (
+          <ScheduleMeeting
+            lead={lead}
+            meetingType="annual_review"
+            onClose={() => setShowScheduleModal(false)}
+            onMeetingScheduled={handleMeetingScheduled}
+          />
         )}
-
-        {/* Meetings History */}
-        <div>
-          <h6 className="font-medium text-gray-700 mb-4">Meeting History</h6>
-          {loading ? (
-            <div className="text-center py-4 text-gray-500">Loading meetings...</div>
-          ) : meetings.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No meetings scheduled yet</div>
-          ) : (
-            <div className="space-y-4">
-              {meetings.map((meeting) => (
-                <div
-                  key={meeting._id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="text-gray-400 mr-2" size={16} />
-                      <span className="font-medium">
-                        {new Date(meeting.dateTime).toLocaleString()}
-                      </span>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      meeting.status === 'completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {meeting.status}
-                    </span>
-                    <button
-                      onClick={() => handleDownloadICS(meeting._id)}
-                      className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    >
-                      Add to Calendar
-                    </button>
-                    <a
-                      href={getGoogleCalendarUrl(meeting)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
-                    >
-                      Add to Google Calendar
-                    </a>
-                  </div>
-                  {meeting.notes && (
-                    <p className="mt-2 text-gray-600 text-sm">{meeting.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
-    </dialog>
+    </div>
   );
 };
 

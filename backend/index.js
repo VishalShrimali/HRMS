@@ -7,7 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { connectionDB } from "./src/utils/database.utils.js";
-import { userRouter } from "./src/routes/user.routes.js";
+//import userRouter from "./src/routes/user.routes.js";
 import { sendGreetings } from "./src/utils/Greetings.utils.js";
 import roleRouter from "./src/routes/role.routes.js";
 import emailRoutes from "./src/routes/email.routes.js";
@@ -17,6 +17,8 @@ import groupRouter from "./src/routes/leadsGroup.routes.js";
 import meetingsRouter from "./src/routes/meetings.routes.js";
 import policiesRouter from "./src/routes/policies.routes.js";
 import { teamRouter } from "./src/routes/team.routes.js";
+import leadRouter from "./src/routes/leads.routes.js";
+import meetingRouter from "./src/routes/meetings.routes.js";
 
 dotenv.config();
 
@@ -43,13 +45,13 @@ app.use((req, res, next) => {
 });
 
 // API Routes
-app.use("/api/v1/user", userRouter);
+//app.use("/api/v1/user", userRouter);
 app.use("/api/v1/roles", roleRouter);
 app.use("/api/v1/emails", emailRoutes);
 app.use("/api/v1/templates", templateRoutes);
 app.use("/api/v1/leads", leadsRouter);
 app.use("/api/v1/groups", groupRouter);
-app.use("/api/v1", meetingsRouter);
+app.use("/api/v1/meetings", meetingRouter);
 app.use("/api/v1", policiesRouter);
 app.use("/api/v1/team", teamRouter);
 

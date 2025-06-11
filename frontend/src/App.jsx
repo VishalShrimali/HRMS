@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,17 +19,23 @@ import CustomEmailEditor from "./pages/EmailEditor";
 import TeamManagement from './components/TeamManagement/TeamManagement';
 import UpcomingMeetings from "./components/Meetings/UpcomingMeetings";
 import MeetingsCalendar from "./components/Meetings/MeetingsCalendar";
+import ScheduleMeeting from "./components/Meetings/ScheduleMeeting";
 
-let token = localStorage.getItem("token");
-const Protected = ({ isAuthenticated, children }) => {
-  return isAuthenticated ? children : <Navigate to="/auth/login" />;
+const Protected = ({ children }) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  return children;
 };
 
 function App() {
-  console.log(token);
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+  }, []);
 
   return (
     <Router>
@@ -37,30 +43,97 @@ function App() {
         <Route
           path="/"
           element={
-            <Protected isAuthenticated={isAuthenticated}>
+            <Protected>
               <Home />
             </Protected>
           }
         >
-          <Route index element={<Dashboard />} /> {/* Default route */}
+          <Route index element={<Dashboard />} />
           <Route
             path="leads"
             element={
-              <Protected isAuthenticated={isAuthenticated}>
+              <Protected>
                 <LeadTable />
               </Protected>
             }
           />
-          <Route path="roles" element={<RolesManager />} />
+          <Route 
+            path="roles" 
+            element={
+              <Protected>
+                <RolesManager />
+              </Protected>
+            } 
+          />
           <Route path="email">
-            <Route index path="designer" element={<EmailDesigner />} />
-            <Route path="editor" element={<CustomEmailEditor />} />
+            <Route 
+              index 
+              path="designer" 
+              element={
+                <Protected>
+                  <EmailDesigner />
+                </Protected>
+              } 
+            />
+            <Route 
+              path="editor" 
+              element={
+                <Protected>
+                  <CustomEmailEditor />
+                </Protected>
+              } 
+            />
           </Route>
-          <Route path="/team" element={<TeamManagement />} />
-          <Route path="employees" element={<div>Employees Page</div>} />
-          <Route path="settings" element={<div>Settings Page</div>} />
-          <Route path="meetings" element={<Protected isAuthenticated={isAuthenticated}><UpcomingMeetings /></Protected>} />
-          <Route path="calendar" element={<Protected isAuthenticated={isAuthenticated}><MeetingsCalendar /></Protected>} />
+          <Route 
+            path="/team" 
+            element={
+              <Protected>
+                <TeamManagement />
+              </Protected>
+            } 
+          />
+          <Route 
+            path="employees" 
+            element={
+              <Protected>
+                <div>Employees Page</div>
+              </Protected>
+            } 
+          />
+          <Route 
+            path="settings" 
+            element={
+              <Protected>
+                <div>Settings Page</div>
+              </Protected>
+            } 
+          />
+          <Route path="meetings">
+            <Route 
+              index 
+              element={
+                <Protected>
+                  <UpcomingMeetings />
+                </Protected>
+              } 
+            />
+            <Route 
+              path="schedule" 
+              element={
+                <Protected>
+                  <ScheduleMeeting />
+                </Protected>
+              } 
+            />
+          </Route>
+          <Route 
+            path="calendar" 
+            element={
+              <Protected>
+                <MeetingsCalendar />
+              </Protected>
+            } 
+          />
         </Route>
         <Route path="auth">
           <Route path="register" element={<Register />} />

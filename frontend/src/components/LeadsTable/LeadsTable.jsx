@@ -1212,6 +1212,7 @@ const LeadsTable = () => {
 
   // Handle annual review
   const handleAnnualReview = (lead) => {
+    console.log('LeadsTable: Setting lead for annual review. Lead data:', lead);
     setSelectedLeadForReview(lead);
     setShowAnnualReviewModal(true);
   };
@@ -1496,9 +1497,8 @@ const LeadsTable = () => {
               {/* Annual Review Modal */}
               {showAnnualReviewModal && selectedLeadForReview && (
                 <AnnualReviewModal
-                  showModal={showAnnualReviewModal}
-                  setShowModal={setShowAnnualReviewModal}
                   lead={selectedLeadForReview}
+                  onClose={() => setShowAnnualReviewModal(false)}
                   onMeetingScheduled={handleMeetingScheduled}
                 >
                   <div className="mt-8">
