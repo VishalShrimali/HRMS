@@ -47,9 +47,14 @@ RoleSchema.methods.getAllPermissions = async function() {
 RoleSchema.methods.canBeAssignedBy = function(assignerRole) {
   // ADMIN (level 0) can assign any role
   if (assignerRole.level === 0) return true;
-  // System roles can only be assigned by Super Admin
-  if (this.isSystem && assignerRole.level !== 0) return false;
-  // Can only assign roles of lower level
+
+  // If the role being assigned is a system role, allow it only if the assigner's level is strictly less than the assigned role's level.
+  // This enables Team Leaders (level 1) to assign Team Members (level 2), both of which are system roles.
+  if (this.isSystem) {
+      return assignerRole.level < this.level;
+  }
+
+  // For non-system roles, standard level check applies.
   return assignerRole.level < this.level;
 };
 

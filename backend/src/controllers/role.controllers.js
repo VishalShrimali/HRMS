@@ -124,9 +124,28 @@ export const getUserRoleAndPermissions = async (req, res) => {
 // Get available roles for assignment
 export const getAvailableRoles = async (req, res) => {
   try {
-    const roles = await Role.find({}, '_id name level').sort({ level: 1 });
+    const currentUserLevel = req.user.level;
+
+    let query = {};
+
+    // Super Admin (level 0) can assign any role
+    if (currentUserLevel === 0) {
+      query = {};
+    } else if (currentUserLevel === 1) {
+      // Team Leaders (level 1) can only assign roles with a level greater than their own (e.g., Team Member, level 2)
+      query = { level: { $gt: currentUserLevel } };
+    } else {
+      // Other roles (e.g., Team Members) cannot assign roles
+      return res.status(200).json({
+        roles: [],
+        message: 'You are not authorized to assign roles.'
+      });
+    }
+
+    const roles = await Role.find(query, '_id name level').sort({ level: 1 });
+
     if (!roles || roles.length === 0) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         roles: [],
         message: 'No roles found'
       });
@@ -134,9 +153,9 @@ export const getAvailableRoles = async (req, res) => {
     res.status(200).json({ roles });
   } catch (error) {
     console.error('Error in getAvailableRoles:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch available roles',
-      details: error.message 
+      details: error.message
     });
   }
 };

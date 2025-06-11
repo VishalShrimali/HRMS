@@ -1,5 +1,6 @@
 import express from "express";
 import { addRole, addPermissionsToRole, getPermissionsByRole, removePermissionsFromRole, getRoles, getUserRoleAndPermissions, getAvailableRoles } from "../controllers/role.controllers.js";
+import { protect } from "../middleware/auth.middlware.js";
 
 const router = express.Router();
 
@@ -20,6 +21,6 @@ router.delete("/permissions/remove/:name/:permissions", removePermissionsFromRol
 // Route to get the role and permissions of the current user
 router.get("/user/permissions", getUserRoleAndPermissions);
 
-router.get('/available', getAvailableRoles);
+router.get('/available', protect, getAvailableRoles);
 
 export default router;
