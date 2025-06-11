@@ -57,10 +57,7 @@ const AnnualReviewModal = ({ lead, onClose, onMeetingScheduled }) => {
     setDownloadError(null);
     try {
       const token = localStorage.getItem('token');
-<<<<<<< HEAD
-      if (!token) {
-        setDownloadError('Authentication token missing. Please log in.');
-=======
+      
       const meetingDateTime = new Date(`${selectedDate}T${selectedTime}`);
       
       await axios.post(
@@ -103,7 +100,6 @@ const AnnualReviewModal = ({ lead, onClose, onMeetingScheduled }) => {
       });
       if (!response.ok) {
         alert('Failed to download calendar file');
->>>>>>> 13616b507af40f8bc71dd47589eff7281e6d7e3c
         return;
       }
 
