@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import { Role } from "../models/role.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { sendEmail } from "../utils/email.utils.js";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 // Create a new team member
@@ -30,39 +31,60 @@ export const createTeamMember = async (req, res) => {
             throw new ApiError(403, "You don't have permission to assign this role");
         }
 
-        // Generate password setup token
-        const token = crypto.randomBytes(32).toString('hex');
+        // Generate a secure random token
+        const setupToken = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-        // Create the new user (no password)
+        // Create the new user with temporary password and setup token
         const newUser = await User.create({
             firstName,
             lastName,
             fullName: `${firstName} ${lastName}`,
             email,
-            password: 'TEMP_PASSWORD_123', // Changed from 'TEMP' to meet minimum length requirement
+            password: 'TEMP_PASSWORD_123',
             role: roleId,
             parent: creator._id,
             level: role.level,
             createdBy: creator._id,
-            passwordSetupToken: token,
+            passwordSetupToken: setupToken,
             passwordSetupExpires: expires
+        });
+
+        // Generate JWT token that includes the setup token
+        const token = jwt.sign(
+            { 
+                userId: newUser._id,
+                email: newUser.email,
+                setupToken: setupToken,
+                purpose: 'password_setup'
+            },
+            process.env.JWT_SECRET_KEY || 'your-secret-key', // Fallback for development
+            { expiresIn: '24h' }
+        );
+
+        console.log("Generated tokens for user:", {
+            email: newUser.email,
+            userId: newUser._id,
+            setupToken: setupToken,
+            expires: expires
         });
 
         // Add to creator's team
         creator.team.push(newUser._id);
         await creator.save();
 
-        // Send invite email
+        // Send invite email with the correct URL
         const setPasswordUrl = `${process.env.FRONTEND_URL}/set-password?token=${token}`;
+        console.log("Sending email with URL:", setPasswordUrl);
         await sendEmail(
             email,
             'Set up your account',
             `You have been invited to join the team. Set your password here: ${setPasswordUrl}`,
-            `<p>You have been invited to join the team. <a href="${setPasswordUrl}">Click here to set your password</a>.</p>`
+            `<p>You have been invited to join the team. <a href="${setPasswordUrl}">Click here to set your password</a>.</p>
+             <p>This link will expire in 24 hours.</p>`
         );
 
-        // Remove password from response
+        // Remove sensitive data from response
         const userResponse = newUser.toObject();
         delete userResponse.password;
         delete userResponse.passwordSetupToken;

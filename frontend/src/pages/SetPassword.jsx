@@ -20,6 +20,8 @@ const SetPassword = () => {
   useEffect(() => {
     if (!token) {
       setError('Invalid or missing token. Please use the link from your email.');
+    } else {
+      console.log('Token from URL:', token);
     }
   }, [token]);
 
@@ -53,10 +55,12 @@ const SetPassword = () => {
 
     setLoading(true);
     try {
+      console.log('Sending token to API:', token);
       await TeamApi.setPassword(token, password);
       setSuccess('Password set successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
+      console.error('Error setting password:', err);
       setError(err.message || 'Failed to set password. The link may have expired.');
     } finally {
       setLoading(false);

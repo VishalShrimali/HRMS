@@ -384,29 +384,66 @@ export const getUsersWithPagination = async (req, res) => {
 export const setPassword = async (req, res) => {
     try {
         const { token, password } = req.body;
-        console.log("Set password request received. Token length:", token?.length, "Password length:", password?.length);
+        console.log("Set password request received. Token:", token);
+        console.log("Request body:", req.body);
 
         if (!token || !password) {
             console.log("Missing token or password.");
             return res.status(400).json({ message: "Token and password are required." });
         }
-        const user = await User.findOne({ passwordSetupToken: token });
-        console.log("User found with token:", !!user);
 
-        if (!user || !user.passwordSetupExpires || user.passwordSetupExpires < new Date()) {
-            console.log("Invalid or expired token detected.");
-            console.log("User exists:", !!user, "passwordSetupExpires exists:", !!user?.passwordSetupExpires, "Expired:", user?.passwordSetupExpires < new Date());
+        // Verify JWT token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'your-secret-key');
+            console.log("Decoded token:", decoded);
+        } catch (error) {
+            console.error("Token verification failed:", error.message);
             return res.status(400).json({ message: "Invalid or expired token." });
         }
+
+        // Check if token is for password setup
+        if (decoded.purpose !== 'password_setup') {
+            console.log("Invalid token purpose:", decoded.purpose);
+            return res.status(400).json({ message: "Invalid token purpose." });
+        }
+
+        // Find user by ID and verify setup token
+        const user = await User.findOne({
+            _id: decoded.userId,
+            passwordSetupToken: decoded.setupToken,
+            passwordSetupExpires: { $gt: new Date() }
+        });
+
+        console.log("User found:", user ? "Yes" : "No");
+        if (user) {
+            console.log("User details:", {
+                email: user.email,
+                id: user._id,
+                token: user.passwordSetupToken,
+                expires: user.passwordSetupExpires
+            });
+        }
+
+        if (!user) {
+            console.log("No valid user found with this token");
+            return res.status(400).json({ message: "Invalid or expired token." });
+        }
+
         // Hash the password
         const bcrypt = await import('bcrypt');
         const hashedPassword = await bcrypt.default.hash(password, 10);
+        
+        // Update user and clear setup token
         user.password = hashedPassword;
         user.passwordSetupToken = undefined;
         user.passwordSetupExpires = undefined;
         await user.save();
+
+        console.log("Password set successfully for user:", user.email);
         res.status(200).json({ message: "Password set successfully." });
     } catch (error) {
+        console.error("Error in setPassword:", error);
         res.status(500).json({ message: "Error setting password. Please try again." });
     }
 };
