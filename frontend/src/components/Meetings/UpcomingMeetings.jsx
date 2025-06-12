@@ -11,12 +11,16 @@ const UpcomingMeetings = ({ refreshMeetingsFlag }) => {
     const fetchMeetings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/meetings/all`, {
-          headers: { Authorization: `Bearer ${token}` }
+        console.log('Fetching meetings with token:', token); // Debugging log
+        const response = await axios.get(`${API_BASE_URL}/all`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+
+        console.log('Meetings fetched:', response.data); // Debugging log
         setMeetings(response.data.meetings || []);
         setError(null);
       } catch (err) {
+        console.error('Error fetching meetings:', err); // Debugging log
         setError(err.response?.data?.message || 'Failed to fetch meetings');
       } finally {
         setLoading(false);
@@ -25,89 +29,58 @@ const UpcomingMeetings = ({ refreshMeetingsFlag }) => {
     fetchMeetings();
   }, [refreshMeetingsFlag]);
 
-  const handleDownloadICS = async (meetingId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/ics`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        alert('Failed to download calendar file');
-        return;
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `meeting-${meetingId}.ics`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      alert('Failed to download calendar file');
+  const handleJoinMeeting = (meetingLink) => {
+    if (meetingLink) {
+      window.open(meetingLink, '_blank');
+    } else {
+      alert('Meeting link is not available.');
     }
   };
 
-  function getGoogleCalendarUrl(meeting) {
-    const title = encodeURIComponent(`Meeting with ${meeting.lead?.firstName || ''} ${meeting.lead?.lastName || ''}`);
-    const description = encodeURIComponent(meeting.notes || '');
-    const start = new Date(meeting.dateTime);
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour meeting
-    const formatDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const dates = `${formatDate(start)}/${formatDate(end)}`;
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${description}`;
-  }
+  const formatDateTime = (dateTime) => {
+    const date = new Date(dateTime);
+    return date.toLocaleString();
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">All Scheduled Meetings</h2>
+      <h2 className="text-2xl font-bold mb-4">All Meetings</h2>
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>}
       {loading ? (
         <div className="text-center py-4 text-gray-500">Loading meetings...</div>
       ) : meetings.length === 0 ? (
-        <div className="text-center py-4 text-gray-500">No meetings scheduled yet</div>
+        <div className="text-center py-4 text-gray-500">No meetings found</div>
       ) : (
-        <table className="min-w-full bg-white border rounded-lg">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Date & Time</th>
-              <th className="py-2 px-4 border-b">Lead</th>
-              <th className="py-2 px-4 border-b">Notes</th>
-              <th className="py-2 px-4 border-b">Status</th>
-              <th className="py-2 px-4 border-b">Calendar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {meetings.map(meeting => (
-              <tr key={meeting._id}>
-                <td className="py-2 px-4 border-b">{new Date(meeting.dateTime).toLocaleString()}</td>
-                <td className="py-2 px-4 border-b">{meeting.lead?.firstName} {meeting.lead?.lastName}</td>
-                <td className="py-2 px-4 border-b">{meeting.notes}</td>
-                <td className="py-2 px-4 border-b">{meeting.status}</td>
-                <td className="py-2 px-4 border-b">
+        <div className="space-y-4">
+          {meetings.map((meeting) => (
+            <div
+              key={meeting._id}
+              className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Meeting with {meeting.lead?.firstName} {meeting.lead?.lastName}
+                  </h3>
+                  <p className="text-gray-600">Scheduled at: {formatDateTime(meeting.dateTime)}</p>
+                  {meeting.notes && <p className="mt-2 text-gray-700">Notes: {meeting.notes}</p>}
+                  <p className="mt-2 text-gray-700">Status: {meeting.status}</p>
+                </div>
+                <div className="flex space-x-2">
                   <button
-                    onClick={() => handleDownloadICS(meeting._id)}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    onClick={() => handleJoinMeeting(meeting.link)}
+                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                   >
-                    Add to Calendar
+                    Join Meeting
                   </button>
-                  <a
-                    href={getGoogleCalendarUrl(meeting)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
-                  >
-                    Add to Google Calendar
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 };
 
-export default UpcomingMeetings; 
+export default UpcomingMeetings;

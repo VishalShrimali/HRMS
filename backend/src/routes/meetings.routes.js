@@ -24,13 +24,19 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     console.log(req.body);
-    const { dateTime, notes, type } = req.body;
+    const { dateTime, notes, type, title, link } = req.body;
+
+    // Create a new meeting with the logged-in user's ID and selected lead's ID
     const meeting = new Meeting({
-      lead: req.params.leadId,
+      lead: req.params.leadId, // Lead ID from the route parameter
+      user: req.user._id,      // Logged-in user's ID from the authentication middleware
       dateTime,
       notes,
-      type: type || "annual_review"
+      type: type || "annual_review",
+      title,                   // Store the title
+      link                     // Store the link
     });
+
     await meeting.save();
 
     // Email reminder logic
@@ -60,9 +66,21 @@ router.post("/", async (req, res) => {
 // GET /api/v1/meetings/all - Get all meetings for the logged-in user
 router.get("/all", async (req, res) => {
   try {
+    // First find all leads owned by this user
     const leads = await Lead.find({ userId: req.user._id }).select("_id");
     const leadIds = leads.map(l => l._id);
-    const meetings = await Meeting.find({ lead: { $in: leadIds } }).populate("lead").sort({ dateTime: 1 });
+
+    // const response = req.user._id;
+    
+    
+    // Then find all meetings for these leads
+    const meetings = await Meeting.find({ lead: { $in: leadIds } })
+      .populate({
+        path: "lead",
+        select: "firstName lastName email phone" // Only populate necessary lead fields
+      })
+      .sort({ dateTime: 1 });
+    
     res.json({ meetings });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -98,4 +116,24 @@ router.get("/:meetingId/ics", async (req, res) => {
   }
 });
 
-export default router; 
+// GET /api/v1/meetings/upcoming - Get all upcoming meetings for the logged-in user
+router.get("/upcoming", async (req, res) => {
+  try {
+    const leads = await Lead.find({ userId: req.user._id }).select("_id");
+    const leadIds = leads.map(l => l._id);
+    const currentDate = new Date();
+    
+    const meetings = await Meeting.find({
+      lead: { $in: leadIds },
+      dateTime: { $gte: currentDate }
+    })
+    .populate("lead")
+    .sort({ dateTime: 1 });
+    
+    res.json({ meetings });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+export default router;

@@ -21,7 +21,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-function ModernMeetingsCalendar() {
+function RedesignedMeetingsCalendar() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,7 +36,6 @@ function ModernMeetingsCalendar() {
 
         const meetings = response.data.meetings || [];
         const formattedEvents = meetings.map((meeting) => ({
-          id: meeting._id,
           title: meeting.title || `Meeting with ${meeting.lead?.firstName} ${meeting.lead?.lastName}`,
           start: new Date(meeting.dateTime),
           end: new Date(new Date(meeting.dateTime).getTime() + 60 * 60 * 1000), // 1-hour duration
@@ -64,15 +63,10 @@ function ModernMeetingsCalendar() {
     }
   };
 
-  const handleSelectSlot = (slotInfo) => {
-    alert(`Selected Date: ${slotInfo.start.toLocaleDateString()}\nTime: ${slotInfo.start.toLocaleTimeString()}`);
-    // You can open a modal here to schedule a new meeting
-  };
-
   return (
     <div className="bg-gray-100 rounded-lg shadow-lg p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">My Meetings</h2>
+        <h2 className="text-3xl font-bold text-gray-800">Meetings Calendar</h2>
         {error && (
           <div className="text-red-700 bg-red-100 px-4 py-2 rounded-lg">
             {error}
@@ -88,16 +82,13 @@ function ModernMeetingsCalendar() {
           startAccessor="start"
           endAccessor="end"
           style={{ height: '80vh', margin: '20px' }}
-          selectable // Enable slot selection
           onSelectEvent={handleEventClick} // Handle event clicks
-          onSelectSlot={handleSelectSlot} // Handle slot selection
           eventPropGetter={(event) => ({
             style: {
-              backgroundColor: '#4285F4', // Google Calendar-like blue
+              backgroundColor: '#4CAF50',
               color: 'white',
               borderRadius: '5px',
               padding: '5px',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
             },
           })}
         />
@@ -106,4 +97,4 @@ function ModernMeetingsCalendar() {
   );
 }
 
-export { ModernMeetingsCalendar as default };
+export { RedesignedMeetingsCalendar as default };
