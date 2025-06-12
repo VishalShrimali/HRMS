@@ -61,7 +61,7 @@ const UpcomingMeetings = ({ refreshMeetingsFlag }) => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">Upcoming Meetings</h2>
+      <h2 className="text-2xl font-bold mb-4">All Scheduled Meetings</h2>
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>}
       {loading ? (
         <div className="text-center py-4 text-gray-500">Loading meetings...</div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Download, Clock, Plus } from 'lucide-react';
+import { X, Calendar, Download, Clock, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/BASEURL';
 
@@ -16,6 +16,7 @@ const AnnualReviewModal = ({
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [meetingNotes, setMeetingNotes] = useState('');
+  const [showMeetingHistory, setShowMeetingHistory] = useState(false);
 
   // Fetch meetings history
   useEffect(() => {
@@ -254,55 +255,68 @@ const AnnualReviewModal = ({
           </form>
         )}
 
-        {/* Meetings History */}
-        <div>
-          <h6 className="font-medium text-gray-700 mb-4">Meeting History</h6>
-          {loading ? (
-            <div className="text-center py-4 text-gray-500">Loading meetings...</div>
-          ) : meetings.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No meetings scheduled yet</div>
-          ) : (
-            <div className="space-y-4">
-              {meetings.map((meeting) => (
-                <div
-                  key={meeting._id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="text-gray-400 mr-2" size={16} />
-                      <span className="font-medium">
-                        {new Date(meeting.dateTime).toLocaleString()}
+        {/* Meeting History */}
+        <div className="mt-6">
+          <h6
+            className="text-xl font-semibold text-gray-800 mb-4 cursor-pointer flex items-center justify-between"
+            onClick={() => setShowMeetingHistory(!showMeetingHistory)}
+          >
+            Meeting History
+            {showMeetingHistory ? <ChevronUp size={20} className="ml-2" /> : <ChevronDown size={20} className="ml-2" />}
+          </h6>
+          {showMeetingHistory && (
+            loading ? (
+              <div className="text-center py-4 text-gray-500">Loading meetings...</div>
+            ) : meetings.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">No meeting history found.</div>
+            ) : (
+              <div className="space-y-4">
+                {meetings.map((meeting) => (
+                  <div
+                    key={meeting._id}
+                    className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-gray-600 text-sm">
+                        <Clock className="mr-2" size={16} />
+                        <span>{new Date(meeting.dateTime).toLocaleString()}</span>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        meeting.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {meeting.status}
                       </span>
                     </div>
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      meeting.status === 'completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {meeting.status}
-                    </span>
-                    <button
-                      onClick={() => handleDownloadICS(meeting._id)}
-                      className="ml-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    >
-                      Add to Calendar
-                    </button>
-                    <a
-                      href={getGoogleCalendarUrl(meeting)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 px-2 py-1 bg-blue-200 rounded hover:bg-blue-300"
-                    >
-                      Add to Google Calendar
-                    </a>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-gray-700 text-sm mb-2">
+                        <strong>Notes:</strong> {meeting.notes || 'No notes'}
+                      </p>
+                      <div className="flex space-x-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadICS(meeting._id);
+                          }}
+                          className="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300"
+                        >
+                          Add to Calendar
+                        </button>
+                        <a
+                          href={getGoogleCalendarUrl(meeting)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-blue-200 rounded text-sm hover:bg-blue-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Add to Google Calendar
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  {meeting.notes && (
-                    <p className="mt-2 text-gray-600 text-sm">{meeting.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
