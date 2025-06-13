@@ -990,11 +990,17 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
           }),
           ...(formData.dates.joinDate && { 
             joinDate: new Date(formData.dates.joinDate).getTime() 
-          }),
-          // Preserve existing dates
-          ...(editingLead.dates?.lastLogin && { lastLogin: editingLead.dates.lastLogin }),
-          ...(editingLead.dates?.passwordChangedAt && { passwordChangedAt: editingLead.dates.passwordChangedAt }),
+          })
         };
+
+        // Only try to preserve existing dates if editingLead exists and has dates
+        if (editingLead && editingLead.dates) {
+          updateData.dates = {
+            ...updateData.dates,
+            ...(editingLead.dates.lastLogin && { lastLogin: editingLead.dates.lastLogin }),
+            ...(editingLead.dates.passwordChangedAt && { passwordChangedAt: editingLead.dates.passwordChangedAt })
+          };
+        }
       }
 
       // Handle user preferences if any are set
@@ -1009,23 +1015,25 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
 
       console.log('Sending update data:', updateData); // Debug log
       const response = await updateLead(editingLead._id, updateData);
+      console.log('Update response:', response); // Debug log
 
       // Update the leads state with the new data
       const updatedLeads = leads.map((lead) => {
         if (lead._id === editingLead._id) {
-          return {
+          const updatedLead = {
             ...lead,
-            ...response.lead,
+            ...(response?.lead || {}),
             dates: {
-              ...lead.dates,
-              ...response.lead.dates,
+              ...(lead.dates || {}),
+              ...(response?.lead?.dates || {})
             },
-            addresses: response.lead.addresses || lead.addresses,
+            addresses: response?.lead?.addresses || lead.addresses || [],
             userPreferences: {
-              ...lead.userPreferences,
-              ...response.lead.userPreferences,
-            },
+              ...(lead.userPreferences || {}),
+              ...(response?.lead?.userPreferences || {})
+            }
           };
+          return updatedLead;
         }
         return lead;
       });
