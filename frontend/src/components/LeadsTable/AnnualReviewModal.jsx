@@ -114,7 +114,7 @@ const AnnualReviewModal = ({
       open={showModal}
       className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
     >
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center border-b pb-4">
           <div>
