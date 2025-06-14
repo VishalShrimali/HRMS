@@ -138,6 +138,9 @@ export const forgotPassword = async (req, res) => {
 
         console.log("Reset token generated:", resetToken);
 
+        // Debug: Check FRONTEND_URL
+        console.log("FRONTEND_URL from env:", process.env.FRONTEND_URL);
+
         // Generate the reset link
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
