@@ -80,11 +80,31 @@ export const addMembersToGroup = asyncHandler(async (req, res) => {
 // Get all groups
 export const getGroups = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role?.name === "ADMIN";
-  let query = isAdmin ? {} : { createdBy: req.user._id };
+  let query = {};
 
-  // Add support for ?userId=... query param (admin only)
-  if (isAdmin && req.query.userId) {
-    query = { createdBy: req.query.userId };
+  if (isAdmin) {
+    // Admins see all groups, potentially filtered by userId
+    if (req.query.userId) {
+      query = { createdBy: req.query.userId };
+    }
+  } else if (req.user.role?.name === "Team Leader") {
+    const teamMemberIds = (await req.user.getSubordinates()).map(member => member._id.toString());
+    teamMemberIds.push(req.user._id.toString()); // Include the team leader's own ID
+
+    if (req.query.userId) {
+      // If a specific userId is requested, ensure it's valid and belongs to the team leader or their subordinates
+      if (teamMemberIds.includes(req.query.userId.toString())) {
+        query = { createdBy: req.query.userId };
+      } else {
+        return res.status(403).json({ message: "You can only view groups of your team members or yourself" });
+      }
+    } else {
+      // If no specific userId is requested, show all groups from the team leader and their subordinates
+      query.createdBy = { $in: teamMemberIds };
+    }
+  } else {
+    // Other non-admin users (e.g., Team Members) only see their own groups
+    query = { createdBy: req.user._id };
   }
 
   const groups = await Group.find(query).populate({

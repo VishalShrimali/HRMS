@@ -91,12 +91,22 @@ export const getTeamMembers = async (req, res) => {
         // Get all subordinates
         const subordinates = await user.getSubordinates();
         
-        // Remove sensitive information
-        const teamMembers = subordinates.map(member => {
-            const memberObj = member.toObject();
-            delete memberObj.password;
-            return memberObj;
-        });
+        // Add the team leader to the list
+        const teamMembers = [
+            {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role,
+                roleName: user.roleName
+            },
+            ...subordinates.map(member => {
+                const memberObj = member.toObject();
+                delete memberObj.password;
+                return memberObj;
+            })
+        ];
 
         res.status(200).json({
             success: true,

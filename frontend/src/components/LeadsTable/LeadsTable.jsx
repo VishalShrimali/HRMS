@@ -28,6 +28,7 @@ import GroupsControlsComponent from "../GroupsComponents/GroupsControlsComponent
 import axios from "axios";
 import { API_BASE_URL } from "../../api/BASEURL";
 import AnnualReviewModal from './AnnualReviewModal';
+import TeamApi from "../../api/TeamApi";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -279,6 +280,9 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamMembersLoading, setTeamMembersLoading] = useState(false);
+  const [teamMembersError, setTeamMembersError] = useState(null);
   const [showNewClientsOnly, setShowNewClientsOnly] = useState(false);
   const [showAnnualReviewModal, setShowAnnualReviewModal] = useState(false);
   const [selectedLeadForReview, setSelectedLeadForReview] = useState(null);
@@ -317,47 +321,56 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
     leadStatus: "new",
   });
 
-  const fetchUsers = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setUsersError("Authentication token is missing. Please log in.");
-      setUsersLoading(false);
-      return;
-    }
-  
-    setUsersLoading(true);
-    setUsersError(null);
-  
-    try {
-      const API = axios.create({
-        baseURL: API_BASE_URL,
-        headers: { "Content-Type": "application/json" },
-      });
-      ; // Get axios instance
-      const response = await API.get("/user/list/all", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      console.log("fetchUsers response:", response.data); // Debug log
-      setUsers(response.data.users || []);
-    } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Error fetching users";
-      setUsersError(message);
-      console.error("Error fetching users:", err);
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []);
-  
+  // Determine if the user is an admin
+  const userData = JSON.parse(localStorage.getItem("userData") || '{}');
+  const isAdmin = userData.roleName === "ADMIN" || userData.roleName === "Super Admin";
+  const isTeamLeader = userData.roleName === "Team Leader";
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      // Only fetch all users if the user is an admin
+      if (!isAdmin) return;
+      
+      setUsersLoading(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/user/list/all`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setUsers(response.data.users || []);
+        setUsersError(null);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setUsersError(err.message || "Failed to fetch users");
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
     fetchUsers();
-  }, [fetchUsers]);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      // Only fetch team members if the user is a team leader
+      if (!isTeamLeader) return;
+      
+      setTeamMembersLoading(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/team/members`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setTeamMembers(response.data.teamMembers || []);
+        setTeamMembersError(null);
+      } catch (err) {
+        console.error("Error fetching team members:", err);
+        setTeamMembersError(err.message || "Failed to fetch team members");
+      } finally {
+        setTeamMembersLoading(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, [isTeamLeader]);
 
   // Fetch leads
   const fetchLeads = useCallback(async () => {
@@ -1214,10 +1227,6 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
     setFormSubmitted(false);
   };
 
-  // Determine if the user is an admin
-  const userData = JSON.parse(localStorage.getItem("userData") || '{}');
-  const isAdmin = userData.roleName === "ADMIN" || userData.roleName === "Super Admin";
-
   // Handle annual review
   const handleAnnualReview = (lead) => {
     setShowAnnualReviewModal(true);
@@ -1424,6 +1433,37 @@ const LeadsTable = ({ setRefreshMeetingsFlag }) => {
                       {users.map((user) => (
                         <option key={user._id} value={user._id}>
                           {user.firstName} {user.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+              {!isAdmin && userData.roleName === "Team Leader" && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="teamMemberFilter"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Filter by Team Member
+                  </label>
+                  {teamMembersLoading ? (
+                    <div>Loading team members...</div>
+                  ) : teamMembersError ? (
+                    <div className="text-red-500">{teamMembersError}</div>
+                  ) : teamMembers.length === 0 ? (
+                    <div>No team members available</div>
+                  ) : (
+                    <select
+                      id="teamMemberFilter"
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      className="mt-1 p-2 w-full border border-gray-300 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Team Members</option>
+                      {teamMembers.map((member) => (
+                        <option key={member._id} value={member._id}>
+                          {member.firstName} {member.lastName}
                         </option>
                       ))}
                     </select>

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from '../api/BASEURL';
 import { getAllUsers } from "../api/GroupsApi";
 import debounce from 'lodash/debounce';
+import axios from 'axios';
 
 const EmailDesigner = () => {
   const [emails, setEmails] = useState([]);
@@ -17,7 +18,12 @@ const EmailDesigner = () => {
   const [newEmail, setNewEmail] = useState({ title: "", description: "" });
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamMembersLoading, setTeamMembersLoading] = useState(false);
+  const [teamMembersError, setTeamMembersError] = useState(null);
+  const userData = JSON.parse(localStorage.getItem("userData") || '{}');
+  const isAdmin = userData.roleName === "ADMIN" || userData.roleName === "Super Admin";
+  const isTeamLeader = userData.roleName === "Team Leader";
   const navigate = useNavigate();
 
   // Debounce search input
@@ -38,7 +44,6 @@ const EmailDesigner = () => {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("userData"));
-    setIsAdmin(user?.role?.name === "ADMIN");
     if (user?.role?.name === "ADMIN") {
       getAllUsers().then(data => {
         console.log("Fetched users:", data);
@@ -46,6 +51,28 @@ const EmailDesigner = () => {
       });
     }
   }, []);
+
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      if (!isTeamLeader) return;
+      
+      setTeamMembersLoading(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/team/members`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setTeamMembers(response.data.teamMembers || []);
+        setTeamMembersError(null);
+      } catch (err) {
+        console.error("Error fetching team members:", err);
+        setTeamMembersError(err.message || "Failed to fetch team members");
+      } finally {
+        setTeamMembersLoading(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, [isTeamLeader]);
 
   const fetchEmails = useCallback(async () => {
     setLoading(true);
@@ -144,6 +171,32 @@ const EmailDesigner = () => {
             </select>
           ) : (
             <div className="text-red-500">No users found or users data is invalid. Check backend response.</div>
+          )}
+        </div>
+      )}
+
+      {isTeamLeader && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Team Member</label>
+          {teamMembersLoading ? (
+            <div>Loading team members...</div>
+          ) : teamMembersError ? (
+            <div className="text-red-500">{teamMembersError}</div>
+          ) : Array.isArray(teamMembers) && teamMembers.length > 0 ? (
+            <select
+              value={selectedUserId}
+              onChange={e => setSelectedUserId(e.target.value)}
+              className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Team Members</option>
+              {teamMembers.map(member => (
+                <option key={member._id} value={member._id}>
+                  {member.firstName + " " + member.lastName}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-red-500">No team members available</div>
           )}
         </div>
       )}

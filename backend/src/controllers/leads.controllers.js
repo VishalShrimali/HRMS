@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { Parser } from 'json2csv';
 import PDFDocument from 'pdfkit';
 import { Meeting } from '../models/meeting.models.js';
+import User from '../models/user.model.js';
 
 
 // Centralized error handler
@@ -34,9 +35,38 @@ export const getLeads = async (req, res) => {
                 return res.status(400).json({ message: "Invalid userId format for filtering" });
             }
             // If no queryUserId, admin gets all leads (query remains {})
+        } else if (req.user.role.name === "Team Leader") {
+            // Get all team members including the team leader
+            const teamMembers = await req.user.getSubordinates();
+            const teamMemberIds = teamMembers.map(member => member._id);
+            
+            // Add the current team leader's ID to the list of IDs to query for
+            teamMemberIds.push(req.user._id);
+
+            if (queryUserId && mongoose.isValidObjectId(queryUserId)) {
+                // Check if the requested user is in the team
+                if (teamMemberIds.includes(queryUserId)) {
+                    query = { userId: queryUserId };
+                } else {
+                    return res.status(403).json({ message: "You can only view leads of your team members" });
+                }
+            } else {
+                // If no specific user requested, show all team members' leads
+                query = { userId: { $in: teamMemberIds } };
+            }
         } else {
-            // Non-admin users can only get their own leads
-            query = { userId: req.user._id };
+            // For team members, they can see only their own leads
+            if (queryUserId && mongoose.isValidObjectId(queryUserId)) {
+                // Check if the requested user is the team member themselves
+                if (queryUserId === req.user._id.toString()) {
+                    query = { userId: queryUserId };
+                } else {
+                    return res.status(403).json({ message: "You can only view your own leads" });
+                }
+            } else {
+                // If no specific user requested, show only the team member's leads
+                query = { userId: req.user._id };
+            }
         }
         
         // Add timestamps to ensure fresh data

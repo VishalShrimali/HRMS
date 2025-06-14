@@ -34,8 +34,15 @@ export const getEmails = async (req, res) => {
         return res.status(400).json({ message: "Invalid userId format" });
       }
     } else {
-      // If not admin, only show their own emails
-      if (req.user.role?.name !== "ADMIN") {
+      // If not admin, apply role-based filtering
+      if (req.user.role?.name === "Team Leader") {
+        // Team Leaders see their own emails and their subordinates' emails
+        const teamMembers = await req.user.getSubordinates();
+        const teamMemberIds = teamMembers.map(member => member._id);
+        teamMemberIds.push(req.user._id); // Include the team leader's own ID
+        query.createdBy = { $in: teamMemberIds };
+      } else if (req.user.role?.name !== "ADMIN") {
+        // Other non-admin users (e.g., Team Members) only see their own emails
         query.createdBy = req.user._id;
       }
       // If admin and no userId, show all emails (query remains {})
